@@ -62,18 +62,16 @@ class NearbyFlightsCard extends HTMLElement {
       const radarContainer = document.createElement('div')
       radarContainer.id = 'radar-container'
 
+      const radarOverlay = document.createElement('div')
+      radarOverlay.id = 'radar-overlay'
+      radarContainer.appendChild(radarOverlay)
+
       const radarInfoDisplay = document.createElement('div')
       radarInfoDisplay.id = 'radar-info'
-
       radarContainer.appendChild(radarInfoDisplay)
 
       const radar = document.createElement('div')
       radar.id = 'radar'
-      radar.addEventListener('wheel', this.handleWheel.bind(this), { passive: false })
-      radar.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: true })
-      radar.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false })
-      radar.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: true })
-      radar.addEventListener('touchcancel', this.handleTouchEnd.bind(this), { passive: true })
 
       const radarScreen = document.createElement('div')
       radarScreen.id = 'radar-screen'
@@ -101,6 +99,8 @@ class NearbyFlightsCard extends HTMLElement {
     card.appendChild(flightsContainer)
 
     this.shadowRoot.appendChild(card)
+
+    this.attachEventListeners()
   }
 
   renderDynamic() {
@@ -108,16 +108,9 @@ class NearbyFlightsCard extends HTMLElement {
     if (!flightsContainer) return
 
     if (this.radar && this.radar.show !== false) {
-      const radarInfoDisplay = this.shadowRoot.getElementById('radar-info')
-      const radar = this.shadowRoot.getElementById('radar')
-      if (radar) {
-        const radarRange = this.radar.range ?? 35
-        radarInfoDisplay.textContent = `Range: ${Math.round(radarRange)}km`
-
-        requestAnimationFrame(() => {
-          this.renderRadar(this._flightsData)
-        })
-      }
+      requestAnimationFrame(() => {
+        this.renderRadar()
+      })
     }
 
     flightsContainer.innerHTML = ''
@@ -136,6 +129,13 @@ class NearbyFlightsCard extends HTMLElement {
   }
 
   renderRadarScreen() {
+    const radarInfoDisplay = this.shadowRoot.getElementById('radar-info')
+    if (radarInfoDisplay) {
+      const infoElements = [`Range: ${Math.round(this.radar.range ?? 35)}km`]
+
+      radarInfoDisplay.innerHTML = infoElements.join('<br />')
+    }
+
     const radarScreen = this.shadowRoot.getElementById('radar-screen')
     radarScreen.innerHTML = ''
 
@@ -261,7 +261,7 @@ class NearbyFlightsCard extends HTMLElement {
     }
   }
 
-  renderRadar(flightsData) {
+  renderRadar() {
     const planesContainer = this.shadowRoot.getElementById('planes')
     planesContainer.innerHTML = ''
 
@@ -276,7 +276,7 @@ class NearbyFlightsCard extends HTMLElement {
       const radarCenterX = radarWidth / 2
       const radarCenterY = radarHeight / 2
 
-      flightsData
+      this._flightsData
         .slice()
         .reverse()
         .forEach((flight) => {
@@ -333,7 +333,7 @@ class NearbyFlightsCard extends HTMLElement {
     this.radar.range = newRange
 
     this.renderRadarScreen()
-    this.renderDynamic()
+    this.renderRadar()
   }
 
   renderFlight(flight) {
@@ -531,8 +531,19 @@ class NearbyFlightsCard extends HTMLElement {
         display: flex;
         justify-content: space-between;
       }
+      #radar-overlay {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+        z-index: 10;
+        opacity: 0;
+        pointer-events: auto;
+      }
       #radar-info {
-        width: 15%;
+        position: absolute;
+        width: 50%;
         text-align: left;
         font-size: 0.9em;
         padding: 0;
@@ -542,7 +553,7 @@ class NearbyFlightsCard extends HTMLElement {
         position: relative;
         width: 70%;
         height: 0;
-        margin: 0 15% 0 0;
+        margin: 0 15%;
         padding-bottom: 70%; /* Maintain aspect ratio (1:1) */
         margin-bottom: 5%;
         border-radius: 50%;
@@ -723,24 +734,30 @@ class NearbyFlightsCard extends HTMLElement {
     } else if (condition.type === 'NOT') {
       result = !this.applyCondition(flight, condition.condition)
     } else {
-      if (!(field in flight)) result = false
       switch (comparator) {
         case 'eq':
           result = flight[field] === value
+          break
         case 'lt':
-          result = flight[field] < value
+          result = Number(flight[field]) < Number(value)
+          break
         case 'lte':
-          result = flight[field] <= value
+          result = Number(flight[field]) <= Number(value)
+          break
         case 'gt':
-          result = flight[field] > value
+          result = Number(flight[field]) > Number(value)
+          break
         case 'gte':
-          result = flight[field] >= value
+          result = Number(flight[field]) >= Number(value)
+          break
         case 'oneOf': {
           result = (Array.isArray(value) ? value : typeof value === 'string' ? value.split(',').map((v) => v.trim()) : []).includes(flight[field])
+          break
         }
         case 'containsOneOf': {
           result =
             flight[field] && (Array.isArray(value) ? value : typeof value === 'string' ? value.split(',').map((v) => v.trim()) : []).some((val) => flight[field].includes(val))
+          break
         }
         default:
           result = false
@@ -964,6 +981,27 @@ class NearbyFlightsCard extends HTMLElement {
     const eta = distance / groundSpeedKmPerMin // ETA in minutes
 
     return eta
+  }
+
+  attachEventListeners() {
+    if (!this._boundEventHandlers) {
+      this._boundEventHandlers = {
+        handleWheel: this.handleWheel.bind(this),
+        handleTouchStart: this.handleTouchStart.bind(this),
+        handleTouchMove: this.handleTouchMove.bind(this),
+        handleTouchEnd: this.handleTouchEnd.bind(this),
+      }
+    }
+
+    // Add event listeners to a higher-level container to ensure they remain active
+    const radarOverlay = this.shadowRoot.getElementById('radar-overlay')
+    if (radarOverlay) {
+      radarOverlay.addEventListener('wheel', this._boundEventHandlers.handleWheel, { passive: false })
+      radarOverlay.addEventListener('touchstart', this._boundEventHandlers.handleTouchStart, { passive: true })
+      radarOverlay.addEventListener('touchmove', this._boundEventHandlers.handleTouchMove, { passive: false })
+      radarOverlay.addEventListener('touchend', this._boundEventHandlers.handleTouchEnd, { passive: true })
+      radarOverlay.addEventListener('touchcancel', this._boundEventHandlers.handleTouchEnd, { passive: true })
+    }
   }
 
   handleWheel(event) {
