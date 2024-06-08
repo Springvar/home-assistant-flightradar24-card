@@ -332,10 +332,7 @@ class NearbyFlightsCard extends HTMLElement {
 
     this.radar.range = newRange
 
-    requestAnimationFrame(() => {
-      this.renderRadarScreen()
-    })
-
+    this.renderRadarScreen()
     this.renderDynamic()
   }
 
@@ -487,8 +484,19 @@ class NearbyFlightsCard extends HTMLElement {
   }
 
   renderStyle() {
+    const radarPrimaryColor = this.radar['primary-color'] || 'var(--dark-primary-color)'
+    const radarAccentColor = this.radar['accent-color'] || 'var(--accent-color)'
+    const callsignLabelColor = this.radar['callsign-label-color'] || 'var(--primary-background-color)'
+    const featureColor = this.radar['feature-color'] || 'var(--secondary-text-color)'
+
     const style = document.createElement('style')
     style.textContent = `
+      :host {
+        --radar-primary-color: ${radarPrimaryColor};
+        --radar-accent-color: ${radarAccentColor};
+        --radar-callsign-label-color: ${callsignLabelColor};
+        --radar-feature-color: ${featureColor};
+      }
       #flights-card {
         padding: 16px;
       }
@@ -553,7 +561,7 @@ class NearbyFlightsCard extends HTMLElement {
         height: 100%;
         margin: 0;
         padding: 0%;
-        background-color: var(--dark-primary-color);
+        background-color: var(--radar-primary-color);
         opacity: 0.05;
       }
       #tracker {
@@ -593,21 +601,21 @@ class NearbyFlightsCard extends HTMLElement {
       .plane.plane-small .arrow {
         border-left: 2px solid transparent;
         border-right: 2px solid transparent;
-        border-bottom: 6px solid var(--accent-color);
+        border-bottom: 6px solid var(--radar-accent-color);
       }
       .plane.plane-medium .arrow {
         border-left: 3px solid transparent;
         border-right: 3px solid transparent;
-        border-bottom: 8px solid var(--accent-color);
+        border-bottom: 8px solid var(--radar-accent-color);
       }
       .plane.plane-large .arrow {
         border-left: 4px solid transparent;
         border-right: 4px solid transparent;
-        border-bottom: 16px solid var(--accent-color);
+        border-bottom: 16px solid var(--radar-accent-color);
       }
       .callsign-label {
         position: absolute;
-        background-color: var(--primary-background-color);
+        background-color: var(--radar-callsign-label-color);
         opacity: 0.7;
         border: 1px solid lightgray;
         line-height: 1em;
@@ -620,7 +628,7 @@ class NearbyFlightsCard extends HTMLElement {
       }
       .ring {
         position: absolute;
-        border: 1px dashed var(--dark-primary-color);
+        border: 1px dashed var(--radar-primary-color);
         border-radius: 50%;
         pointer-events: none;
       }
@@ -628,7 +636,7 @@ class NearbyFlightsCard extends HTMLElement {
         position: absolute;
         top: 50%;
         left: 50%;
-        border-bottom: 1px dotted var(--dark-primary-color);
+        border-bottom: 1px dotted var(--radar-primary-color);
         width: 50%;
         height: 0px;
         transform-origin: 0 0;
@@ -636,14 +644,14 @@ class NearbyFlightsCard extends HTMLElement {
       }
       .runway {
         position: absolute;
-        background-color: var(--secondary-text-color);
+        background-color: var(--radar-feature-color);
         height: 2px;
       }
       .location-dot {
         position: absolute;
         width: 4px;
         height: 4px;
-        background-color: var(--secondary-text-color);
+        background-color: var(--radar-feature-color);
         border-radius: 50%;
         z-index: 1;
       }
@@ -654,13 +662,14 @@ class NearbyFlightsCard extends HTMLElement {
         border: none;
         padding: 0px;
         font-size: 10px;
-        color: var(--disabled-text-color);
+        color: var(--radar-feature-color);
+        opacity: 0.5;
         z-index: 1;
       }
       .outline-line {
         position: absolute;
-        background-color: var(--dark-primary-color);
-        opacity: 0.4;
+        background-color: var(--radar-feature-color);
+        opacity: 0.35;
       }
     `
     this.shadowRoot.appendChild(style)
@@ -705,40 +714,44 @@ class NearbyFlightsCard extends HTMLElement {
     const { field, _, comparator } = condition
     const value = this.resolvePlaceholders(condition.value)
 
+    let result = true
+
     if (condition.type === 'AND') {
-      return condition.conditions.every((cond) => this.applyCondition(flight, cond))
+      result = condition.conditions.every((cond) => this.applyCondition(flight, cond))
     } else if (condition.type === 'OR') {
-      return condition.conditions.some((cond) => this.applyCondition(flight, cond))
+      result = condition.conditions.some((cond) => this.applyCondition(flight, cond))
     } else if (condition.type === 'NOT') {
-      return !this.applyCondition(flight, condition.condition)
+      result = !this.applyCondition(flight, condition.condition)
     } else {
-      if (!(field in flight)) return false
+      if (!(field in flight)) result = false
       switch (comparator) {
         case 'eq':
-          return flight[field] === value
+          result = flight[field] === value
         case 'lt':
-          return flight[field] < value
+          result = flight[field] < value
         case 'lte':
-          return flight[field] <= value
+          result = flight[field] <= value
         case 'gt':
-          return flight[field] > value
+          result = flight[field] > value
         case 'gte':
-          return flight[field] >= value
+          result = flight[field] >= value
         case 'oneOf': {
-          const valuesArray = value !== undefined ? (Array.isArray(value) ? value : value.split(',').map((v) => v.trim())) : []
-          return valuesArray.includes(flight[field])
+          result = (Array.isArray(value) ? value : typeof value === 'string' ? value.split(',').map((v) => v.trim()) : []).includes(flight[field])
         }
         case 'containsOneOf': {
-          const valuesArray = value !== undefined ? (Array.isArray(value) ? value : value.split(',').map((v) => v.trim())) : []
-          console.log("Field",field)
-          console.log("Values",valuesArray)
-          console.log("ContainsOneOf",valuesArray.some((val) => flight[field] && flight[field].includes(val)))
-          return flight[field] && valuesArray.some((val) => flight[field].includes(val))
+          result =
+            flight[field] && (Array.isArray(value) ? value : typeof value === 'string' ? value.split(',').map((v) => v.trim()) : []).some((val) => flight[field].includes(val))
         }
         default:
-          return false
+          result = false
       }
     }
+
+    if (condition.debugIf === result) {
+      console.debug('applyCondition', condition, flight, result)
+    }
+
+    return result
   }
 
   resolvePlaceholders(value) {
