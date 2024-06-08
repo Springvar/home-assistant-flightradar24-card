@@ -1,2 +1,2 @@
-# Flightradar23 integration Card
-Custom card to use with Flightradar23 integration for Home Assistant
+# Flightradar24 integration Card
+Custom card to use with Flightradar24 integration for Home Assistant
