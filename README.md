@@ -52,7 +52,7 @@ To install the card, follow these steps:
    - Edit your Lovelace dashboard and add the custom card:
      ```yaml
      resources:
-       - url: /local/flightradar24/flightradar24-card.js.js
+       - url: /local/flightradar24/flightradar24-card.js
          type: module
      ```
 
