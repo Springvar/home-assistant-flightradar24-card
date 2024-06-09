@@ -1,6 +1,6 @@
 # Flightradar24 Integration Card
 
-Custom card to use with Flightradar24 integration for Home Assistant.
+Custom card to use with <a href="https://github.com/AlexandrErohin/home-assistant-flightradar24">Flightradar24 integration</a> for Home Assistant.
 
 <img src="https://raw.githubusercontent.com/Springvar/home-assistant-flightradar24-card/master/card.png" width="35%">
 
@@ -27,6 +27,10 @@ Custom card to use with Flightradar24 integration for Home Assistant.
 The Flightradar24 Integration Card allows you to display flight data from Flightradar24 in your Home Assistant dashboard. You can track flights near your location, view details about specific aircraft, and customize the display to fit your needs.
 
 ## Installation
+
+### Prerequisites
+
+This card is designed to work with sensor data provided by <a href="https://github.com/AlexandrErohin/home-assistant-flightradar24">Flightradar24 integration</a>.
 
 ### HACS (recommended)
 
