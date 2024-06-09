@@ -30,7 +30,8 @@ class Flightradar24Card extends HTMLElement {
     }
 
     this.config = config
-    this.radar = Object.assign({}, config.radar)
+    this.units = Object.assign({ altitude: 'ft', speed: 'kts', distance: 'km' }, config.units)
+    this.radar = Object.assign({ range: this.units.distance === 'km' ? 35 : 25 }, config.radar)
     this.defines = Object.assign({}, config.defines)
 
     this.renderStatic()
@@ -60,7 +61,7 @@ class Flightradar24Card extends HTMLElement {
     const card = document.createElement('ha-card')
     card.id = 'flights-card'
 
-    if (this.radar && this.radar.show !== false) {
+    if (this.radar.hide !== true) {
       const radarContainer = document.createElement('div')
       radarContainer.id = 'radar-container'
 
@@ -143,7 +144,7 @@ class Flightradar24Card extends HTMLElement {
     const flightsContainer = this.shadowRoot.getElementById('flights')
     if (!flightsContainer) return
 
-    if (this.radar && this.radar.show !== false) {
+    if (this.radar.hide !== true) {
       requestAnimationFrame(() => {
         this.renderRadar()
       })
@@ -180,12 +181,14 @@ class Flightradar24Card extends HTMLElement {
   renderRadarScreen() {
     const radarInfoDisplay = this.shadowRoot.getElementById('radar-info')
     if (radarInfoDisplay) {
-      const infoElements = [`Range: ${Math.round(this.radar.range ?? 35)}km`]
+      const infoElements = [`Range: ${Math.round(this.radar.range)}${this.units.distance}`]
       radarInfoDisplay.innerHTML = infoElements.join('<br />')
     }
 
     const radarScreen = this.shadowRoot.getElementById('radar-screen')
-    radarScreen.innerHTML = ''
+    if(radarScreen) {
+      radarScreen.innerHTML = ''
+    }
 
     const radar = this.shadowRoot.getElementById('radar')
     if (radar) {
@@ -202,7 +205,7 @@ class Flightradar24Card extends HTMLElement {
       radarScreenBackground.id = 'radar-screen-background'
       radarScreen.appendChild(radarScreenBackground)
 
-      const ringDistance = 10 // Distance between rings in km
+      const ringDistance = 10 // Distance between rings in km or miles
       const ringCount = Math.floor(radarRange / ringDistance)
 
       for (let i = 1; i <= ringCount; i++) {
@@ -268,11 +271,11 @@ class Flightradar24Card extends HTMLElement {
                 const heading = feature.heading
                 const lengthFeet = feature.length
 
-                const lengthKm = lengthFeet * 0.0003048
+                const lengthUnit = this.units.distance === 'km' ? lengthFeet * 0.0003048 : lengthFeet * 0.00018939
 
                 const runway = document.createElement('div')
                 runway.className = 'runway'
-                runway.style.width = lengthKm * scaleFactor + 'px'
+                runway.style.width = lengthUnit * scaleFactor + 'px'
                 runway.style.height = '1px'
                 runway.style.top = featureY + 'px'
                 runway.style.left = featureX + 'px'
@@ -375,7 +378,7 @@ class Flightradar24Card extends HTMLElement {
   updateRadarRange(delta) {
     const minRange = this.radar.min_range || 1
     const maxRange = this.radar.max_range || 100
-    let newRange = (this.radar.range ?? 35) + delta
+    let newRange = this.radar.range + delta
 
     if (newRange < minRange) newRange = minRange
     if (newRange > maxRange) newRange = maxRange
@@ -467,14 +470,14 @@ class Flightradar24Card extends HTMLElement {
       if (flight.altitude >= 17750) {
         altSpdHdgInfo.push(`Alt: FL${Math.round(flight.altitude / 1000) * 10}${climbDescendIndicator}`)
       } else if (flight.altitude > 0) {
-        if (this.config.units && this.config.units.altitude === 'm') {
+        if (this.units.altitude === 'm') {
           altSpdHdgInfo.push(`Alt: ${Math.round(flight.altitude * 0.3048)} m${climbDescendIndicator}`)
         } else {
           altSpdHdgInfo.push(`Alt: ${Math.round(flight.altitude)} ft${climbDescendIndicator}`)
         }
       }
       if (flight.ground_speed > 0) {
-        if (this.config.units && this.config.units.speed === 'kmh') {
+        if (this.units.speed === 'kmh') {
           altSpdHdgInfo.push(`Spd: ${Math.round(flight.ground_speed * 1.852)} km/h`)
         } else {
           altSpdHdgInfo.push(`Spd: ${Math.round(flight.ground_speed)} kts`)
@@ -489,9 +492,9 @@ class Flightradar24Card extends HTMLElement {
     }
 
     const distanceInfo = document.createElement('div')
-    distanceInfo.textContent = `Dist: ${Math.round(flight.distance_to_tracker)}${flight.ground_speed > 70 ? (flight.is_approaching ? '↓' : '↑') : ''} km - ${Math.round(
-      flight.heading_from_tracker
-    )}° ${flight.cardinal_direction_from_tracker}`
+    distanceInfo.textContent = `Dist: ${Math.round(flight.distance_to_tracker)}${flight.ground_speed > 70 ? (flight.is_approaching ? '↓' : '↑') : ''} ${
+      this.units.distance
+    } - ${Math.round(flight.heading_from_tracker)}° ${flight.cardinal_direction_from_tracker}`
     const mapLink = document.createElement('a')
     mapLink.href = `https://www.google.com/maps?q=${flight.latitude},${flight.longitude}`
     mapLink.target = 'map'
@@ -503,7 +506,9 @@ class Flightradar24Card extends HTMLElement {
       const approachingInfo = document.createElement('div')
       approachingInfo.style.fontWeight = 'bold'
       approachingInfo.style.fontStyle = 'italic'
-      approachingInfo.textContent = `Closest Distance: ${Math.round(flight.closest_passing_distance)} km, ETA: ${Math.round(flight.eta_to_closest_distance)} min`
+      approachingInfo.textContent = `Closest Distance: ${Math.round(flight.closest_passing_distance)} ${this.units.distance}, ETA: ${Math.round(
+        flight.eta_to_closest_distance
+      )} min`
       flightDetails.appendChild(approachingInfo)
     }
 
@@ -993,7 +998,7 @@ class Flightradar24Card extends HTMLElement {
     const dLon = this.toRadians(lon2 - lon1)
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    return R * c // Distance in kilometers
+    return this.units.distance === 'km' ? R * c : (R * c) / 1.60934
   }
 
   calculateBearing(lat1, lon1, lat2, lon2) {
@@ -1055,8 +1060,8 @@ class Flightradar24Card extends HTMLElement {
       return Infinity
     }
 
-    const groundSpeedKmPerMin = (groundSpeed * 1.852) / 60 // Convert knots to km/h to km/min
-    const eta = distance / groundSpeedKmPerMin // ETA in minutes
+    const groundSpeedDistanceUnitsPrMin = (groundSpeed * (this.units.distance === 'km' ? 1.852 : 1.15078)) / 60
+    const eta = distance / groundSpeedDistanceUnitsPrMin // ETA in minutes
 
     return eta
   }
@@ -1107,7 +1112,7 @@ class Flightradar24Card extends HTMLElement {
   handleTouchStart(event) {
     if (event.touches.length === 2) {
       this._initialPinchDistance = this.getPinchDistance(event.touches)
-      this._initialRadarRange = this.radar.range ?? 35
+      this._initialRadarRange = this.radar.range
     }
   }
   handleTouchMove(event) {
@@ -1117,7 +1122,7 @@ class Flightradar24Card extends HTMLElement {
       if (currentPinchDistance > 0 && this._initialPinchDistance > 0) {
         const pinchRatio = currentPinchDistance / this._initialPinchDistance
         const newRadarRange = this._initialRadarRange / pinchRatio
-        this.updateRadarRange(newRadarRange - (this.radar.range ?? 35))
+        this.updateRadarRange(newRadarRange - this.radar.range)
       }
     }
   }
