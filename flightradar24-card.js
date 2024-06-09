@@ -53,7 +53,7 @@ class Flightradar24Card extends HTMLElement {
         route_element: '<div>${tpl.route_info}</div>',
         flight_status: '<div>${[flight.alt_info, flight.spd_info, flight.hdg_info].filter((el) => el).join(" - ")}</div>',
         position_status: '<div>${[flight.dist_info, flight.direction_info].filter((el) => el).join(" - ")}</div>',
-        proximity_info: '<div style="font-weight: bold; font-style: italic;">${flight.is_approaching && flight.ground_speed > 70 && flight.closest_passing_distance < 15 ? `Closest Distance: ${Math.round(flight.closest_passing_distance)} ${this.units.distance}, ETA: ${Math.round(flight.eta_to_closest_distance)} min` : ""}</div>',
+        proximity_info: '<div style="font-weight: bold; font-style: italic;">${flight.is_approaching && flight.ground_speed > 70 && flight.closest_passing_distance < 15 ? `Closest Distance: ${Math.round(flight.closest_passing_distance)} ${units.distance}, ETA: ${Math.round(flight.eta_to_closest_distance)} min` : ""}</div>',
         flight_element: '${tpl.header}${tpl.aircraft_info_element}${tpl.route_element}${tpl.flight_status}${tpl.position_status}${tpl.proximity_info}',
       },
       config.templates,
@@ -804,7 +804,7 @@ class Flightradar24Card extends HTMLElement {
 
   parseTemplate(template, flight, tpl) {
     try {
-      return new Function('flight', 'tpl', `return \`${template.replace(/\${(.*?)}/g, (_, expr) => `\${${expr}}`)}\``)(flight, tpl)
+      return new Function('flight', 'tpl', 'units', `return \`${template.replace(/\${(.*?)}/g, (_, expr) => `\${${expr}}`)}\``)(flight, tpl, this.units)
     } catch (e) {
       console.error('Error when rendering: ' + template, e)
       return ''
