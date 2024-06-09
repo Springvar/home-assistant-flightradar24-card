@@ -880,17 +880,17 @@ class NearbyFlightsCard extends HTMLElement {
     }
 
     const { moving } = this.calculateFlightData()
-    if (this.config.interpolate_interval) {
+    if (this.config.projection_interval) {
       if (moving && !this._timer) {
         clearInterval(this._timer)
         this._timer = setInterval(() => {
           if (this._hass) {
-            const { interpolated } = this.calculateFlightData()
-            if (interpolated) {
+            const { projected } = this.calculateFlightData()
+            if (projected) {
               this.renderDynamic()
             }
           }
-        }, this.config.interpolate_interval * 1000)
+        }, this.config.projection_interval * 1000)
       } else if (!moving) {
         clearInterval(this._timer)
       }
@@ -898,7 +898,7 @@ class NearbyFlightsCard extends HTMLElement {
   }
 
   calculateFlightData() {
-    let interpolated = false
+    let projected = false
     let moving = false
     const currentTime = Date.now() / 1000
 
@@ -916,7 +916,7 @@ class NearbyFlightsCard extends HTMLElement {
 
         const timeElapsed = currentTime - flight._timestamp
         if (timeElapsed > 1) {
-          interpolated = true
+          projected = true
 
           flight._timestamp = currentTime
 
@@ -984,7 +984,7 @@ class NearbyFlightsCard extends HTMLElement {
       console.error('Tracker state is undefined. Make sure the location tracker entity ID is correct.')
     }
 
-    return { interpolated, moving }
+    return { projected, moving }
   }
 
   haversine(lat1, lon1, lat2, lon2) {
