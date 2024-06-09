@@ -1,0 +1,6 @@
+{
+    "name": "Flightradar24 Card",
+    "filename": "flightradar24-card.js",
+    "homeassistant": "2024.3.0",
+    "render_readme": true
+}
