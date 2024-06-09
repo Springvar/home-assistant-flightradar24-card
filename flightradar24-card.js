@@ -31,6 +31,8 @@ class NearbyFlightsCard extends HTMLElement {
 
     this.config = config
     this.radar = Object.assign({}, config.radar)
+    this.defines = Object.assign({}, config.defines)
+
     this.renderStatic()
   }
 
@@ -70,6 +72,10 @@ class NearbyFlightsCard extends HTMLElement {
       radarInfoDisplay.id = 'radar-info'
       radarContainer.appendChild(radarInfoDisplay)
 
+      const toggleContainer = document.createElement('div')
+      toggleContainer.id = 'toggle-container'
+      radarContainer.appendChild(toggleContainer)
+
       const radar = document.createElement('div')
       radar.id = 'radar'
 
@@ -101,6 +107,36 @@ class NearbyFlightsCard extends HTMLElement {
     this.shadowRoot.appendChild(card)
 
     this.attachEventListeners()
+    this.renderToggles()
+  }
+
+  renderToggles() {
+    const toggleContainer = this.shadowRoot.getElementById('toggle-container')
+    if (this.config.toggles && toggleContainer) {
+      for (const toggleKey in this.config.toggles) {
+        if (this.config.toggles.hasOwnProperty(toggleKey)) {
+          const toggle = this.config.toggles[toggleKey]
+
+          const toggleElement = document.createElement('div')
+          toggleElement.className = 'toggle'
+
+          const label = document.createElement('label')
+          label.textContent = toggle.label
+
+          const input = document.createElement('ha-switch')
+          input.checked = toggle.default
+          input.addEventListener('change', () => {
+            this.defines[toggleKey] = input.checked
+            this.renderDynamic()
+          })
+
+          toggleElement.appendChild(label)
+          toggleElement.appendChild(input)
+
+          toggleContainer.appendChild(toggleElement)
+        }
+      }
+    }
   }
 
   renderDynamic() {
@@ -114,7 +150,17 @@ class NearbyFlightsCard extends HTMLElement {
     }
 
     flightsContainer.innerHTML = ''
-    const flightsData = this.config.filter ? this.applyFilter(this._flightsData, this.config.filter) : this._flightsData
+    const filter = this.config.filter
+      ? this._selectedFlights && this._selectedFlights.length > 0
+        ? [
+            {
+              type: 'OR',
+              conditions: [{ field: 'id', comparator: 'oneOf', value: this._selectedFlights }, this.config.filter],
+            },
+          ]
+        : this.config.filter
+      : undefined
+    const flightsData = filter ? this.applyFilter(this._flightsData, filter) : this._flightsData
     if (flightsData.length === 0) {
       const noFlightsMessage = document.createElement('div')
       noFlightsMessage.className = 'no-flights-message'
@@ -132,7 +178,6 @@ class NearbyFlightsCard extends HTMLElement {
     const radarInfoDisplay = this.shadowRoot.getElementById('radar-info')
     if (radarInfoDisplay) {
       const infoElements = [`Range: ${Math.round(this.radar.range ?? 35)}km`]
-
       radarInfoDisplay.innerHTML = infoElements.join('<br />')
     }
 
@@ -316,6 +361,8 @@ class NearbyFlightsCard extends HTMLElement {
           } else {
             plane.classList.add('plane-medium')
           }
+          plane.addEventListener('click', () => this.toggleSelectedFlight(flight))
+          label.addEventListener('click', () => this.toggleSelectedFlight(flight))
 
           planesContainer.appendChild(plane)
         })
@@ -340,6 +387,10 @@ class NearbyFlightsCard extends HTMLElement {
     const flightElement = document.createElement('div')
     flightElement.style.clear = 'both'
     flightElement.className = 'flight'
+
+    if (this._selectedFlights && this._selectedFlights.includes(flight.id)) {
+      flightElement.className += ' selected'
+    }
 
     const flightDetails = document.createElement('span')
     flightDetails.className = 'flight-details'
@@ -391,7 +442,7 @@ class NearbyFlightsCard extends HTMLElement {
         if (flight.time_scheduled_departure && flight.altitude === 0) {
           originInfo.textContent += ` (${new Date(flight.time_scheduled_departure * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`
         }
-        const originFlag = this.createFlagElement(flight.airport_origin_country_code, flight.airport_origin_country_name)
+        const originFlag = this.renderFlag(flight.airport_origin_country_code, flight.airport_origin_country_name)
         routeInfo.appendChild(originInfo)
         routeInfo.appendChild(originFlag)
       }
@@ -399,7 +450,7 @@ class NearbyFlightsCard extends HTMLElement {
       if (flight.airport_destination_country_code) {
         const destinationInfo = document.createElement('span')
         destinationInfo.textContent = ` -> ${flight.airport_destination_code_iata || ''}`
-        const destinationFlag = this.createFlagElement(flight.airport_destination_country_code, flight.airport_destination_country_name)
+        const destinationFlag = this.renderFlag(flight.airport_destination_country_code, flight.airport_destination_country_name)
         routeInfo.appendChild(destinationInfo)
         routeInfo.appendChild(destinationFlag)
       }
@@ -457,23 +508,7 @@ class NearbyFlightsCard extends HTMLElement {
     return flightElement
   }
 
-  flightField(flight, field) {
-    let text = flight[field]
-    if (this.config.annotate) {
-      const f = Object.assign({}, flight)
-      this.config.annotate
-        .filter((a) => a.field === field)
-        .forEach((a) => {
-          if (this.applyConditions(flight, a.conditions)) {
-            f[field] = a.render.replace(/\$\{([^}]*)\}/g, (_, p1) => f[p1])
-          }
-        })
-      text = f[field]
-    }
-    return text
-  }
-
-  createFlagElement(countryCode, countryName) {
+  renderFlag(countryCode, countryName) {
     const flagElement = document.createElement('img')
     flagElement.setAttribute('src', `https://flagsapi.com/${countryCode}/shiny/16.png`)
     flagElement.setAttribute('title', `${countryName}`)
@@ -507,6 +542,18 @@ class NearbyFlightsCard extends HTMLElement {
         margin-top: 16px;
         margin-bottom: 16px;
       }
+      #flights .flight.selected {
+        margin-left: -3px;
+        margin-right: -3px;
+        padding: 3px;
+        background-color: var(--primary-background-color);
+        border: 1px solid var(--fc-border-color);
+        border-radius: 4px;
+      }
+      #flights .flight {
+        margin-top: 16px;
+        margin-bottom: 16px;
+      }
       #flights > :first-child {
         margin-top: 0px;
       }
@@ -533,21 +580,41 @@ class NearbyFlightsCard extends HTMLElement {
       }
       #radar-overlay {
         position: absolute;
-        width: 100%;
-        height: 100%;
-        padding: 0;
-        margin: 0;
-        z-index: 10;
+        width: 70%;
+        left: 15%;
+        padding: 0 0 70% 0;
+        margin-bottom: 5%;
+        z-index: 1;
         opacity: 0;
         pointer-events: auto;
+        border-radius: 50%;
+        overflow: hidden;
       }
       #radar-info {
         position: absolute;
-        width: 50%;
+        width: 30%;
         text-align: left;
         font-size: 0.9em;
         padding: 0;
         margin: 0;
+      }
+      #toggle-container {
+        position: absolute;
+        right: 0;
+        width: 25%;
+        text-align: left;
+        font-size: 0.9em;
+        padding: 0;
+        margin: 0 15px;
+      }
+      .toggle {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+      }
+      .toggle label {
+        margin-right: 10px;
+        flex: 1; /* Ensure the label and switch are aligned properly */
       }
       #radar {
         position: relative;
@@ -584,12 +651,11 @@ class NearbyFlightsCard extends HTMLElement {
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        z-index: 1;
       }
       .plane {
         position: absolute;
         translate: -50% -50%;
-        z-index: 3;
+        z-index: 2;
       }
       .plane.plane-small {
         width: 4px;
@@ -664,7 +730,6 @@ class NearbyFlightsCard extends HTMLElement {
         height: 4px;
         background-color: var(--radar-feature-color);
         border-radius: 50%;
-        z-index: 1;
       }
       .location-label {
         position: absolute;
@@ -675,7 +740,6 @@ class NearbyFlightsCard extends HTMLElement {
         font-size: 10px;
         color: var(--radar-feature-color);
         opacity: 0.5;
-        z-index: 1;
       }
       .outline-line {
         position: absolute;
@@ -684,29 +748,6 @@ class NearbyFlightsCard extends HTMLElement {
       }
     `
     this.shadowRoot.appendChild(style)
-  }
-
-  getTestTracker() {
-    return {
-      attributes: {
-        latitude: 40.697354, // Model Airplane Field, Queens, NY
-        longitude: -73.868253, // Model Airplane Field, Queens, NY
-      },
-    }
-  }
-
-  get hass() {
-    return this._hass
-  }
-
-  subscribeToStateChanges(hass) {
-    if (!this.config.test && this.config.update !== false) {
-      hass.connection.subscribeEvents((event) => {
-        if (event.data.entity_id === this.config.flights_entity || event.data.entity_id === this.config.location_tracker) {
-          this._updateRequired = true
-        }
-      }, 'state_changed')
-    }
   }
 
   applyFilter(flights, filter) {
@@ -722,7 +763,7 @@ class NearbyFlightsCard extends HTMLElement {
   }
 
   applyCondition(flight, condition) {
-    const { field, _, comparator } = condition
+    const { field, defined, defaultValue, _, comparator } = condition
     const value = this.resolvePlaceholders(condition.value)
 
     let result = true
@@ -734,29 +775,30 @@ class NearbyFlightsCard extends HTMLElement {
     } else if (condition.type === 'NOT') {
       result = !this.applyCondition(flight, condition.condition)
     } else {
+      const comparand = flight[field] ?? (defined ? this.resolvePlaceholders('${' + defined + '}', defaultValue) : undefined)
+
       switch (comparator) {
         case 'eq':
-          result = flight[field] === value
+          result = comparand === value
           break
         case 'lt':
-          result = Number(flight[field]) < Number(value)
+          result = Number(comparand) < Number(value)
           break
         case 'lte':
-          result = Number(flight[field]) <= Number(value)
+          result = Number(comparand) <= Number(value)
           break
         case 'gt':
-          result = Number(flight[field]) > Number(value)
+          result = Number(comparand) > Number(value)
           break
         case 'gte':
-          result = Number(flight[field]) >= Number(value)
+          result = Number(comparand) >= Number(value)
           break
         case 'oneOf': {
-          result = (Array.isArray(value) ? value : typeof value === 'string' ? value.split(',').map((v) => v.trim()) : []).includes(flight[field])
+          result = (Array.isArray(value) ? value : typeof value === 'string' ? value.split(',').map((v) => v.trim()) : []).includes(comparand)
           break
         }
         case 'containsOneOf': {
-          result =
-            flight[field] && (Array.isArray(value) ? value : typeof value === 'string' ? value.split(',').map((v) => v.trim()) : []).some((val) => flight[field].includes(val))
+          result = comparand && (Array.isArray(value) ? value : typeof value === 'string' ? value.split(',').map((v) => v.trim()) : []).some((val) => comparand.includes(val))
           break
         }
         default:
@@ -771,17 +813,50 @@ class NearbyFlightsCard extends HTMLElement {
     return result
   }
 
-  resolvePlaceholders(value) {
+  flightField(flight, field) {
+    let text = flight[field]
+    if (this.config.annotate) {
+      const f = Object.assign({}, flight)
+      this.config.annotate
+        .filter((a) => a.field === field)
+        .forEach((a) => {
+          if (this.applyConditions(flight, a.conditions)) {
+            f[field] = a.render.replace(/\$\{([^}]*)\}/g, (_, p1) => f[p1])
+          }
+        })
+      text = f[field]
+    }
+    return text
+  }
+
+  resolvePlaceholders(value, defaultValue) {
     if (typeof value === 'string' && value.startsWith('${') && value.endsWith('}')) {
       const key = value.slice(2, -1)
-      if (key in this.config.defines) {
-        return this.config.defines[key]
+      if (key in this.defines) {
+        return this.defines[key]
+      } else if (key in this.config.toggles) {
+        return this.config.toggles[key].default
       } else {
-        console.error('Unresolved placeholder: ' + key)
-        console.debug('Defines', this.config.defines)
+        if (defaultValue !== undefined) {
+          return defaultValue
+        } else {
+          console.error('Unresolved placeholder: ' + key)
+          console.debug('Defines', this.defines)
+        }
       }
     }
+
     return value
+  }
+
+  subscribeToStateChanges(hass) {
+    if (!this.config.test && this.config.update !== false) {
+      hass.connection.subscribeEvents((event) => {
+        if (event.data.entity_id === this.config.flights_entity || event.data.entity_id === this.config.location_tracker) {
+          this._updateRequired = true
+        }
+      }, 'state_changed')
+    }
   }
 
   fetchFlightsData() {
@@ -1004,6 +1079,23 @@ class NearbyFlightsCard extends HTMLElement {
     }
   }
 
+  toggleSelectedFlight(flight) {
+    if (this._selectedFlights === undefined) {
+      this._selectedFlights = []
+    }
+
+    if (!this._selectedFlights.includes(flight.id)) {
+      this._selectedFlights.push(flight.id)
+    } else {
+      this._selectedFlights = this._selectedFlights.filter((id) => id !== flight.id)
+    }
+    this.renderDynamic()
+  }
+
+  get hass() {
+    return this._hass
+  }
+
   handleWheel(event) {
     event.preventDefault()
     const delta = Math.sign(event.deltaY)
@@ -1037,6 +1129,14 @@ class NearbyFlightsCard extends HTMLElement {
     return Math.sqrt(dx * dx + dy * dy)
   }
 
+  getTestTracker() {
+    return {
+      attributes: {
+        latitude: 40.697354, // Model Airplane Field, Queens, NY
+        longitude: -73.868253, // Model Airplane Field, Queens, NY
+      },
+    }
+  }
   getTestFlightsData() {
     return [
       {
