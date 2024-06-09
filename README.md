@@ -66,7 +66,7 @@ To use the card, add the following configuration to your Lovelace dashboard:
 type: custom:nearby-flights-card
 location_tracker: device_tracker.your_device_tracker
 flights_entity: sensor.flightradar24_current_in_area
-```yaml
+```
 
 ### Advanced Configuration
 
@@ -98,7 +98,7 @@ filter:
 radar:
   show: true,
   range: 35
-```yaml
+```
 
 #### Annotation Configuration
 
