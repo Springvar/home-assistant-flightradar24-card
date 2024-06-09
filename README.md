@@ -29,10 +29,10 @@ The Flightradar24 Integration Card allows you to display flight data from Flight
 
 Have [HACS](https://hacs.xyz/) installed, this will allow you to update easily.
 
-[![Install quickly via a HACS link](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Springvar&repository=home-assistant-flightradar24-card&category=lovelace)
+[![Install quickly via a HACS link](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=springvar&repository=home-assistant-flightradar24-card&category=lovelace)
 
 1. Go to the **Hacs** -> **Integrations**.
-2. Add this repository ([https://github.com/Springvar/home-assistant-flightradar24-card](https://github.com/Springvar/home-assistant-flightradar24-card)) as a [custom repository](https://hacs.xyz/docs/faq/custom_repositories/)
+2. Add this repository ([https://github.com/Springvar/home-assistant-flightradar24-card](https://github.com/springvar/home-assistant-flightradar24-card)) as a [custom repository](https://hacs.xyz/docs/faq/custom_repositories/)
 3. Click on `+ Explore & Download Repositories`, search for `Flightradar24`. 
 4. Search for `Flightradar24`. 
 5. Navigate to `Flightradar24` integration 
