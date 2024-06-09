@@ -75,6 +75,15 @@ location_tracker: device_tracker.your_device_tracker
 flights_entity: sensor.flightradar24_current_in_area
 ```
 
+#### Units
+
+```yaml
+units:
+  altitude: m # m or ft (default ft - always FL above 17750 ft)
+  speed: kmh # kmh or kts (default kts)
+  distance: km # km or miles
+```
+
 ### Advanced Configuration
 
 #### Filter Configuration
@@ -103,11 +112,16 @@ filter:
 
 ```yaml
 radar:
-  show: true,
   range: 35
   projection_interval: 3
   primary-color: rgb(0,200,100) // Default colors defined by theme
   feature-color: rgb(0,100,20)
+```
+
+Hide the radar
+```yaml
+radar:
+  hide: true
 ```
 
 ##### Radar Features
@@ -116,7 +130,6 @@ radar:
 
 ```yaml
 radar:
-  show: true,
   local_features:
     - type: location
       label: Trondheim
@@ -129,7 +142,6 @@ radar:
 
 ```yaml
 radar:
-  show: true,
   local_features:
     - type: runway
       position:
@@ -143,7 +155,6 @@ radar:
 
 ```yaml
 radar:
-  show: true,
   local_features:
     - type: outline
       points:
