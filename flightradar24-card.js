@@ -155,7 +155,10 @@ class NearbyFlightsCard extends HTMLElement {
         ? [
             {
               type: 'OR',
-              conditions: [{ field: 'id', comparator: 'oneOf', value: this._selectedFlights }, this.config.filter],
+              conditions: [
+                { field: 'id', comparator: 'oneOf', value: this._selectedFlights },
+                { type: 'AND', conditions: this.config.filter },
+              ],
             },
           ]
         : this.config.filter
