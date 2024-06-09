@@ -1,4 +1,4 @@
-class NearbyFlightsCard extends HTMLElement {
+class Flightradar24Card extends HTMLElement {
   _hass
   _flightsData = []
   _updateRequired = true
@@ -1230,4 +1230,4 @@ class NearbyFlightsCard extends HTMLElement {
   }
 }
 
-customElements.define('nearby-flights-card', NearbyFlightsCard)
+customElements.define('flightradar24-card', Flightradar24Card)
