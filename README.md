@@ -105,6 +105,7 @@ filter:
 radar:
   show: true,
   range: 35
+  projection_interval: 3
   primary-color: rgb(0,200,100) // Default colors defined by theme
   feature-color: rgb(0,100,20)
 ```
