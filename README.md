@@ -2,6 +2,8 @@
 
 Custom card to use with Flightradar24 integration for Home Assistant.
 
+<img src="https://raw.githubusercontent.com/Springvar/home-assistant-flightradar24-card/master/card.png" width="35%">
+
 ## Table of Contents
 
 1. [Introduction](#introduction)
