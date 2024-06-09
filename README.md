@@ -13,6 +13,7 @@ Custom card to use with Flightradar24 integration for Home Assistant.
    - [Advanced Configuration](#advanced-configuration)
      - [Filter](#filter-configuration)
      - [Radar](#radar-configuration)
+        - [Radar features](#radar-features)
      - [Annotations](#annotation-configuration)
      - [Toggles](#toggles-configuration)
      - [Defines](#defines-configuration)
@@ -100,6 +101,53 @@ filter:
 radar:
   show: true,
   range: 35
+  primary-color: rgb(0,200,100) // Default colors defined by theme
+  feature-color: rgb(0,100,20)
+```
+
+##### Radar Features
+
+###### Locations
+
+```yaml
+radar:
+  show: true,
+  local_features:
+    - type: location
+      label: Trondheim
+      position:
+        lat: 63.430472
+        lon: 10.394964
+```
+
+###### Runways
+
+```yaml
+radar:
+  show: true,
+  local_features:
+    - type: runway
+      position:
+        lat: 63.457647
+        lon: 10.894486
+      heading: 86.7
+      length: 9052
+```
+
+##### Outlines (for geography etc)
+
+```yaml
+radar:
+  show: true,
+  local_features:
+    - type: outline
+      points:
+        - lat: 63.642064
+          lon: 9.713992
+        - lat: 63.443223
+          lon: 9.974975
+        - lat: 63.353184
+          lon: 9.912988
 ```
 
 #### Annotation Configuration
