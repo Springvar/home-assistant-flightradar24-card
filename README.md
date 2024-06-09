@@ -9,8 +9,8 @@ Custom card to use with Flightradar24 integration for Home Assistant.
 3. [Configuration](#configuration)
    - [Basic Configuration](#basic-configuration)
    - [Advanced Configuration](#advanced-configuration)
-     - [Radar](#radar-configuration)
      - [Filter](#filter-configuration)
+     - [Radar](#radar-configuration)
      - [Annotations](#annotation-configuration)
      - [Toggles](#toggles-configuration)
      - [Defines](#defines-configuration)
@@ -29,15 +29,14 @@ The Flightradar24 Integration Card allows you to display flight data from Flight
 
 Have [HACS](https://hacs.xyz/) installed, this will allow you to update easily.
 
-[![Install quickly via a HACS link](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Springvar&repository=home-assistant-flightradar24-card&category=lovelace)
+[![Install quickly via a HACS link](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Springvar&repository=home-assistant-flightradar24-card&category=plugin)
 
-1. Go to the **Hacs** -> **Integrations**.
+1. Go to **HACS** -> **Integrations**.
 2. Add this repository ([https://github.com/Springvar/home-assistant-flightradar24-card](https://github.com/Springvar/home-assistant-flightradar24-card)) as a [custom repository](https://hacs.xyz/docs/faq/custom_repositories/)
-3. Click on `+ Explore & Download Repositories`, search for `Flightradar24`. 
-4. Search for `Flightradar24`. 
-5. Navigate to `Flightradar24` integration 
-6. Press `DOWNLOAD` and in the next window also press `DOWNLOAD`. 
-7. After download, restart Home Assistant.
+3. Click on `+ Explore & Download Repositories`, search for `Flightradar24 Card`. 
+4. Search for and select `Flightradar24 Card`. 
+5. Press `DOWNLOAD` and in the next window also press `DOWNLOAD`. 
+6. After download, restart Home Assistant.
 
 ### Manual
 
@@ -47,13 +46,13 @@ To install the card, follow these steps:
    - Download the latest release from the [GitHub repository](https://github.com/your-repo/home-assistant-flightradar24-card/releases).
 
 2. **Add to Home Assistant**:
-   - Place the downloaded files in your `www` directory inside your Home Assistant configuration directory.
+   - Place the downloaded files in a `flightradar24` directory under your `www` directory inside your Home Assistant configuration directory.
 
 3. **Add the Custom Card to Lovelace**:
    - Edit your Lovelace dashboard and add the custom card:
      ```yaml
      resources:
-       - url: /local/path-to-your-js-file.js
+       - url: /local/flightradar24/flightradar24-card.js.js
          type: module
      ```
 
@@ -71,15 +70,99 @@ flights_entity: sensor.flightradar24_current_in_area
 
 ### Advanced Configuration
 
+#### Filter Configuration
+
+```
+filter:
+   - type: OR
+     conditions:
+       - field: distance_to_tracker
+         comparator: lte
+         value: 15
+       - type: AND
+         conditions:
+           - field: closest_passing_distance
+             comparator: lte
+             value: 15
+           - field: is_approaching
+             comparator: eq
+             value: true
+       - field: altitude
+         comparator: lte
+         value: 2500
+```
+
 #### Radar Configuration
 
-#### Filter Configuration
+```yaml
+radar:
+  show: true,
+  range: 35
+```yaml
 
 #### Annotation Configuration
 
+```yaml
+annotate:
+  - field: aircraft_registration
+    render: <i>${aircraft_registration}</i>
+    conditions:
+      - field: aircraft_registration
+        comparator: oneOf
+        value: [LN-NIE,PH-EXV]
+```
+
 #### Toggles Configuration
 
+```yaml
+toggles:
+  list_all:
+    label: List all
+    default: false
+filter:
+  - type: OR
+    conditions:
+      - defined: list_all
+        defaultValue: false
+        comparator: eq
+        value: true
+      - type: OR
+        conditions:
+          - field: distance_to_tracker
+            comparator: lte
+            value: 15
+          - type: AND
+            conditions:
+              - field: closest_passing_distance
+                comparator: lte
+                value: 15
+              - field: is_approaching
+                comparator: eq
+                value: true
+          - field: altitude
+            comparator: lte
+            value: 2500
+```
+
 #### Defines Configuration
+
+```yaml
+defines:
+  aircraftsOfDisinterest:
+    - Helicopter
+    - LocalPilot1
+filter:
+  - type: NOT
+    condition:
+      type: OR
+      conditions:
+        - field: aircraft_model
+          comparator: containsOneOf
+          value: ${aircraftsOfDisinterest}
+        - field: callsign
+          comparator: containsOneOf
+          value: ${aircraftsOfDisinterest}
+ ```
 
 ## Usage
 
