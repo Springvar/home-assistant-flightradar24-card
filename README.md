@@ -70,7 +70,7 @@ To install the card, follow these steps:
 To use the card, add the following configuration to your Lovelace dashboard:
 
 ```yaml
-type: custom:nearby-flights-card
+type: custom:flightradar24-card
 location_tracker: device_tracker.your_device_tracker
 flights_entity: sensor.flightradar24_current_in_area
 ```
