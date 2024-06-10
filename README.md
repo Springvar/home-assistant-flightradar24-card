@@ -75,7 +75,14 @@ location_tracker: device_tracker.your_device_tracker
 flights_entity: sensor.flightradar24_current_in_area
 ```
 
+| Name              | Description                                      | Default Value | Constraints                              |
+|-------------------|--------------------------------------------------|---------------|------------------------------------------|
+| `location_tracker`| Entity ID for the location tracker device.       | None          | Must be a valid device_tracker entity ID |
+| `flights_entity`  | Entity ID for the Flightradar24 sensor.          | None          | Must be a valid sensor entity ID         |
+
 #### Units
+
+To customize units for altitude, speed, and distance, use the units configuration option.
 
 ```yaml
 units:
@@ -84,9 +91,17 @@ units:
   distance: km # km or miles
 ```
 
+| Name      | Description                         | Default Value | Constraints                |
+|-----------|-------------------------------------|---------------|----------------------------|
+| `altitude`| Unit for altitude                   | `ft`          | Must be `m` or `ft`        |
+| `speed`   | Unit for speed                      | `kts`         | Must be `kmh` or `kts`     |
+| `distance`| Unit for distance                   | `km`          | Must be `km` or `miles`    |
+
 ### Advanced Configuration
 
 #### Filter Configuration
+
+To filter the displayed flights, use the filter option.
 
 ```
 filter:
@@ -108,7 +123,31 @@ filter:
          value: 2500
 ```
 
+##### Group conditions
+
+| Name                  | Description                                  | Default Value | Constraints                         |
+|-----------------------|----------------------------------------------|---------------|-------------------------------------|
+| `type`                | Logical operator for the filter conditions   | None          | Must be `OR` or `AND`               |
+| `conditions`          | List of filter conditions                    | None          | Must be a list of condition objects |
+
+##### Negative condition
+
+| Name                  | Description                                  | Default Value | Constraints               |
+|-----------------------|----------------------------------------------|---------------|---------------------------|
+| `type`                | Logical operator for the filter conditions   | None          | Must be `NOT`             |
+| `condition`           | Condition to negate                          | None          | Must be a valid condition |
+
+##### Field comparision condition
+
+| Name                 | Description                                   | Default Value | Constraints                                                     |
+|----------------------|-----------------------------------------------|---------------|-----------------------------------------------------------------|
+| `field` or `defined` | Flight field or defined value to filter on    | None          | Must be a valid field name or defined property                  |
+| `comparator`         | Comparator for the filter condition           | None          | Can be 'eq', 'lt', 'lte', 'gt', 'gte', 'oneOf', 'containsOneOf' |
+| `value`              | Value to compare against                      | None          | Must be a valid value or list of values                         |
+
 #### Radar Configuration
+
+Configure radar settings with the radar option.
 
 ```yaml
 radar:
@@ -118,15 +157,27 @@ radar:
   feature-color: rgb(0,100,20)
 ```
 
-Hide the radar
+To hide the radar:
 ```yaml
 radar:
   hide: true
 ```
 
+| Name                  | Description                                      | Default Value | Constraints               |
+|-----------------------|--------------------------------------------------|---------------|---------------------------|
+| `range`               | Range of the radar in kilometers                 | None          | Must be a positive number | 
+| `projection_interval` | Interval for radar projection updates in seconds | None          | Must be a positive number |
+| `primary-color`       | Primary color for the radar display              | None          | Must be a valid CSS color |
+| `accent-color`        | Accent Color for the radar display               | None          | Must be a valid CSS color |
+| `feature-color`       | Color for radar features                         | None          | Must be a valid CSS color |
+| `callsign-label-color`| Color for callsign labels                        | None          | Must be a valid CSS color |
+| `hide`                | Option to hide the radar                         | `false`       | Must be `true` or `false` |
+
 ##### Radar Features
 
 ###### Locations
+
+Add locations to the radar.
 
 ```yaml
 radar:
@@ -138,7 +189,22 @@ radar:
         lon: 10.394964
 ```
 
+| Name       | Description                                 | Default Value | Constraints                    |
+|------------|---------------------------------------------|---------------|--------------------------------|
+| `type`     | Type of the radar feature                   | None          | Must be `location`             |
+| `label`    | Label for the location                      | None          | Must be a string               |
+| `position` | Position of the location                    | None          | Must be a valid lat/lon object |
+
+Position object:
+
+| Name | Description               | Default Value | Constraints               |
+|------|---------------------------|---------------|---------------------------|
+| `lat`| Latitude of the position  | None          | Must be a valid latitude  |
+| `lon`| Longitude of the position | None          | Must be a valid longitude |
+
 ###### Runways
+
+Add runways to the radar.
 
 ```yaml
 radar:
@@ -151,7 +217,16 @@ radar:
       length: 9052
 ```
 
-##### Outlines (for geography etc)
+| Name       | Description                                      | Default Value | Constraints                    |
+|------------|--------------------------------------------------|---------------|--------------------------------|
+| `type`     | Type of the radar feature                        | None          | Must be `runway`               |
+| `position` | Position of the runway (one end of the rwy)      | None          | Must be a valid lat/lon object |
+| `heading`  | Heading of the runway in degrees (from position) | None          | Must be a valid number         |
+| `length`   | Length of the runway in feet                     | None          | Must be a positive number      |
+
+##### Outlines
+
+Add geographic outlines to the radar.
 
 ```yaml
 radar:
@@ -166,7 +241,14 @@ radar:
           lon: 9.912988
 ```
 
+| Name     | Description                                 | Default Value | Constraints                       |
+|----------|---------------------------------------------|---------------|-----------------------------------|
+| `type`   | Type of the radar feature                   | None          | Must be `outline`                 |
+| `points` | List of points defining the outline         | None          | Must be a list of lat/lon objects |
+
 #### Annotation Configuration
+
+Control how single fields are rendered based on conditions. Add annotations to highlight certain flights based on custom criteria.
 
 ```yaml
 annotate:
@@ -178,7 +260,15 @@ annotate:
         value: [LN-NIE,PH-EXV]
 ```
 
+| Name        | Description                           | Default Value | Constraints                                |
+|-------------|---------------------------------------|---------------|--------------------------------------------|
+| `field`     | Flight field to be annotated          | None          | Must be a valid flight field name          |
+| `render`    | Template for rendering the annotation | None          | Must be a valid javascript template string |
+| `conditions`| List of conditions for annotation     | None          | Must be a list of condition objects        |
+
 #### Toggles Configuration
+
+Toggle buttons control flags which can be used by the filters. Add toggle buttons to dynamically control your filters.
 
 ```yaml
 toggles:
@@ -210,7 +300,15 @@ filter:
             value: 2500
 ```
 
+| Name        | Description                                            | Default Value | Constraints                |
+|-------------|--------------------------------------------------------|---------------|----------------------------|
+| `[key]:`    | key: Name of the property to be defined by this toggle | None          | Must be a string           |
+|   `label`   | Label for the toggle button                            | None          | Must be a string           |
+|   `default` | Default state of the toggle                            | `false`       | Must be `true` or `false`  |
+
 #### Defines Configuration
+
+Use the defines option to create reusable condition values.
 
 ```yaml
 defines:
@@ -230,7 +328,29 @@ filter:
           value: ${aircraftsOfDisinterest}
  ```
 
+| Name             | Description                               | Default Value | Constraints      |
+|------------------|-------------------------------------------|---------------|------------------|
+| `[key]: [value]` | key: Name of the property to be defined   | None          | Must be a string |
+|                  | value: The value for the defined property | None          | None             |
+
 ## Usage
 
-## Support
+### Features
 
+The Flightradar24 Integration Card offers the following features:
+
+* Display real-time flight data from Flightradar24.
+* Customizable radar view with range, projection interval, and colors.
+* Add custom locations, runways, and geographic outlines.
+* Filter flights based on various criteria.
+* Annotate specific flights with custom conditions.
+* Toggle options to control flight visibility.
+
+## Support
+For support, you can:
+
+* Open an issue on the GitHub repository.
+* Join the Home Assistant community forums and ask for help in the relevant threads.
+* Check the documentation for more details and troubleshooting tips.
+
+Feel free to reach out if you encounter any issues or have suggestions for improvements. Your feedback is highly appreciated!
