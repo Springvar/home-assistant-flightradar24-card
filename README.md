@@ -366,7 +366,9 @@ By default, the card comes with predefined templates for each element. However, 
 You can customize each template by providing your own HTML structure and using placeholders like `${flight.property}` to dynamically insert flight data into the template. For example, `${flight.aircraft_photo_small}` will be replaced with the URL of the small aircraft photo. Refer to the [Flightradar24 integration documentation](https://github.com/AlexandrErohin/home-assistant-flightradar24?tab=readme-ov-file#flight-fields) for a list of valid flight fields.
 
 In addition you will find these fields defined
+
 | Field | Description |
+|-------|-------------|
 | origin_flag | |
 | destination_flag | |
 | climb_descend_indicator | Arrow pointing up or down to indicate vertical speed exceeding 100 ft/minute |
