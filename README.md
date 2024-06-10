@@ -333,6 +333,39 @@ filter:
 | `[key]: [value]` | key: Name of the property to be defined   | None          | Must be a string |
 |                  | value: The value for the defined property | None          | None             |
 
+#### Templates Configuration
+
+The `templates` configuration option allows you to customize the HTML templates used for rendering various parts of the flight information displayed on the card. You can define your own HTML templates for different elements such as icons, flight information, aircraft information, departure and arrival details, route information, flight status, position status, and proximity information.
+
+By default, the card comes with predefined templates for each element. However, you can override these defaults or add new templates according to your preferences.
+
+| Template Name          | Description                                                                                 | Default Value                                                                                              |
+|------------------------|---------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| `img_element`          | HTML template for rendering the image element of the aircraft.                              | `<img style="float: right; width: 120px; height: auto; marginLeft: 8px; border: 1px solid black;" src="${flight.aircraft_photo_small}" />` |
+| `icon`                 | Template for defining the icon to be displayed based on flight altitude and vertical speed. | `${flight.altitude > 0 ? (flight.vertical_speed > 100 ? "airplane-takeoff" : flight.vertical_speed < -100 ? "airplane-landing" : "airplane") : "airport"}` |
+| `icon_element`         | HTML template for rendering the icon element.                                               | `<ha-icon style="float: left;" icon="mdi:${tpl.icon}"></ha-icon>`                                          |
+| `flight_info`          | Template for displaying basic flight information like airline, flight number, and callsign. | `${[flight.airline_short, flight.flight_number, flight.callsign !== flight.flight_number ? flight.callsign : ""].filter((el) => el).join(" - ")}` |
+| `flight_info_element`  | HTML template for rendering the flight information element.                                 | `<div style="font-weight: bold; padding-left: 5px; padding-top: 5px;">${tpl.flight_info}</div>`            |
+| `header`               | HTML template for rendering the header section of the flight card.                          | `<div>${tpl.img_element}${tpl.icon_element}${tpl.flight_info_element}</div>`                               |
+| `aircraft_info`        | Template for displaying aircraft registration and model information.                        | `${[flight.aircraft_registration, flight.aircraft_model].filter((el) => el).join(" - ")}`                  |
+| `aircraft_info_element`| HTML template for rendering the aircraft information element.                               | `${tpl.aircraft_info ? \`<div style="clear: left;">${tpl.aircraft_info}</div>\` : ""}`                     |
+| `departure_info`       | Template for displaying departure time information.                                         | `${flight.altitude === 0 && flight.time_scheduled_departure ? ` (${new Date(flight.time_scheduled_departure * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})` : ""}` |
+| `origin_info`          | Template for displaying origin airport information.                                         | `${[flight.airport_origin_code_iata, tpl.departure_info, flight.origin_flag].filter((el) => el).join("")}` |
+| `arrival_info`         | Template for displaying arrival airport information.                                        | ``                                                                                                         |
+| `destination_info`     | Template for displaying destination airport information.                                    | `${[flight.airport_destination_code_iata, tpl.arrival_info, flight.destination_flag].filter((el) => el).join(" ")}` |
+| `route_info`           | Template for displaying the flight route information.                                       | `${[tpl.origin_info, tpl.destination_info].filter((el) => el).join(" -> ")}`                               |
+| `route_element`        | HTML template for rendering the route information element.                                  | `<div>${tpl.route_info}</div>`                                                                             |
+| `flight_status`        | Template for displaying flight status information like altitude, speed, and heading.        | `<div>${[flight.alt_info, flight.spd_info, flight.hdg_info].filter((el) => el).join(" - ")}</div>`         |
+| `position_status`      | Template for displaying flight position status information like distance and direction.     | `<div>${[flight.dist_info, flight.direction_info].filter((el) => el).join(" - ")}</div>`                   |
+| `proximity_info`       | Template for displaying proximity information when the flight is approaching.               | `<div style="font-weight: bold; font-style: italic;">${flight.is_approaching && flight.ground_speed > 70 && flight.closest_passing_distance < 15 ? `Closest Distance: ${Math.round(flight.closest_passing_distance)} ${units.distance}, ETA: ${Math.round(flight.eta_to_closest_distance)} min` : ""}</div>` |
+| `flight_element`       | HTML template for rendering the complete flight element.                                    | `${tpl.header}${tpl.aircraft_info_element}${tpl.route_element}${tpl.flight_status}${tpl.position_status}${tpl.proximity_info}`|
+
+**IMPORTANT**: The templates are evaluated in the order they appear. You can reference the result of rendered templates as `tpl.[name of template]` as long as they are defined before the template using them.
+
+You can customize each template by providing your own HTML structure and using placeholders like `${flight.property}` to dynamically insert flight data into the template. For example, `${flight.aircraft_photo_small}` will be replaced with the URL of the small aircraft photo.
+
+To customize the templates, simply override the default templates by providing new templates in the `templates` section of your configuration.
+
 ## Usage
 
 ### Features
