@@ -17,6 +17,7 @@ Custom card to use with <a href="https://github.com/AlexandrErohin/home-assistan
      - [Annotations](#annotation-configuration)
      - [Toggles](#toggles-configuration)
      - [Defines](#defines-configuration)
+     - [Templates](#templates-configuration)
 4. [Usage](#usage)
    - [Features](#features)
    - [Examples](#examples)
@@ -348,10 +349,10 @@ By default, the card comes with predefined templates for each element. However, 
 | `flight_info_element`  | HTML template for rendering the flight information element.                                 | `<div style="font-weight: bold; padding-left: 5px; padding-top: 5px;">${tpl.flight_info}</div>`            |
 | `header`               | HTML template for rendering the header section of the flight card.                          | `<div>${tpl.img_element}${tpl.icon_element}${tpl.flight_info_element}</div>`                               |
 | `aircraft_info`        | Template for displaying aircraft registration and model information.                        | `${[flight.aircraft_registration, flight.aircraft_model].filter((el) => el).join(" - ")}`                  |
-| `aircraft_info_element`| HTML template for rendering the aircraft information element.                               | `${tpl.aircraft_info ? \`<div style="clear: left;">${tpl.aircraft_info}</div>\` : ""}`                     |
-| `departure_info`       | Template for displaying departure time information.                                         | `${flight.altitude === 0 && flight.time_scheduled_departure ? ` (${new Date(flight.time_scheduled_departure * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})` : ""}` |
+| `aircraft_info_element`| HTML template for rendering the aircraft information element.                               | ``${tpl.aircraft_info ? `<div style="clear: left;">${tpl.aircraft_info}</div>` : ""}``                     |
+| `departure_info`       | Template for displaying departure time information.                                         | ``${flight.altitude === 0 && flight.time_scheduled_departure ? ` (${new Date(flight.time_scheduled_departure * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})` : ""}`` |
 | `origin_info`          | Template for displaying origin airport information.                                         | `${[flight.airport_origin_code_iata, tpl.departure_info, flight.origin_flag].filter((el) => el).join("")}` |
-| `arrival_info`         | Template for displaying arrival airport information.                                        | ``                                                                                                         |
+| `arrival_info`         | Template for displaying arrival airport information.                                        |                                                                                                            |
 | `destination_info`     | Template for displaying destination airport information.                                    | `${[flight.airport_destination_code_iata, tpl.arrival_info, flight.destination_flag].filter((el) => el).join(" ")}` |
 | `route_info`           | Template for displaying the flight route information.                                       | `${[tpl.origin_info, tpl.destination_info].filter((el) => el).join(" -> ")}`                               |
 | `route_element`        | HTML template for rendering the route information element.                                  | `<div>${tpl.route_info}</div>`                                                                             |
@@ -362,9 +363,24 @@ By default, the card comes with predefined templates for each element. However, 
 
 **IMPORTANT**: The templates are evaluated in the order they appear. You can reference the result of rendered templates as `tpl.[name of template]` as long as they are defined before the template using them.
 
-You can customize each template by providing your own HTML structure and using placeholders like `${flight.property}` to dynamically insert flight data into the template. For example, `${flight.aircraft_photo_small}` will be replaced with the URL of the small aircraft photo.
+You can customize each template by providing your own HTML structure and using placeholders like `${flight.property}` to dynamically insert flight data into the template. For example, `${flight.aircraft_photo_small}` will be replaced with the URL of the small aircraft photo. Refer to the [Flightradar24 integration documentation](https://github.com/AlexandrErohin/home-assistant-flightradar24?tab=readme-ov-file#flight-fields) for a list of valid flight fields.
 
-To customize the templates, simply override the default templates by providing new templates in the `templates` section of your configuration.
+In addition you will find these fields defined
+| Field | Description |
+| origin_flag | |
+| destination_flag | |
+| climb_descend_indicator | Arrow pointing up or down to indicate vertical speed exceeding 100 ft/minute |
+| alt_info | Altitude given in the configured altitude unit |
+| spd_info | Speed given in the configured speed unit |
+| hdg_info | Rounded heading value with degree symbol |
+| heading_from_tracker | Heading from tracker to flight |
+| cardinal_direction_from_tracker | Cardinal direction (N, NW, W, SW, S, SE, E, NE) from tracker to flight |
+| is_approaching | Boolean to indicate if the aircraft is approaching the tracker |
+| approach_indicator | Arrow pointing up or down to indicate if the aircraft is approaching the tracker |
+| closest_passing_distance  | Distance from tracker to calculated closest point between tracker and flight (available if is_approaching is true) in configured distance unit |
+| eta_to_closest_distance   | Time until flight reaches calculated closest point between tracker and flight in minutes  |
+| heading_from_tracker_to_closest_passing | Heading from tracker to calculated closest point between tracker and flight |
+| is_landing   | True if the flight is approaching and has a projected landing point before closest point between tracker and flight, in which case closest_passing_distance, eta_to_closest_distance and heading_from_tracker_to_closest_passing will be calculated based on the projected landing point |
 
 ## Usage
 
