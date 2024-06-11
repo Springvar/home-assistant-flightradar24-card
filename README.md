@@ -1,6 +1,6 @@
 # Flightradar24 Integration Card
 
-Custom card to use with <a href="https://github.com/AlexandrErohin/home-assistant-flightradar24">Flightradar24 integration</a> for Home Assistant.
+Custom card to use with [Flightradar24 integration](https://github.com/AlexandrErohin/home-assistant-flightradar24) for Home Assistant.
 
 <img src="https://raw.githubusercontent.com/Springvar/home-assistant-flightradar24-card/master/card.png" width="35%">
 
@@ -13,7 +13,7 @@ Custom card to use with <a href="https://github.com/AlexandrErohin/home-assistan
    - [Advanced Configuration](#advanced-configuration)
      - [Filter](#filter-configuration)
      - [Radar](#radar-configuration)
-        - [Radar features](#radar-features)
+       - [Radar features](#radar-features)
      - [Annotations](#annotation-configuration)
      - [Toggles](#toggles-configuration)
      - [Defines](#defines-configuration)
@@ -41,9 +41,9 @@ Have [HACS](https://hacs.xyz/) installed, this will allow you to update easily.
 
 1. Go to **HACS** -> **Integrations**.
 2. Add this repository ([https://github.com/Springvar/home-assistant-flightradar24-card](https://github.com/Springvar/home-assistant-flightradar24-card)) as a [custom repository](https://hacs.xyz/docs/faq/custom_repositories/)
-3. Click on `+ Explore & Download Repositories`, search for `Flightradar24 Card`. 
-4. Search for and select `Flightradar24 Card`. 
-5. Press `DOWNLOAD` and in the next window also press `DOWNLOAD`. 
+3. Click on `+ Explore & Download Repositories`, search for `Flightradar24 Card`.
+4. Search for and select `Flightradar24 Card`.
+5. Press `DOWNLOAD` and in the next window also press `DOWNLOAD`.
 6. After download, restart Home Assistant.
 
 ### Manual
@@ -51,9 +51,11 @@ Have [HACS](https://hacs.xyz/) installed, this will allow you to update easily.
 To install the card, follow these steps:
 
 1. **Download the Card**:
+
    - Download the latest release from the [GitHub repository](https://github.com/your-repo/home-assistant-flightradar24-card/releases).
 
 2. **Add to Home Assistant**:
+
    - Place the downloaded files in a `flightradar24` directory under your `www` directory inside your Home Assistant configuration directory.
 
 3. **Add the Custom Card to Lovelace**:
@@ -68,49 +70,23 @@ To install the card, follow these steps:
 
 ### Basic Configuration
 
-To use the card, add the following configuration to your Lovelace dashboard:
+To use the card, simply add the following configuration to your Lovelace dashboard:
 
 ```yaml
 type: custom:flightradar24-card
-location_tracker: device_tracker.your_device_tracker
-flights_entity: sensor.flightradar24_current_in_area
-projection_interval: 3
-```
-or
-```yaml
-type: custom:flightradar24-card
-location:
-  lat: 00.000000
-  lon: 00.000000
-flights_entity: sensor.flightradar24_current_in_area
-projection_interval: 3
 ```
 
-| Name                  | Description                                                                               | Default Value | Constraints                              |
-|-----------------------|-------------------------------------------------------------------------------------------|---------------|------------------------------------------|
-| `location_tracker`    | Entity ID for the location tracker device.                                                | None          | Must be a valid device_tracker entity ID |
-| `location`            | Latitude and longitude of the observer. Will be used as fallback if tracker is unavailable or not provided. | None      | Must have both lat and lon |
-| `flights_entity`      | Entity ID for the Flightradar24 sensor.                                                   | None          | Must be a valid sensor entity ID         |
-| `projection_interval` | Interval in seconds for when to recalculate projected positions and altitude.             | None          | Number (seconds)                         |
+| Name                  | Description                                                                                                                                                       | Default Value                                                                            | Constraints                                                                                                     |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `flights_entity`      | Entity ID for the Flightradar24 sensor.                                                                                                                           | `sensor.flightradar24_current_in_area`                                                   | Must be a valid sensor entity ID                                                                                |
+| `location_tracker`    | Entity ID for a location tracker device.<br><br>If provided, all distances and directions will be calculated with the tracker position as the reference position. | None                                                                                     | Must be a valid device_tracker entity ID                                                                        |
+| `location`            | Latitude and longitude of a static reference position. Will be used as fallback if tracker is unavailable or not provided.                                        | Home Assistant home location                                                             | Must have both lat and lon                                                                                      |
+| `projection_interval` | Interval in seconds for when to recalculate projected positions and altitude.                                                                                     | `5`                                                                                      | Number (seconds) - `0` disables projection. Radar and list will refresh when flights sensor or tracker updates. |
+| `units`               | Unit object to customize units for altitude, speed and distance.                                                                                                  | units:<br>&nbsp;&nbsp;altitude: ft<br>&nbsp;&nbsp;speed: kts<br>&nbsp;&nbsp;distance: km | `altitude` must be `m` or `ft`<br>`speed` must be `kmh`, `mph` or `kts`<br>`distance` must be `km` or `miles`   |
+| `no_flights_message`  | Message to display if no flights are visible.                                                                                                                     | `No flights are currently visible. Please check back later.`                             | String - Use empty string to disable the message                                                                |
 
-*Note:* If location is configured, this must be within the area fetched by the (Flightradar24 Integration)["https://github.com/AlexandrErohin/home-assistant-flightradar24"]. The location would normally be the same given to the integration.
-
-#### Units
-
-To customize units for altitude, speed, and distance, use the units configuration option.
-
-```yaml
-units:
-  altitude: m # m or ft (default ft - always FL above 17750 ft)
-  speed: kmh # kmh or kts (default kts)
-  distance: km # km or miles
-```
-
-| Name      | Description                         | Default Value | Constraints                |
-|-----------|-------------------------------------|---------------|----------------------------|
-| `altitude`| Unit for altitude                   | `ft`          | Must be `m` or `ft`        |
-| `speed`   | Unit for speed                      | `kts`         | Must be `kmh` or `kts`     |
-| `distance`| Unit for distance                   | `km`          | Must be `km` or `miles`    |
+_Note:_ If location is configured, this must be within the area fetched by the [Flightradar24 Integration]("https://github.com/AlexandrErohin/home-assistant-flightradar24").
+The location would normally be the same given to the integration. If no location is configured, the home location for Home Assistant will be used.
 
 ### Advanced Configuration
 
@@ -140,25 +116,25 @@ filter:
 
 ##### Group conditions
 
-| Name                  | Description                                  | Default Value | Constraints                         |
-|-----------------------|----------------------------------------------|---------------|-------------------------------------|
-| `type`                | Logical operator for the filter conditions   | None          | Must be `OR` or `AND`               |
-| `conditions`          | List of filter conditions                    | None          | Must be a list of condition objects |
+| Name         | Description                                | Default Value | Constraints                         |
+| ------------ | ------------------------------------------ | ------------- | ----------------------------------- |
+| `type`       | Logical operator for the filter conditions | None          | Must be `OR` or `AND`               |
+| `conditions` | List of filter conditions                  | None          | Must be a list of condition objects |
 
 ##### Negative condition
 
-| Name                  | Description                                  | Default Value | Constraints               |
-|-----------------------|----------------------------------------------|---------------|---------------------------|
-| `type`                | Logical operator for the filter conditions   | None          | Must be `NOT`             |
-| `condition`           | Condition to negate                          | None          | Must be a valid condition |
+| Name        | Description                                | Default Value | Constraints               |
+| ----------- | ------------------------------------------ | ------------- | ------------------------- |
+| `type`      | Logical operator for the filter conditions | None          | Must be `NOT`             |
+| `condition` | Condition to negate                        | None          | Must be a valid condition |
 
 ##### Field comparision condition
 
-| Name                 | Description                                   | Default Value | Constraints                                                     |
-|----------------------|-----------------------------------------------|---------------|-----------------------------------------------------------------|
-| `field` or `defined` | Flight field or defined value to filter on    | None          | Must be a valid field name or defined property                  |
-| `comparator`         | Comparator for the filter condition           | None          | Can be 'eq', 'lt', 'lte', 'gt', 'gte', 'oneOf', 'containsOneOf' |
-| `value`              | Value to compare against                      | None          | Must be a valid value or list of values                         |
+| Name                 | Description                                | Default Value | Constraints                                                     |
+| -------------------- | ------------------------------------------ | ------------- | --------------------------------------------------------------- |
+| `field` or `defined` | Flight field or defined value to filter on | None          | Must be a valid field name or defined property                  |
+| `comparator`         | Comparator for the filter condition        | None          | Can be 'eq', 'lt', 'lte', 'gt', 'gte', 'oneOf', 'containsOneOf' |
+| `value`              | Value to compare against                   | None          | Must be a valid value or list of values                         |
 
 #### Radar Configuration
 
@@ -172,19 +148,21 @@ radar:
 ```
 
 To hide the radar:
+
 ```yaml
 radar:
   hide: true
 ```
 
-| Name                  | Description                                      | Default Value | Constraints               |
-|-----------------------|--------------------------------------------------|---------------|---------------------------|
-| `range`               | Range of the radar in kilometers                 | None          | Must be a positive number | 
-| `primary-color`       | Primary color for the radar display              | None          | Must be a valid CSS color |
-| `accent-color`        | Accent Color for the radar display               | None          | Must be a valid CSS color |
-| `feature-color`       | Color for radar features                         | None          | Must be a valid CSS color |
-| `callsign-label-color`| Color for callsign labels                        | None          | Must be a valid CSS color |
-| `hide`                | Option to hide the radar                         | `false`       | Must be `true` or `false` |
+| Name                   | Description                                  | Default Value                     | Constraints               |
+| ---------------------- | -------------------------------------------- | --------------------------------- | ------------------------- |
+| `range`                | Range of the radar in selected distance unit | 35 km or 20 miles                 | Must be a positive number |
+| `primary-color`        | Primary color for the radar display          | `var(--dark-primary-color)`       | Must be a valid CSS color |
+| `accent-color`         | Accent Color for the radar display           | `var(--accent-color)`             | Must be a valid CSS color |
+| `feature-color`        | Color for radar features                     | `var(--primary-background-color)` | Must be a valid CSS color |
+| `callsign-label-color` | Color for callsign labels                    | `var(--secondary-text-color)`     | Must be a valid CSS color |
+| `hide`                 | Option to hide the radar                     | `false`                           | Must be `true` or `false` |
+| `hide_range`           | Option to hide the radar range               | `false`                           | Must be `true` or `false` |
 
 ##### Radar Features
 
@@ -202,18 +180,18 @@ radar:
         lon: 10.394964
 ```
 
-| Name       | Description                                 | Default Value | Constraints                    |
-|------------|---------------------------------------------|---------------|--------------------------------|
-| `type`     | Type of the radar feature                   | None          | Must be `location`             |
-| `label`    | Label for the location                      | None          | Must be a string               |
-| `position` | Position of the location                    | None          | Must be a valid lat/lon object |
+| Name       | Description               | Default Value | Constraints                    |
+| ---------- | ------------------------- | ------------- | ------------------------------ |
+| `type`     | Type of the radar feature | None          | Must be `location`             |
+| `label`    | Label for the location    | None          | Must be a string               |
+| `position` | Position of the location  | None          | Must be a valid lat/lon object |
 
 Position object:
 
-| Name | Description               | Default Value | Constraints               |
-|------|---------------------------|---------------|---------------------------|
-| `lat`| Latitude of the position  | None          | Must be a valid latitude  |
-| `lon`| Longitude of the position | None          | Must be a valid longitude |
+| Name  | Description               | Default Value | Constraints               |
+| ----- | ------------------------- | ------------- | ------------------------- |
+| `lat` | Latitude of the position  | None          | Must be a valid latitude  |
+| `lon` | Longitude of the position | None          | Must be a valid longitude |
 
 ###### Runways
 
@@ -231,7 +209,7 @@ radar:
 ```
 
 | Name       | Description                                      | Default Value | Constraints                    |
-|------------|--------------------------------------------------|---------------|--------------------------------|
+| ---------- | ------------------------------------------------ | ------------- | ------------------------------ |
 | `type`     | Type of the radar feature                        | None          | Must be `runway`               |
 | `position` | Position of the runway (one end of the rwy)      | None          | Must be a valid lat/lon object |
 | `heading`  | Heading of the runway in degrees (from position) | None          | Must be a valid number         |
@@ -254,10 +232,10 @@ radar:
           lon: 9.912988
 ```
 
-| Name     | Description                                 | Default Value | Constraints                       |
-|----------|---------------------------------------------|---------------|-----------------------------------|
-| `type`   | Type of the radar feature                   | None          | Must be `outline`                 |
-| `points` | List of points defining the outline         | None          | Must be a list of lat/lon objects |
+| Name     | Description                         | Default Value | Constraints                       |
+| -------- | ----------------------------------- | ------------- | --------------------------------- |
+| `type`   | Type of the radar feature           | None          | Must be `outline`                 |
+| `points` | List of points defining the outline | None          | Must be a list of lat/lon objects |
 
 #### Annotation Configuration
 
@@ -270,14 +248,14 @@ annotate:
     conditions:
       - field: aircraft_registration
         comparator: oneOf
-        value: [LN-NIE,PH-EXV]
+        value: [LN-NIE, PH-EXV]
 ```
 
-| Name        | Description                           | Default Value | Constraints                                |
-|-------------|---------------------------------------|---------------|--------------------------------------------|
-| `field`     | Flight field to be annotated          | None          | Must be a valid flight field name          |
-| `render`    | Template for rendering the annotation | None          | Must be a valid javascript template string |
-| `conditions`| List of conditions for annotation     | None          | Must be a list of condition objects        |
+| Name         | Description                           | Default Value | Constraints                                |
+| ------------ | ------------------------------------- | ------------- | ------------------------------------------ |
+| `field`      | Flight field to be annotated          | None          | Must be a valid flight field name          |
+| `render`     | Template for rendering the annotation | None          | Must be a valid javascript template string |
+| `conditions` | List of conditions for annotation     | None          | Must be a list of condition objects        |
 
 #### Toggles Configuration
 
@@ -313,11 +291,11 @@ filter:
             value: 2500
 ```
 
-| Name        | Description                                            | Default Value | Constraints                |
-|-------------|--------------------------------------------------------|---------------|----------------------------|
-| `[key]:`    | key: Name of the property to be defined by this toggle | None          | Must be a string           |
-|   `label`   | Label for the toggle button                            | None          | Must be a string           |
-|   `default` | Default state of the toggle                            | `false`       | Must be `true` or `false`  |
+| Name      | Description                                            | Default Value | Constraints               |
+| --------- | ------------------------------------------------------ | ------------- | ------------------------- |
+| `[key]:`  | key: Name of the property to be defined by this toggle | None          | Must be a string          |
+| `label`   | Label for the toggle button                            | None          | Must be a string          |
+| `default` | Default state of the toggle                            | `false`       | Must be `true` or `false` |
 
 #### Defines Configuration
 
@@ -339,10 +317,10 @@ filter:
         - field: callsign
           comparator: containsOneOf
           value: ${aircraftsOfDisinterest}
- ```
+```
 
 | Name             | Description                               | Default Value | Constraints      |
-|------------------|-------------------------------------------|---------------|------------------|
+| ---------------- | ----------------------------------------- | ------------- | ---------------- |
 | `[key]: [value]` | key: Name of the property to be defined   | None          | Must be a string |
 |                  | value: The value for the defined property | None          | None             |
 
@@ -352,26 +330,26 @@ The `templates` configuration option allows you to customize the HTML templates 
 
 By default, the card comes with predefined templates for each element. However, you can override these defaults or add new templates according to your preferences.
 
-| Template Name          | Description                                                                                 | Default Value                                                                                              |
-|------------------------|---------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
-| `img_element`          | HTML template for rendering the image element of the aircraft.                              | `<img style="float: right; width: 120px; height: auto; marginLeft: 8px; border: 1px solid black;" src="${flight.aircraft_photo_small}" />` |
-| `icon`                 | Template for defining the icon to be displayed based on flight altitude and vertical speed. | `${flight.altitude > 0 ? (flight.vertical_speed > 100 ? "airplane-takeoff" : flight.vertical_speed < -100 ? "airplane-landing" : "airplane") : "airport"}` |
-| `icon_element`         | HTML template for rendering the icon element.                                               | `<ha-icon style="float: left;" icon="mdi:${tpl.icon}"></ha-icon>`                                          |
-| `flight_info`          | Template for displaying basic flight information like airline, flight number, and callsign. | `${[flight.airline_short, flight.flight_number, flight.callsign !== flight.flight_number ? flight.callsign : ""].filter((el) => el).join(" - ")}` |
-| `flight_info_element`  | HTML template for rendering the flight information element.                                 | `<div style="font-weight: bold; padding-left: 5px; padding-top: 5px;">${tpl.flight_info}</div>`            |
-| `header`               | HTML template for rendering the header section of the flight card.                          | `<div>${tpl.img_element}${tpl.icon_element}${tpl.flight_info_element}</div>`                               |
-| `aircraft_info`        | Template for displaying aircraft registration and model information.                        | `${[flight.aircraft_registration, flight.aircraft_model].filter((el) => el).join(" - ")}`                  |
-| `aircraft_info_element`| HTML template for rendering the aircraft information element.                               | ``${tpl.aircraft_info ? `<div style="clear: left;">${tpl.aircraft_info}</div>` : ""}``                     |
-| `departure_info`       | Template for displaying departure time information.                                         | ``${flight.altitude === 0 && flight.time_scheduled_departure ? ` (${new Date(flight.time_scheduled_departure * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})` : ""}`` |
-| `origin_info`          | Template for displaying origin airport information.                                         | `${[flight.airport_origin_code_iata, tpl.departure_info, flight.origin_flag].filter((el) => el).join("")}` |
-| `arrival_info`         | Template for displaying arrival airport information.                                        |                                                                                                            |
-| `destination_info`     | Template for displaying destination airport information.                                    | `${[flight.airport_destination_code_iata, tpl.arrival_info, flight.destination_flag].filter((el) => el).join(" ")}` |
-| `route_info`           | Template for displaying the flight route information.                                       | `${[tpl.origin_info, tpl.destination_info].filter((el) => el).join(" -> ")}`                               |
-| `route_element`        | HTML template for rendering the route information element.                                  | `<div>${tpl.route_info}</div>`                                                                             |
-| `flight_status`        | Template for displaying flight status information like altitude, speed, and heading.        | `<div>${[flight.alt_info, flight.spd_info, flight.hdg_info].filter((el) => el).join(" - ")}</div>`         |
-| `position_status`      | Template for displaying flight position status information like distance and direction.     | `<div>${[flight.dist_info, flight.direction_info].filter((el) => el).join(" - ")}</div>`                   |
-| `proximity_info`       | Template for displaying proximity information when the flight is approaching.               | `<div style="font-weight: bold; font-style: italic;">${flight.is_approaching && flight.ground_speed > 70 && flight.closest_passing_distance < 15 ? `Closest Distance: ${Math.round(flight.closest_passing_distance)} ${units.distance}, ETA: ${Math.round(flight.eta_to_closest_distance)} min` : ""}</div>` |
-| `flight_element`       | HTML template for rendering the complete flight element.                                    | `${tpl.header}${tpl.aircraft_info_element}${tpl.route_element}${tpl.flight_status}${tpl.position_status}${tpl.proximity_info}`|
+| Template Name           | Description                                                                                 | Default Value                                                                                                                                                                                                                                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `img_element`           | HTML template for rendering the image element of the aircraft.                              | `<img style="float: right; width: 120px; height: auto; marginLeft: 8px; border: 1px solid black;" src="${flight.aircraft_photo_small}" />`                                                                                                                                                                   |
+| `icon`                  | Template for defining the icon to be displayed based on flight altitude and vertical speed. | `${flight.altitude > 0 ? (flight.vertical_speed > 100 ? "airplane-takeoff" : flight.vertical_speed < -100 ? "airplane-landing" : "airplane") : "airport"}`                                                                                                                                                   |
+| `icon_element`          | HTML template for rendering the icon element.                                               | `<ha-icon style="float: left;" icon="mdi:${tpl.icon}"></ha-icon>`                                                                                                                                                                                                                                            |
+| `flight_info`           | Template for displaying basic flight information like airline, flight number, and callsign. | `${[flight.airline_short, flight.flight_number, flight.callsign !== flight.flight_number ? flight.callsign : ""].filter((el) => el).join(" - ")}`                                                                                                                                                            |
+| `flight_info_element`   | HTML template for rendering the flight information element.                                 | `<div style="font-weight: bold; padding-left: 5px; padding-top: 5px;">${tpl.flight_info}</div>`                                                                                                                                                                                                              |
+| `header`                | HTML template for rendering the header section of the flight card.                          | `<div>${tpl.img_element}${tpl.icon_element}${tpl.flight_info_element}</div>`                                                                                                                                                                                                                                 |
+| `aircraft_info`         | Template for displaying aircraft registration and model information.                        | `${[flight.aircraft_registration, flight.aircraft_model].filter((el) => el).join(" - ")}`                                                                                                                                                                                                                    |
+| `aircraft_info_element` | HTML template for rendering the aircraft information element.                               | `` ${tpl.aircraft_info ? `<div style="clear: left;">${tpl.aircraft_info}</div>` : ""} ``                                                                                                                                                                                                                     |
+| `departure_info`        | Template for displaying departure time information.                                         | `` ${flight.altitude === 0 && flight.time_scheduled_departure ? ` (${new Date(flight.time_scheduled_departure * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})` : ""} ``                                                                                                             |
+| `origin_info`           | Template for displaying origin airport information.                                         | `${[flight.airport_origin_code_iata, tpl.departure_info, flight.origin_flag].filter((el) => el).join("")}`                                                                                                                                                                                                   |
+| `arrival_info`          | Template for displaying arrival airport information.                                        |                                                                                                                                                                                                                                                                                                              |
+| `destination_info`      | Template for displaying destination airport information.                                    | `${[flight.airport_destination_code_iata, tpl.arrival_info, flight.destination_flag].filter((el) => el).join(" ")}`                                                                                                                                                                                          |
+| `route_info`            | Template for displaying the flight route information.                                       | `${[tpl.origin_info, tpl.destination_info].filter((el) => el).join(" -> ")}`                                                                                                                                                                                                                                 |
+| `route_element`         | HTML template for rendering the route information element.                                  | `<div>${tpl.route_info}</div>`                                                                                                                                                                                                                                                                               |
+| `flight_status`         | Template for displaying flight status information like altitude, speed, and heading.        | `<div>${[flight.alt_info, flight.spd_info, flight.hdg_info].filter((el) => el).join(" - ")}</div>`                                                                                                                                                                                                           |
+| `position_status`       | Template for displaying flight position status information like distance and direction.     | `<div>${[flight.dist_info, flight.direction_info].filter((el) => el).join(" - ")}</div>`                                                                                                                                                                                                                     |
+| `proximity_info`        | Template for displaying proximity information when the flight is approaching.               | `<div style="font-weight: bold; font-style: italic;">${flight.is_approaching && flight.ground_speed > 70 && flight.closest_passing_distance < 15 ? `Closest Distance: ${Math.round(flight.closest_passing_distance)} ${units.distance}, ETA: ${Math.round(flight.eta_to_closest_distance)} min` : ""}</div>` |
+| `flight_element`        | HTML template for rendering the complete flight element.                                    | `${tpl.header}${tpl.aircraft_info_element}${tpl.route_element}${tpl.flight_status}${tpl.position_status}${tpl.proximity_info}`                                                                                                                                                                               |
 
 **IMPORTANT**: The templates are evaluated in the order they appear. You can reference the result of rendered templates as `tpl.[name of template]` as long as they are defined before the template using them.
 
@@ -379,22 +357,22 @@ You can customize each template by providing your own HTML structure and using p
 
 In addition you will find these fields defined
 
-| Field | Description |
-|-------|-------------|
-| origin_flag | |
-| destination_flag | |
-| climb_descend_indicator | Arrow pointing up or down to indicate vertical speed exceeding 100 ft/minute |
-| alt_info | Altitude given in the configured altitude unit |
-| spd_info | Speed given in the configured speed unit |
-| hdg_info | Rounded heading value with degree symbol |
-| heading_from_tracker | Heading from tracker to flight |
-| cardinal_direction_from_tracker | Cardinal direction (N, NW, W, SW, S, SE, E, NE) from tracker to flight |
-| is_approaching | Boolean to indicate if the aircraft is approaching the tracker |
-| approach_indicator | Arrow pointing up or down to indicate if the aircraft is approaching the tracker |
-| closest_passing_distance  | Distance from tracker to calculated closest point between tracker and flight (available if is_approaching is true) in configured distance unit |
-| eta_to_closest_distance   | Time until flight reaches calculated closest point between tracker and flight in minutes  |
-| heading_from_tracker_to_closest_passing | Heading from tracker to calculated closest point between tracker and flight |
-| is_landing   | True if the flight is approaching and has a projected landing point before closest point between tracker and flight, in which case closest_passing_distance, eta_to_closest_distance and heading_from_tracker_to_closest_passing will be calculated based on the projected landing point |
+| Field                                   | Description                                                                                                                                                                                                                                                                              |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| origin_flag                             |                                                                                                                                                                                                                                                                                          |
+| destination_flag                        |                                                                                                                                                                                                                                                                                          |
+| climb_descend_indicator                 | Arrow pointing up or down to indicate vertical speed exceeding 100 ft/minute                                                                                                                                                                                                             |
+| alt_info                                | Altitude given in the configured altitude unit                                                                                                                                                                                                                                           |
+| spd_info                                | Speed given in the configured speed unit                                                                                                                                                                                                                                                 |
+| hdg_info                                | Rounded heading value with degree symbol                                                                                                                                                                                                                                                 |
+| heading_from_tracker                    | Heading from tracker to flight                                                                                                                                                                                                                                                           |
+| cardinal_direction_from_tracker         | Cardinal direction (N, NW, W, SW, S, SE, E, NE) from tracker to flight                                                                                                                                                                                                                   |
+| is_approaching                          | Boolean to indicate if the aircraft is approaching the tracker                                                                                                                                                                                                                           |
+| approach_indicator                      | Arrow pointing up or down to indicate if the aircraft is approaching the tracker                                                                                                                                                                                                         |
+| closest_passing_distance                | Distance from tracker to calculated closest point between tracker and flight (available if is_approaching is true) in configured distance unit                                                                                                                                           |
+| eta_to_closest_distance                 | Time until flight reaches calculated closest point between tracker and flight in minutes                                                                                                                                                                                                 |
+| heading_from_tracker_to_closest_passing | Heading from tracker to calculated closest point between tracker and flight                                                                                                                                                                                                              |
+| is_landing                              | True if the flight is approaching and has a projected landing point before closest point between tracker and flight, in which case closest_passing_distance, eta_to_closest_distance and heading_from_tracker_to_closest_passing will be calculated based on the projected landing point |
 
 ## Usage
 
@@ -402,12 +380,12 @@ In addition you will find these fields defined
 
 The Flightradar24 Integration Card offers the following features:
 
-* Display real-time flight data from Flightradar24.
-* Customizable radar view with range, projection interval, and colors.
-* Add custom locations, runways, and geographic outlines.
-* Filter flights based on various criteria.
-* Annotate specific flights with custom conditions.
-* Toggle options to control flight visibility.
+- Display real-time flight data from Flightradar24.
+- Customizable radar view with range, projection interval, and colors.
+- Add custom locations, runways, and geographic outlines.
+- Filter flights based on various criteria.
+- Annotate specific flights with custom conditions.
+- Toggle options to control flight visibility.
 
 ### Examples
 
@@ -417,9 +395,6 @@ Note: Radar will show all tracked flights
 
 ```yaml
 type: custom:flightradar24-card
-location_tracker: device_tracker.your_device_tracker
-flights_entity: sensor.flightradar24_current_in_area
-projection_interval: 3
 toggles:
   show_on_ground:
     label: Show aircraft on the ground
@@ -436,11 +411,9 @@ filter:
 ```
 
 **lists all aircraft from a given airline ("Delta" in this example), with no radar**
+
 ```yaml
 type: custom:flightradar24-card
-location_tracker: device_tracker.your_device_tracker
-flights_entity: sensor.flightradar24_current_in_area
-projection_interval: 3
 filter:
   - field: airline_short
     comparator: eq
@@ -455,9 +428,6 @@ Note: Radar will show all tracked flights
 
 ```yaml
 type: custom:flightradar24-card
-location_tracker: device_tracker.your_device_tracker
-flights_entity: sensor.flightradar24_current_in_area
-projection_interval: 3
 defines:
   boeing_747_icao_codes:
     - B741
@@ -508,10 +478,11 @@ filter:
 ```
 
 ## Support
+
 For support, you can:
 
-* Open an issue on the GitHub repository.
-* Join the Home Assistant community forums and ask for help in the relevant threads.
-* Check the documentation for more details and troubleshooting tips.
+- Open an issue on the GitHub repository.
+- Join the Home Assistant community forums and ask for help in the relevant threads.
+- Check the documentation for more details and troubleshooting tips.
 
 Feel free to reach out if you encounter any issues or have suggestions for improvements. Your feedback is highly appreciated!
