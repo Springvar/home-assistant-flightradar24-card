@@ -36,7 +36,8 @@ class Flightradar24Card extends HTMLElement {
 
     this.templates = Object.assign(
       {
-        img_element: '<img style="float: right; width: 120px; height: auto; marginLeft: 8px; border: 1px solid black;" src="${flight.aircraft_photo_small}" />',
+        img_element:
+          '${flight.aircraft_photo_small ? `<img style="float: right; width: 120px; height: auto; marginLeft: 8px; border: 1px solid black;" src="${flight.aircraft_photo_small}" />` : ""}',
         icon: '${flight.altitude > 0 ? (flight.vertical_speed > 100 ? "airplane-takeoff" : flight.vertical_speed < -100 ? "airplane-landing" : "airplane") : "airport"}',
         icon_element: '<ha-icon style="float: left;" icon="mdi:${tpl.icon}"></ha-icon>',
         flight_info: '${[flight.airline_short, flight.flight_number, flight.callsign !== flight.flight_number ? flight.callsign : ""].filter((el) => el).join(" - ")}',
