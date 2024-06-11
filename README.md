@@ -412,6 +412,9 @@ The Flightradar24 Integration Card offers the following features:
 ### Examples
 
 **lists all aircraft in the air with a toggle button to also display aircraft on the ground (altitude <= 0)**
+
+Note: Radar will show all tracked flights
+
 ```yaml
 type: custom:flightradar24-card
 location_tracker: device_tracker.your_device_tracker
@@ -447,6 +450,9 @@ radar:
 ```
 
 **list all approaching and overhead B747 or A380s with toggles to show/hide each of them**
+
+Note: Radar will show all tracked flights
+
 ```yaml
 type: custom:flightradar24-card
 location_tracker: device_tracker.your_device_tracker
@@ -465,7 +471,7 @@ defines:
     - B748
 toggles:
   show_b747s:
-    label: Show Boeing 747s
+    label: Show 747s
     default: true
   show_a380s:
     label: Show A380s
