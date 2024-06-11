@@ -21,8 +21,8 @@ class Flightradar24Card extends HTMLElement {
       throw new Error('Configuration is missing.')
     }
 
-    if (!config.location_tracker) {
-      throw new Error('Location tracker is missing in the configuration.')
+    if (!config.location_tracker && !config.location) {
+      throw new Error('Location or tracker is missing in the configuration.')
     }
 
     if (!config.flights_entity) {
@@ -54,7 +54,8 @@ class Flightradar24Card extends HTMLElement {
         route_element: '<div>${tpl.route_info}</div>',
         flight_status: '<div>${[flight.alt_info, flight.spd_info, flight.hdg_info].filter((el) => el).join(" - ")}</div>',
         position_status: '<div>${[flight.dist_info, flight.direction_info].filter((el) => el).join(" - ")}</div>',
-        proximity_info: '<div style="font-weight: bold; font-style: italic;">${flight.is_approaching && flight.ground_speed > 70 && flight.closest_passing_distance < 15 ? `Closest Distance: ${Math.round(flight.closest_passing_distance)} ${units.distance}, ETA: ${Math.round(flight.eta_to_closest_distance)} min` : ""}</div>',
+        proximity_info:
+          '<div style="font-weight: bold; font-style: italic;">${flight.is_approaching && flight.ground_speed > 70 && flight.closest_passing_distance < 15 ? `Closest Distance: ${Math.round(flight.closest_passing_distance)} ${units.distance}, ETA: ${Math.round(flight.eta_to_closest_distance)} min` : ""}</div>',
         flight_element: '${tpl.header}${tpl.aircraft_info_element}${tpl.route_element}${tpl.flight_status}${tpl.position_status}${tpl.proximity_info}',
       },
       config.templates,
@@ -253,10 +254,10 @@ class Flightradar24Card extends HTMLElement {
       }
 
       if (this.radar.local_features && this.hass) {
-        const trackerState = this.config.test ? this.getTestTracker() : this.hass.states[this.config.location_tracker]
-        if (trackerState) {
-          const refLat = trackerState.attributes.latitude
-          const refLon = trackerState.attributes.longitude
+        const location = this.getLocation()
+        if (location) {
+          const refLat = location.latitude
+          const refLon = location.longitude
 
           this.radar.local_features.forEach((feature) => {
             if (feature.type === 'outline' && feature.points && feature.points.length > 1) {
@@ -460,9 +461,9 @@ class Flightradar24Card extends HTMLElement {
 
     flight.hdg_info = flight.heading !== undefined ? `Hdg: ${Math.round(flight.heading)}°` : undefined
 
-    flight.approach_indicator = flight.ground_speed > 70 ? (flight.is_approaching ? '↓' : '↑') : '';
-    flight.dist_info = `Dist: ${Math.round(flight.distance_to_tracker)}${flight.approach_indicator} ${this.units.distance}`;
-    flight.direction_info = `${Math.round(flight.heading_from_tracker)}° ${flight.cardinal_direction_from_tracker}`;
+    flight.approach_indicator = flight.ground_speed > 70 ? (flight.is_approaching ? '↓' : '↑') : ''
+    flight.dist_info = `Dist: ${Math.round(flight.distance_to_tracker)}${flight.approach_indicator} ${this.units.distance}`
+    flight.direction_info = `${Math.round(flight.heading_from_tracker)}° ${flight.cardinal_direction_from_tracker}`
 
     const template = {}
     Object.keys(this.templates).forEach((key) => {
@@ -832,6 +833,14 @@ class Flightradar24Card extends HTMLElement {
     return value
   }
 
+  getLocation() {
+    return this.config.test
+      ? this.getTestTracker()
+      : this.config.location_tracker && (this.config.location_tracker in this.hass.states)
+      ? this.hass.states[this.config.location_tracker].attributes
+      : { latitude: this.config.location.lat, longitude: this.config.location.lon } 
+  }
+
   subscribeToStateChanges(hass) {
     if (!this.config.test && this.config.update !== false) {
       hass.connection.subscribeEvents((event) => {
@@ -882,10 +891,10 @@ class Flightradar24Card extends HTMLElement {
     let moving = false
     const currentTime = Date.now() / 1000
 
-    const trackerState = this.config.test ? this.getTestTracker() : this.hass.states[this.config.location_tracker]
-    if (trackerState) {
-      const refLat = trackerState.attributes.latitude
-      const refLon = trackerState.attributes.longitude
+    const location = this.getLocation()
+    if (location) {
+      const refLat = location.latitude
+      const refLon = location.longitude
 
       this._flightsData.forEach((flight) => {
         if (!flight._timestamp) {
