@@ -75,11 +75,22 @@ type: custom:flightradar24-card
 location_tracker: device_tracker.your_device_tracker
 flights_entity: sensor.flightradar24_current_in_area
 ```
+or
+```yaml
+type: custom:flightradar24-card
+location:
+  lat: 00.000000
+  lon: 00.000000
+flights_entity: sensor.flightradar24_current_in_area
+```
 
-| Name              | Description                                      | Default Value | Constraints                              |
-|-------------------|--------------------------------------------------|---------------|------------------------------------------|
-| `location_tracker`| Entity ID for the location tracker device.       | None          | Must be a valid device_tracker entity ID |
-| `flights_entity`  | Entity ID for the Flightradar24 sensor.          | None          | Must be a valid sensor entity ID         |
+| Name              | Description                                                                               | Default Value | Constraints                              |
+|-------------------|-------------------------------------------------------------------------------------------|---------------|------------------------------------------|
+| `location_tracker`| Entity ID for the location tracker device.                                                | None          | Must be a valid device_tracker entity ID |
+| `location`        | Latitude and longitude of the observer. Will be used as fallback if tracker is unavailable or not provided. | None      | Must have both lat and lon |
+| `flights_entity`  | Entity ID for the Flightradar24 sensor.                                                   | None          | Must be a valid sensor entity ID         |
+
+*Note:* If location is configured, this must be within the area fetched by the (Flightradar24 Integration)["https://github.com/AlexandrErohin/home-assistant-flightradar24"]. The location would normally be the same given to the integration.
 
 #### Units
 
