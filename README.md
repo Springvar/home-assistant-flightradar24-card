@@ -74,6 +74,7 @@ To use the card, add the following configuration to your Lovelace dashboard:
 type: custom:flightradar24-card
 location_tracker: device_tracker.your_device_tracker
 flights_entity: sensor.flightradar24_current_in_area
+projection_interval: 3
 ```
 or
 ```yaml
@@ -82,13 +83,15 @@ location:
   lat: 00.000000
   lon: 00.000000
 flights_entity: sensor.flightradar24_current_in_area
+projection_interval: 3
 ```
 
-| Name              | Description                                                                               | Default Value | Constraints                              |
-|-------------------|-------------------------------------------------------------------------------------------|---------------|------------------------------------------|
-| `location_tracker`| Entity ID for the location tracker device.                                                | None          | Must be a valid device_tracker entity ID |
-| `location`        | Latitude and longitude of the observer. Will be used as fallback if tracker is unavailable or not provided. | None      | Must have both lat and lon |
-| `flights_entity`  | Entity ID for the Flightradar24 sensor.                                                   | None          | Must be a valid sensor entity ID         |
+| Name                  | Description                                                                               | Default Value | Constraints                              |
+|-----------------------|-------------------------------------------------------------------------------------------|---------------|------------------------------------------|
+| `location_tracker`    | Entity ID for the location tracker device.                                                | None          | Must be a valid device_tracker entity ID |
+| `location`            | Latitude and longitude of the observer. Will be used as fallback if tracker is unavailable or not provided. | None      | Must have both lat and lon |
+| `flights_entity`      | Entity ID for the Flightradar24 sensor.                                                   | None          | Must be a valid sensor entity ID         |
+| `projection_interval` | Interval in seconds for when to recalculate projected positions and altitude.             | None          | Number (seconds)                         |
 
 *Note:* If location is configured, this must be within the area fetched by the (Flightradar24 Integration)["https://github.com/AlexandrErohin/home-assistant-flightradar24"]. The location would normally be the same given to the integration.
 
@@ -164,7 +167,6 @@ Configure radar settings with the radar option.
 ```yaml
 radar:
   range: 35
-  projection_interval: 3
   primary-color: rgb(0,200,100) // Default colors defined by theme
   feature-color: rgb(0,100,20)
 ```
@@ -178,7 +180,6 @@ radar:
 | Name                  | Description                                      | Default Value | Constraints               |
 |-----------------------|--------------------------------------------------|---------------|---------------------------|
 | `range`               | Range of the radar in kilometers                 | None          | Must be a positive number | 
-| `projection_interval` | Interval for radar projection updates in seconds | None          | Must be a positive number |
 | `primary-color`       | Primary color for the radar display              | None          | Must be a valid CSS color |
 | `accent-color`        | Accent Color for the radar display               | None          | Must be a valid CSS color |
 | `feature-color`       | Color for radar features                         | None          | Must be a valid CSS color |
@@ -407,6 +408,98 @@ The Flightradar24 Integration Card offers the following features:
 * Filter flights based on various criteria.
 * Annotate specific flights with custom conditions.
 * Toggle options to control flight visibility.
+
+### Examples
+
+**lists all aircraft in the air with a toggle button to also display aircraft on the ground (altitude <= 0)**
+```yaml
+type: custom:flightradar24-card
+location_tracker: device_tracker.your_device_tracker
+flights_entity: sensor.flightradar24_current_in_area
+projection_interval: 3
+toggles:
+  show_on_ground:
+    label: Show aircraft on the ground
+    default: false
+filter:
+  - type: OR
+    conditions:
+      - field: altitude
+        comparator: gt
+        value: 0
+      - defined: show_on_ground
+        comparator: eq
+        value: true
+```
+
+**lists all aircraft from a given airline ("Delta" in this example), with no radar**
+```yaml
+type: custom:flightradar24-card
+location_tracker: device_tracker.your_device_tracker
+flights_entity: sensor.flightradar24_current_in_area
+projection_interval: 3
+filter:
+  - field: airline_short
+    comparator: eq
+    value: Delta
+radar:
+  hide: true
+```
+
+**list all approaching and overhead B747 or A380s with toggles to show/hide each of them**
+```yaml
+type: custom:flightradar24-card
+location_tracker: device_tracker.your_device_tracker
+flights_entity: sensor.flightradar24_current_in_area
+projection_interval: 3
+defines:
+  boeing_747_icao_codes:
+    - B741
+    - B742
+    - B743
+    - BLCF
+    - B74S
+    - B74R
+    - B748
+    - B744
+    - B748
+toggles:
+  show_b747s:
+    label: Show Boeing 747s
+    default: true
+  show_a380s:
+    label: Show A380s
+    default: true
+filter:
+  - type: AND
+    conditions:
+      - type: OR
+        conditions:
+          - type: AND
+            conditions:
+              - field: aircraft_code
+                comparator: oneOf
+                value: ${boeing_747_icao_codes}
+              - defined: show_b747s
+                comparator: eq
+                value: true
+          - type: AND
+            conditions:
+              - field: aircraft_code
+                comparator: eq
+                value: A388
+              - defined: show_a380s
+                comparator: eq
+                value: true
+  - type: OR
+    conditions:
+      - field: is_approaching
+        comparator: eq
+        value: true
+      - field: distance_to_tracker
+        comparator: lt
+        value: 10
+```
 
 ## Support
 For support, you can:
