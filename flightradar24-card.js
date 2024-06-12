@@ -39,7 +39,7 @@ class Flightradar24Card extends HTMLElement {
         flight_info_element: '<div style="font-weight: bold; padding-left: 5px; padding-top: 5px;">${tpl.flight_info}</div>',
         header: '<div>${tpl.img_element}${tpl.icon_element}${tpl.flight_info_element}</div>',
         aircraft_info: '${[flight.aircraft_registration, flight.aircraft_model].filter((el) => el).join(" - ")}',
-        aircraft_info_element: '${tpl.aircraft_info ? `<div style="clear: left;">${tpl.aircraft_info}</div>` : ""}',
+        aircraft_info_element: '${tpl.aircraft_info ? `<div>${tpl.aircraft_info}</div>` : ""}',
         departure_info:
           '${flight.altitude === 0 && flight.time_scheduled_departure ? ` (${new Date(flight.time_scheduled_departure * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})` : ""}',
         origin_info: '${[flight.airport_origin_code_iata, tpl.departure_info, flight.origin_flag].filter((el) => el).join("")}',
@@ -206,7 +206,7 @@ class Flightradar24Card extends HTMLElement {
   renderRadarScreen() {
     const radarInfoDisplay = this.shadowRoot.getElementById('radar-info');
     if (radarInfoDisplay) {
-      const infoElements = [this.config.radar.hide_range !== true ? `Range: ${Math.round(this.radar.range)}${this.units.distance}` : ''].filter((el) => el);
+      const infoElements = [this.config.radar?.hide_range !== true ? `Range: ${Math.round(this.radar.range)}${this.units.distance}` : ''].filter((el) => el);
       radarInfoDisplay.innerHTML = infoElements.join('<br />');
     }
 
@@ -458,8 +458,8 @@ class Flightradar24Card extends HTMLElement {
         ? this.units.speed === 'kmh'
           ? `Spd: ${Math.round(flight.ground_speed * 1.852)} km/h`
           : this.units.speed === 'mph'
-            ? `Spd: ${Math.round(flight.ground_speed * 1.15078)} mph`
-            : `Spd: ${Math.round(flight.ground_speed)} kts`
+          ? `Spd: ${Math.round(flight.ground_speed * 1.15078)} mph`
+          : `Spd: ${Math.round(flight.ground_speed)} kts`
         : undefined;
 
     flight.hdg_info = flight.heading !== undefined ? `Hdg: ${Math.round(flight.heading)}°` : undefined;
@@ -467,11 +467,6 @@ class Flightradar24Card extends HTMLElement {
     flight.approach_indicator = flight.ground_speed > 70 ? (flight.is_approaching ? '↓' : '↑') : '';
     flight.dist_info = `Dist: ${Math.round(flight.distance_to_tracker)}${flight.approach_indicator} ${this.units.distance}`;
     flight.direction_info = `${Math.round(flight.heading_from_tracker)}° ${flight.cardinal_direction_from_tracker}`;
-
-    const template = {};
-    Object.keys(this.templates).forEach((key) => {
-      template[key] = this.parseTemplate(this.templates[key], flight, template);
-    });
 
     const flightElement = document.createElement('div');
     flightElement.style.clear = 'both';
@@ -481,7 +476,7 @@ class Flightradar24Card extends HTMLElement {
       flightElement.className += ' selected';
     }
 
-    flightElement.innerHTML = template['flight_element'];
+    flightElement.innerHTML = this.parseTemplate('flight_element', flight);
 
     return flightElement;
   }
@@ -807,12 +802,35 @@ class Flightradar24Card extends HTMLElement {
     return text;
   }
 
-  parseTemplate(template, flight, tpl) {
-    try {
-      return new Function('flight', 'tpl', 'units', `return \`${template.replace(/\${(.*?)}/g, (_, expr) => `\${${expr}}`)}\``)(flight, tpl, this.units);
-    } catch (e) {
-      console.error('Error when rendering: ' + template, e);
+  parseTemplate(templateId, flight, trace = []) {
+    if (trace.includes(templateId)) {
+      console.error('Circular template dependencies detected. ' + trace.join(' -> ') + ' -> ' + templateId);
       return '';
+    }
+    let template = this.templates[templateId];
+    if (template === undefined) {
+      console.error('Missing template reference. tpl.' + templateId);
+      return '';
+    }
+
+    const tpl = {};
+    const tagRegex = /\${([^{}]*)}/g;
+    const tplRegex = /tpl\.([a-zA-Z_$][a-zA-Z0-9_$]*)/g;
+
+    let tagMatch;
+    while ((tagMatch = tagRegex.exec(template)) !== null) {
+        let tplMatch;
+        while ((tplMatch = tplRegex.exec(tagMatch[1])) !== null) {
+            tpl[tplMatch[1]] = this.parseTemplate(tplMatch[1], flight, [...trace, templateId]);
+        }
+    }
+
+    try {
+        const parsedTemplate = new Function('flight', 'tpl', 'units', `return \`${template.replace(/\${(.*?)}/g, (_, expr) => `\${${expr}}`)}\``)(flight, tpl, this.units);
+        return parsedTemplate;
+    } catch (e) {
+        console.error('Error when rendering: ' + template, e);
+        return '';
     }
   }
 

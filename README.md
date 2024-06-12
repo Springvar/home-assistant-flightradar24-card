@@ -339,7 +339,7 @@ By default, the card comes with predefined templates for each element. However, 
 | `flight_info_element`   | HTML template for rendering the flight information element.                                 | `<div style="font-weight: bold; padding-left: 5px; padding-top: 5px;">${tpl.flight_info}</div>`                                                                                                                                                                                                              |
 | `header`                | HTML template for rendering the header section of the flight card.                          | `<div>${tpl.img_element}${tpl.icon_element}${tpl.flight_info_element}</div>`                                                                                                                                                                                                                                 |
 | `aircraft_info`         | Template for displaying aircraft registration and model information.                        | `${[flight.aircraft_registration, flight.aircraft_model].filter((el) => el).join(" - ")}`                                                                                                                                                                                                                    |
-| `aircraft_info_element` | HTML template for rendering the aircraft information element.                               | `` ${tpl.aircraft_info ? `<div style="clear: left;">${tpl.aircraft_info}</div>` : ""} ``                                                                                                                                                                                                                     |
+| `aircraft_info_element` | HTML template for rendering the aircraft information element.                               | `` ${tpl.aircraft_info ? `<div>${tpl.aircraft_info}</div>` : ""} ``                                                                                                                                                                                                                                          |
 | `departure_info`        | Template for displaying departure time information.                                         | `` ${flight.altitude === 0 && flight.time_scheduled_departure ? ` (${new Date(flight.time_scheduled_departure * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})` : ""} ``                                                                                                             |
 | `origin_info`           | Template for displaying origin airport information.                                         | `${[flight.airport_origin_code_iata, tpl.departure_info, flight.origin_flag].filter((el) => el).join("")}`                                                                                                                                                                                                   |
 | `arrival_info`          | Template for displaying arrival airport information.                                        |                                                                                                                                                                                                                                                                                                              |
@@ -351,9 +351,12 @@ By default, the card comes with predefined templates for each element. However, 
 | `proximity_info`        | Template for displaying proximity information when the flight is approaching.               | `<div style="font-weight: bold; font-style: italic;">${flight.is_approaching && flight.ground_speed > 70 && flight.closest_passing_distance < 15 ? `Closest Distance: ${Math.round(flight.closest_passing_distance)} ${units.distance}, ETA: ${Math.round(flight.eta_to_closest_distance)} min` : ""}</div>` |
 | `flight_element`        | HTML template for rendering the complete flight element.                                    | `${tpl.header}${tpl.aircraft_info_element}${tpl.route_element}${tpl.flight_status}${tpl.position_status}${tpl.proximity_info}`                                                                                                                                                                               |
 
-**IMPORTANT**: The templates are evaluated in the order they appear. You can reference the result of rendered templates as `tpl.[name of template]` as long as they are defined before the template using them.
+**Note:** The template used when rendering flights is the `flight_element` template. The default `flight_element` consist of the templates for `header`, `aircraft_info_element`, `route_element`, `flight_status`, `position_status` and `proximity_info`.
 
-You can customize each template by providing your own HTML structure and using placeholders like `${flight.property}` to dynamically insert flight data into the template. For example, `${flight.aircraft_photo_small}` will be replaced with the URL of the small aircraft photo. Refer to the [Flightradar24 integration documentation](https://github.com/AlexandrErohin/home-assistant-flightradar24?tab=readme-ov-file#flight-fields) for a list of valid flight fields.
+You can customize each template by providing your own javascript template string building HTML structure and using placeholders like `${flight.property}` to dynamically insert flight data into the template. For example, `${flight.aircraft_photo_small}` will be replaced with the URL of the small aircraft photo. Refer to the [Flightradar24 integration documentation](https://github.com/AlexandrErohin/home-assistant-flightradar24?tab=readme-ov-file#flight-fields) for a list of valid flight fields.
+
+You can reference the result other templates as `tpl.[name of template]`.
+You can reference configured units as `unit.[unit name]`.
 
 In addition you will find these fields defined
 
@@ -389,7 +392,7 @@ The Flightradar24 Integration Card offers the following features:
 
 ### Examples
 
-**lists all aircraft in the air with a toggle button to also display aircraft on the ground (altitude <= 0)**
+#### Example: Lists all aircraft in the air with a toggle button to also display aircraft on the ground (altitude <= 0)
 
 Note: Radar will show all tracked flights
 
@@ -410,7 +413,7 @@ filter:
         value: true
 ```
 
-**lists all aircraft from a given airline ("Delta" in this example), with no radar**
+#### Example: List all aircraft from a given airline ("Delta" in this example), with no radar
 
 ```yaml
 type: custom:flightradar24-card
@@ -422,7 +425,7 @@ radar:
   hide: true
 ```
 
-**list all approaching and overhead B747 or A380s with toggles to show/hide each of them**
+#### Example: List all approaching and overhead B747 or A380s with toggles to show/hide either
 
 Note: Radar will show all tracked flights
 
@@ -476,6 +479,20 @@ filter:
         comparator: lt
         value: 10
 ```
+
+#### Example: Change the flight template to display a tail image instead of airplane icon
+
+```yaml
+type: custom:flightradar24-card
+templates:
+  tail_image: >-
+    <img style="float: left; margin-right: 5px;"
+    src="https://content.airhex.com/content/logos/airlines_${flight.airline_icao}_90_90_f.png?proportions=keep"
+    />
+  header: ${tpl.tail_image}${tpl.flight_info_element}
+```
+
+Note: Here we add a new tail_image template, and update the header template (which previously referenced the icon template) to include our new tail_image template.
 
 ## Support
 
