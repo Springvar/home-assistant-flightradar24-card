@@ -427,6 +427,8 @@ radar:
 
 #### Example: List all approaching and overhead B747 or A380s with toggles to show/hide either
 
+![Template with toggles](resources/example_templates_747_a380_toggle.PNG "Example")
+
 Note: Radar will show all tracked flights
 
 ```yaml
@@ -444,10 +446,10 @@ defines:
     - B748
 toggles:
   show_b747s:
-    label: Show 747s
+    label: 747s
     default: true
   show_a380s:
-    label: Show A380s
+    label: A380s
     default: true
 filter:
   - type: AND
@@ -481,6 +483,8 @@ filter:
 ```
 
 #### Example: Change the flight template to display a tail image instead of airplane icon
+
+![Template with tails](resources/example_templates_tails_dark.PNG "Example")
 
 ```yaml
 type: custom:flightradar24-card
