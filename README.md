@@ -237,6 +237,21 @@ radar:
 | `type`   | Type of the radar feature           | None          | Must be `outline`                 |
 | `points` | List of points defining the outline | None          | Must be a list of lat/lon objects |
 
+**Tip:** You can use a LLM like ChatGPT to generate outlines for you, and you may get useful results.
+
+Try a question like this one:
+```ChatGPT
+I need a series of coordinates to make out the rough shape of Manhattan.
+I want them printed as a yaml list on the format:
+- lat: MM.MMMMMM
+  lon: MM.MMMMMM
+  desc: [Placename]
+- lat: NN.NNNNNN
+  lon: NN.NNNNNN
+  desc: [Placename]
+```
+The desc: fields will be ignored by the Card, but will be useful if you want to add or move coordinates.
+
 #### Annotation Configuration
 
 Control how single fields are rendered based on conditions. Add annotations to highlight certain flights based on custom criteria.
