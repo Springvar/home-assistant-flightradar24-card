@@ -304,6 +304,7 @@ class Flightradar24Card extends HTMLElement {
                 runway.style.height = '1px';
                 runway.style.top = featureY + 'px';
                 runway.style.left = featureX + 'px';
+                runway.style.transformOrigin = '0 50%';
                 runway.style.transform = `rotate(${heading - 90}deg)`;
 
                 radarScreen.appendChild(runway);
