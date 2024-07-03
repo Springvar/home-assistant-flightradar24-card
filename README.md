@@ -11,8 +11,10 @@ Custom card to use with [Flightradar24 integration](https://github.com/AlexandrE
 3. [Configuration](#configuration)
    - [Basic Configuration](#basic-configuration)
    - [Advanced Configuration](#advanced-configuration)
+     - [Sort](#sort-configuration)
      - [Filter](#filter-configuration)
      - [Radar](#radar-configuration)
+       - [Radar filter](#radar-filter)
        - [Radar features](#radar-features)
      - [Annotations](#annotation-configuration)
      - [Toggles](#toggles-configuration)
@@ -90,28 +92,53 @@ The location would normally be the same given to the integration. If no location
 
 ### Advanced Configuration
 
+#### Sort Configuration
+
+To sort the displayed flights with a custom sort order, use the sort option.
+
+```yaml
+sort:
+  - field: id
+    comparator: oneOf
+    value: ${selectedFlights}
+    order: desc
+  - field: altitude
+    comparator: eq
+    value: 0
+    order: asc
+  - field: distance
+    order: desc
+```
+
+| Name         | Description                                                                                                                                   | Default Value | Constraints                                                      |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ---------------------------------------------------------------- |
+| `field`      | Flight field to sort on                                                                                                                       | None          | Must be valid flight field                                       |
+| `order`      | Sort in ascending or descending order                                                                                                         | ASC           | Must be `ASC` or `DESC`                                          |
+| `comparator` | Optional comparator to evaluate field against a value. If no comparator is given, the fields of the flights are evaluated against each other. | None          | Must be `eq`, `lt`, `lte`, `gt`, `gte`, `oneOf`, `containsOneOf` |
+| `value`      | Optional value to evaluate field against with comparator                                                                                      | None          | Must be a valid value or list of values                          |
+
 #### Filter Configuration
 
 To filter the displayed flights, use the filter option.
 
-```
+```yaml
 filter:
-   - type: OR
-     conditions:
-       - field: distance_to_tracker
-         comparator: lte
-         value: 15
-       - type: AND
-         conditions:
-           - field: closest_passing_distance
-             comparator: lte
-             value: 15
-           - field: is_approaching
-             comparator: eq
-             value: true
-       - field: altitude
-         comparator: lte
-         value: 2500
+  - type: OR
+    conditions:
+      - field: distance_to_tracker
+        comparator: lte
+        value: 15
+      - type: AND
+        conditions:
+          - field: closest_passing_distance
+            comparator: lte
+            value: 15
+          - field: is_approaching
+            comparator: eq
+            value: true
+      - field: altitude
+        comparator: lte
+        value: 2500
 ```
 
 ##### Group conditions
@@ -130,11 +157,11 @@ filter:
 
 ##### Field comparision condition
 
-| Name                 | Description                                | Default Value | Constraints                                                     |
-| -------------------- | ------------------------------------------ | ------------- | --------------------------------------------------------------- |
-| `field` or `defined` | Flight field or defined value to filter on | None          | Must be a valid field name or defined property                  |
-| `comparator`         | Comparator for the filter condition        | None          | Can be 'eq', 'lt', 'lte', 'gt', 'gte', 'oneOf', 'containsOneOf' |
-| `value`              | Value to compare against                   | None          | Must be a valid value or list of values                         |
+| Name                 | Description                                | Default Value | Constraints                                                      |
+| -------------------- | ------------------------------------------ | ------------- | ---------------------------------------------------------------- |
+| `field` or `defined` | Flight field or defined value to filter on | None          | Must be a valid field name or defined property                   |
+| `comparator`         | Comparator for the filter condition        | None          | Must be `eq`, `lt`, `lte`, `gt`, `gte`, `oneOf`, `containsOneOf` |
+| `value`              | Value to compare against                   | None          | Must be a valid value or list of values                          |
 
 #### Radar Configuration
 
@@ -143,6 +170,7 @@ Configure radar settings with the radar option.
 ```yaml
 radar:
   range: 35
+  filter: false
   primary-color: rgb(0,200,100) // Default colors defined by theme
   feature-color: rgb(0,100,20)
 ```
@@ -154,15 +182,28 @@ radar:
   hide: true
 ```
 
-| Name                   | Description                                  | Default Value                     | Constraints               |
-| ---------------------- | -------------------------------------------- | --------------------------------- | ------------------------- |
-| `range`                | Range of the radar in selected distance unit | 35 km or 20 miles                 | Must be a positive number |
-| `primary-color`        | Primary color for the radar display          | `var(--dark-primary-color)`       | Must be a valid CSS color |
-| `accent-color`         | Accent Color for the radar display           | `var(--accent-color)`             | Must be a valid CSS color |
-| `feature-color`        | Color for radar features                     | `var(--primary-background-color)` | Must be a valid CSS color |
-| `callsign-label-color` | Color for callsign labels                    | `var(--secondary-text-color)`     | Must be a valid CSS color |
-| `hide`                 | Option to hide the radar                     | `false`                           | Must be `true` or `false` |
-| `hide_range`           | Option to hide the radar range               | `false`                           | Must be `true` or `false` |
+| Name                   | Description                                  | Default Value                     | Constraints                                           |
+| ---------------------- | -------------------------------------------- | --------------------------------- | ----------------------------------------------------- |
+| `range`                | Range of the radar in selected distance unit | 35 km or 20 miles                 | Must be a positive number                             |
+| `filter`               | Filter the flights displayed on the radar    | false                             | `true`, `false` or a filter configuration (see below) |
+| `primary-color`        | Primary color for the radar display          | `var(--dark-primary-color)`       | Must be a valid CSS color                             |
+| `accent-color`         | Accent Color for the radar display           | `var(--accent-color)`             | Must be a valid CSS color                             |
+| `feature-color`        | Color for radar features                     | `var(--primary-background-color)` | Must be a valid CSS color                             |
+| `callsign-label-color` | Color for callsign labels                    | `var(--secondary-text-color)`     | Must be a valid CSS color                             |
+| `hide`                 | Option to hide the radar                     | `false`                           | Must be `true` or `false`                             |
+| `hide_range`           | Option to hide the radar range               | `false`                           | Must be `true` or `false`                             |
+
+##### Radar Filter
+
+You can filter the flights displayed on the radar using a filter configuration similar to the main filter configuration.
+
+```yaml
+radar:
+  filter:
+    - field: altitude
+      comparator: lte
+      value: 5000
+```
 
 ##### Radar Features
 
@@ -240,6 +281,7 @@ radar:
 **Tip:** You can use a LLM like ChatGPT to generate outlines for you, and you may get useful results.
 
 Try a question like this one:
+
 ```ChatGPT
 I need a series of coordinates to make out the rough shape of Manhattan.
 I want them printed as a yaml list on the format:
@@ -250,6 +292,7 @@ I want them printed as a yaml list on the format:
   lon: NN.NNNNNN
   desc: [Placename]
 ```
+
 The desc: fields will be ignored by the Card, but will be useful if you want to add or move coordinates.
 
 #### Annotation Configuration
@@ -442,7 +485,7 @@ radar:
 
 #### Example: List all approaching and overhead B747 or A380s with toggles to show/hide either
 
-![Template with toggles](resources/example_templates_747_a380_toggle.PNG "Example")
+![Template with toggles](resources/example_templates_747_a380_toggle.PNG 'Example')
 
 Note: Radar will show all tracked flights
 
@@ -499,7 +542,7 @@ filter:
 
 #### Example: Change the flight template to display a tail image instead of airplane icon
 
-![Template with tails](resources/example_templates_tails_dark.PNG "Example")
+![Template with tails](resources/example_templates_tails_dark.PNG 'Example')
 
 ```yaml
 type: custom:flightradar24-card
