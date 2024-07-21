@@ -862,7 +862,7 @@ class Flightradar24Card extends HTMLElement {
       if (!compiledTemplates[innerTemplateId]) {
         compiledTemplates[innerTemplateId] = this.compileTemplate(templates, innerTemplateId, [...trace, templateId]);
       }
-      template = template.replace(`tpl.${innerTemplateId}`, '(`' + compiledTemplates[innerTemplateId] + '`)');
+      template = template.replace(`tpl.${innerTemplateId}`, '(`' + compiledTemplates[innerTemplateId] + '`).replace(/^undefined$/, "")');
     }
 
     templates['compiled_' + templateId] = template;
@@ -874,7 +874,7 @@ class Flightradar24Card extends HTMLElement {
     const compiledTemplate = this.compileTemplate(this.templates, templateId);
     try {
       const parsedTemplate = new Function('flight', 'tpl', 'units', `return \`${compiledTemplate.replace(/\${(.*?)}/g, (_, expr) => `\${${expr}}`)}\``)(flight, {}, this.units);
-      return parsedTemplate !== 'undefined' ? parsedTemplate : undefined;
+      return parsedTemplate !== 'undefined' ? parsedTemplate : "";
     } catch (e) {
       console.error('Error when rendering: ' + compiledTemplate, e);
       return '';
