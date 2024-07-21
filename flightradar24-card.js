@@ -54,8 +54,12 @@ class Flightradar24Card extends HTMLElement {
         destination_info: '${[flight.airport_destination_code_iata, tpl.arrival_info, flight.destination_flag].filter((el) => el).join(" ")}',
         route_info: '${[tpl.origin_info, tpl.destination_info].filter((el) => el).join(" -> ")}',
         route_element: '<div>${tpl.route_info}</div>',
-        flight_status: '<div>${[flight.alt_info, flight.spd_info, flight.hdg_info].filter((el) => el).join(" - ")}</div>',
-        position_status: '<div>${[flight.dist_info, flight.direction_info].filter((el) => el).join(" - ")}</div>',
+        alt_info: '${flight.alt_in_unit ? "Alt: " + flight.alt_in_unit + flight.climb_descend_indicator : undefined}',
+        spd_info: '${flight.spd_in_unit ? "Spd: " + flight.spd_in_unit : undefined}',
+        hdg_info: '${flight.heading ? "Hdg: " + flight.heading + "°" : undefined}',
+        dist_info: '${flight.dist_in_unit ? "Dist: " + flight.dist_in_unit + flight.approach_indicator : undefined}',
+        flight_status: '<div>${[tpl.alt_info, tpl.spd_info, tpl.hdg_info].filter((el) => el).join(" - ")}</div>',
+        position_status: '<div>${[tpl.dist_info, flight.direction_info].filter((el) => el).join(" - ")}</div>',
         proximity_info:
           '<div style="font-weight: bold; font-style: italic;">${flight.is_approaching && flight.ground_speed > 70 && flight.closest_passing_distance < 15 ? `Closest Distance: ${Math.round(flight.closest_passing_distance)} ${units.distance}, ETA: ${Math.round(flight.eta_to_closest_distance)} min` : ""}</div>',
         flight_element: '${tpl.header}${tpl.aircraft_info_element}${tpl.route_element}${tpl.flight_status}${tpl.position_status}${tpl.proximity_info}'
@@ -477,28 +481,26 @@ class Flightradar24Card extends HTMLElement {
       : '';
 
     flight.climb_descend_indicator = Math.abs(flight.vertical_speed) > 100 ? (flight.vertical_speed > 100 ? '↑' : '↓') : '';
-    flight.alt_info =
+    flight.alt_in_unit =
       flight.altitude >= 17750
-        ? `Alt: FL${Math.round(flight.altitude / 1000) * 10}${flight.climb_descend_indicator}`
+        ? `FL${Math.round(flight.altitude / 1000) * 10}`
         : flight.altitude > 0
         ? this.units.altitude === 'm'
-          ? `Alt: ${Math.round(flight.altitude * 0.3048)} m${flight.climb_descend_indicator}`
-          : `Alt: ${Math.round(flight.altitude)} ft${flight.climb_descend_indicator}`
+          ? `${Math.round(flight.altitude * 0.3048)} m`
+          : `${Math.round(flight.altitude)} ft`
         : undefined;
 
-    flight.spd_info =
+    flight.spd_in_unit =
       flight.ground_speed > 0
         ? this.units.speed === 'kmh'
-          ? `Spd: ${Math.round(flight.ground_speed * 1.852)} km/h`
+          ? `${Math.round(flight.ground_speed * 1.852)} km/h`
           : this.units.speed === 'mph'
-          ? `Spd: ${Math.round(flight.ground_speed * 1.15078)} mph`
-          : `Spd: ${Math.round(flight.ground_speed)} kts`
+          ? `${Math.round(flight.ground_speed * 1.15078)} mph`
+          : `${Math.round(flight.ground_speed)} kts`
         : undefined;
 
-    flight.hdg_info = flight.heading !== undefined ? `Hdg: ${Math.round(flight.heading)}°` : undefined;
-
     flight.approach_indicator = flight.ground_speed > 70 ? (flight.is_approaching ? '↓' : '↑') : '';
-    flight.dist_info = `Dist: ${Math.round(flight.distance_to_tracker)}${flight.approach_indicator} ${this.units.distance}`;
+    flight.dist_in_unit = `${Math.round(flight.distance_to_tracker)}${this.units.distance}`;
     flight.direction_info = `${Math.round(flight.heading_from_tracker)}° ${flight.cardinal_direction_from_tracker}`;
 
     const flightElement = document.createElement('div');
@@ -860,7 +862,7 @@ class Flightradar24Card extends HTMLElement {
 
     try {
       const parsedTemplate = new Function('flight', 'tpl', 'units', `return \`${template.replace(/\${(.*?)}/g, (_, expr) => `\${${expr}}`)}\``)(flight, tpl, this.units);
-      return parsedTemplate;
+      return parsedTemplate !== 'undefined' ? parsedTemplate : undefined;
     } catch (e) {
       console.error('Error when rendering: ' + template, e);
       return '';
