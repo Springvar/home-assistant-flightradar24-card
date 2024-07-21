@@ -837,34 +837,46 @@ class Flightradar24Card extends HTMLElement {
     return text;
   }
 
-  parseTemplate(templateId, flight, trace = []) {
+  compileTemplate(templates, templateId, trace = []) {
     if (trace.includes(templateId)) {
       console.error('Circular template dependencies detected. ' + trace.join(' -> ') + ' -> ' + templateId);
       return '';
     }
-    let template = this.templates[templateId];
+
+    if (templates['compiled_' + templateId]) {
+      return templates['compiled_' + templateId];
+    }
+
+    let template = templates[templateId];
     if (template === undefined) {
-      console.error('Missing template reference. tpl.' + templateId);
+      console.error('Missing template reference: ' + templateId);
       return '';
     }
 
-    const tpl = {};
-    const tagRegex = /\${([^{}]*)}/g;
     const tplRegex = /tpl\.([a-zA-Z_$][a-zA-Z0-9_$]*)/g;
+    let tplMatch;
+    const compiledTemplates = {};
 
-    let tagMatch;
-    while ((tagMatch = tagRegex.exec(template)) !== null) {
-      let tplMatch;
-      while ((tplMatch = tplRegex.exec(tagMatch[1])) !== null) {
-        tpl[tplMatch[1]] = this.parseTemplate(tplMatch[1], flight, [...trace, templateId]);
+    while ((tplMatch = tplRegex.exec(template)) !== null) {
+      const innerTemplateId = tplMatch[1];
+      if (!compiledTemplates[innerTemplateId]) {
+        compiledTemplates[innerTemplateId] = this.compileTemplate(templates, innerTemplateId, [...trace, templateId]);
       }
+      template = template.replace(`tpl.${innerTemplateId}`, '(`' + compiledTemplates[innerTemplateId] + '`)');
     }
 
+    templates['compiled_' + templateId] = template;
+
+    return template;
+  }
+
+  parseTemplate(templateId, flight) {
+    const compiledTemplate = this.compileTemplate(this.templates, templateId);
     try {
-      const parsedTemplate = new Function('flight', 'tpl', 'units', `return \`${template.replace(/\${(.*?)}/g, (_, expr) => `\${${expr}}`)}\``)(flight, tpl, this.units);
+      const parsedTemplate = new Function('flight', 'tpl', 'units', `return \`${compiledTemplate.replace(/\${(.*?)}/g, (_, expr) => `\${${expr}}`)}\``)(flight, {}, this.units);
       return parsedTemplate !== 'undefined' ? parsedTemplate : undefined;
     } catch (e) {
-      console.error('Error when rendering: ' + template, e);
+      console.error('Error when rendering: ' + compiledTemplate, e);
       return '';
     }
   }
