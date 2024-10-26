@@ -184,14 +184,15 @@ radar:
 
 | Name                   | Description                                  | Default Value                     | Constraints                                           |
 | ---------------------- | -------------------------------------------- | --------------------------------- | ----------------------------------------------------- |
-| `range`                | Range of the radar in selected distance unit | 35 km or 20 miles                 | Must be a positive number                             |
-| `filter`               | Filter the flights displayed on the radar    | false                             | `true`, `false` or a filter configuration (see below) |
-| `primary-color`        | Primary color for the radar display          | `var(--dark-primary-color)`       | Must be a valid CSS color                             |
-| `accent-color`         | Accent Color for the radar display           | `var(--accent-color)`             | Must be a valid CSS color                             |
-| `feature-color`        | Color for radar features                     | `var(--primary-background-color)` | Must be a valid CSS color                             |
-| `callsign-label-color` | Color for callsign labels                    | `var(--secondary-text-color)`     | Must be a valid CSS color                             |
-| `hide`                 | Option to hide the radar                     | `false`                           | Must be `true` or `false`                             |
-| `hide_range`           | Option to hide the radar range               | `false`                           | Must be `true` or `false`                             |
+| `range`                | Range of the radar in selected distance unit     | 35 km or 20 miles                 | Must be a positive number                             |
+| `ring_distance`        | Distance between rings in selected distance unit | 10 km or 10 miles                 | Must be a positive number                             |
+| `filter`               | Filter the flights displayed on the radar        | false                             | `true`, `false` or a filter configuration (see below) |
+| `primary-color`        | Primary color for the radar display              | `var(--dark-primary-color)`       | Must be a valid CSS color                             |
+| `accent-color`         | Accent Color for the radar display               | `var(--accent-color)`             | Must be a valid CSS color                             |
+| `feature-color`        | Color for radar features                         | `var(--primary-background-color)` | Must be a valid CSS color                             |
+| `callsign-label-color` | Color for callsign labels                        | `var(--secondary-text-color)`     | Must be a valid CSS color                             |
+| `hide`                 | Option to hide the radar                         | `false`                           | Must be `true` or `false`                             |
+| `hide_range`           | Option to hide the radar range                   | `false`                           | Must be `true` or `false`                             |
 
 ##### Radar Filter
 
