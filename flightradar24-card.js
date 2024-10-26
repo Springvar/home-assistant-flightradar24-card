@@ -512,6 +512,7 @@ class Flightradar24Card extends HTMLElement {
     }
 
     flightElement.innerHTML = this.parseTemplate('flight_element', flight);
+    flightElement.addEventListener('click', () => this.toggleSelectedFlight(flight));
 
     return flightElement;
   }
