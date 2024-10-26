@@ -32,7 +32,7 @@ class Flightradar24Card extends HTMLElement {
       config.sort ?? [
         { field: 'id', comparator: 'oneOf', value: '${selectedFlights}', order: 'DESC' },
         { field: 'altitude', comparator: 'eq', value: 0, order: 'ASC' },
-        { field: 'closest_passing_distance ?? distance_to_tracker', order: 'DESC' }
+        { field: 'closest_passing_distance ?? distance_to_tracker', order: 'ASC' }
       ]
     );
 
@@ -1182,7 +1182,7 @@ class Flightradar24Card extends HTMLElement {
         }
 
         if (result !== 0) {
-          return order === 'DESC' ? -result : result;
+          return order.toUpperCase() === 'DESC' ? -result : result;
         }
       }
 

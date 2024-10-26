@@ -106,8 +106,8 @@ sort:
     comparator: eq
     value: 0
     order: asc
-  - field: distance
-    order: desc
+  - field: distance_to_tracker
+    order: asc
 ```
 
 | Name         | Description                                                                                                                                   | Default Value | Constraints                                                      |
