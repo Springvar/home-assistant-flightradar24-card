@@ -421,6 +421,10 @@ class Flightradar24Card extends HTMLElement {
             } else {
               plane.classList.add('plane-medium');
             }
+            if (this._selectedFlights && this._selectedFlights.includes(flight.id)) {
+              plane.classList.add('selected');
+            }
+        
             plane.addEventListener('click', () => this.toggleSelectedFlight(flight));
             label.addEventListener('click', () => this.toggleSelectedFlight(flight));
 
@@ -698,6 +702,13 @@ class Flightradar24Card extends HTMLElement {
         border-left: 4px solid transparent;
         border-right: 4px solid transparent;
         border-bottom: 16px solid var(--radar-accent-color);
+      }
+.plane.selected {
+        z-index: 3;
+        transform: scale(1.2);
+      }
+      .plane.selected .arrow {
+        filter: brightness(1.4);
       }
       .callsign-label {
         position: absolute;
