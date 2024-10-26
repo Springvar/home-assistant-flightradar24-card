@@ -503,7 +503,7 @@ class Flightradar24Card extends HTMLElement {
           : `${Math.round(flight.ground_speed)} kts`
         : undefined;
 
-    flight.approach_indicator = flight.ground_speed > 70 ? (flight.is_approaching ? '↓' : '↑') : '';
+    flight.approach_indicator = flight.ground_speed > 70 ? (flight.is_approaching ? '↓' : flight.is_receding ? '↑' : '') : '';
     flight.dist_in_unit = `${Math.round(flight.distance_to_tracker)}${this.units.distance}`;
     flight.direction_info = `${Math.round(flight.heading_from_tracker)}° ${flight.cardinal_direction_from_tracker}`;
 
@@ -703,7 +703,7 @@ class Flightradar24Card extends HTMLElement {
         border-right: 4px solid transparent;
         border-bottom: 16px solid var(--radar-accent-color);
       }
-.plane.selected {
+      .plane.selected {
         z-index: 3;
         transform: scale(1.2);
       }
@@ -1010,7 +1010,8 @@ class Flightradar24Card extends HTMLElement {
         flight.heading_from_tracker = this.calculateBearing(refLat, refLon, flight.latitude, flight.longitude);
         flight.cardinal_direction_from_tracker = this.getCardinalDirection(flight.heading_from_tracker);
         const heading_to_tracker = (flight.heading_from_tracker + 180) % 360;
-        flight.is_approaching = this.isApproaching(heading_to_tracker, flight.heading);
+        flight.is_approaching = this.areHeadingsAligned(heading_to_tracker, flight.heading);
+        flight.is_receding = this.areHeadingsAligned(flight.heading_from_tracker, flight.heading);
 
         if (flight.is_approaching) {
           let closestPassingLatLon = this.calculateClosestPassingPoint(refLat, refLon, flight.latitude, flight.longitude, flight.heading);
@@ -1073,9 +1074,9 @@ class Flightradar24Card extends HTMLElement {
     return directions[index];
   }
 
-  isApproaching(direction_to_tracker, heading) {
+  areHeadingsAligned(direction_to_tracker, heading, margin = 60) {
     const diff = Math.abs((direction_to_tracker - heading + 360) % 360);
-    return diff <= 45 || diff >= 315;
+    return diff <= margin || diff >= (360 - margin);
   }
 
   calculateNewPosition(lat, lon, bearing, distance) {
