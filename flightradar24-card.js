@@ -1062,7 +1062,7 @@ class Flightradar24Card extends HTMLElement {
   }
 
   isApproaching(direction_to_tracker, heading) {
-    const diff = Math.abs(direction_to_tracker - heading);
+    const diff = Math.abs((direction_to_tracker - heading + 360) % 360);
     return diff <= 45 || diff >= 315;
   }
 
