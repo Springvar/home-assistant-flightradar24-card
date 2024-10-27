@@ -1034,6 +1034,11 @@ class Flightradar24Card extends HTMLElement {
           }
 
           flight.heading_from_tracker_to_closest_passing = Math.round(this.calculateBearing(refLat, refLon, closestPassingLatLon.lat, closestPassingLatLon.lon));
+        } else {
+          delete flight.closest_passing_distance;
+          delete flight.eta_to_closest_distance;
+          delete flight.heading_from_tracker_to_closest_passing;
+          delete flight.is_landing;
         }
       });
     } else {
