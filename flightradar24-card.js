@@ -250,7 +250,7 @@ class Flightradar24Card extends HTMLElement {
       radarScreenBackground.id = 'radar-screen-background';
       radarScreen.appendChild(radarScreenBackground);
 
-      const ringDistance = this.config.radar.ring_distance ?? 10; // Distance between rings in km or miles
+      const ringDistance = this.radar.ring_distance ?? 10; // Distance between rings in km or miles
       const ringCount = Math.floor(radarRange / ringDistance);
 
       for (let i = 1; i <= ringCount; i++) {
