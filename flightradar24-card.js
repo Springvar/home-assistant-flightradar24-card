@@ -448,13 +448,17 @@ class Flightradar24Card extends HTMLElement {
 
     this.renderRadarScreen();
 
-    this.renderRadar(
-      this.radar.filter === true
-        ? this.applyFilter(this._flightsData, this.config.filter)
-        : this.radar.filter && typeof this.radar.filter === 'object'
-        ? this.applyFilter(this._flightsData, this.radar.filter)
-        : this._flightsData
-    );
+    if(this.renderDynamicOnRangeChange) {
+      this.renderDynamic()
+    } else {
+      this.renderRadar(
+        this.radar.filter === true
+          ? this.applyFilter(this._flightsData, this.config.filter)
+          : this.radar.filter && typeof this.radar.filter === 'object'
+          ? this.applyFilter(this._flightsData, this.radar.filter)
+          : this._flightsData
+      );
+    }
   }
 
   renderFlight(_flight) {
@@ -902,6 +906,8 @@ class Flightradar24Card extends HTMLElement {
       if (key === 'selectedFlights') {
         return this._selectedFlights;
       } else if(key === 'radar_range') {
+        // Filter is dependent on range
+        this.renderDynamicOnRangeChange = true;
         return this.radar.range;
       } else if (key in this.defines) {
         return this.defines[key];
