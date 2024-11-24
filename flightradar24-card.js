@@ -27,6 +27,7 @@ class Flightradar24Card extends HTMLElement {
     this.config.no_flights_message = config.no_flights_message ?? 'No flights are currently visible. Please check back later.';
     this.units = Object.assign({ altitude: 'ft', speed: 'kts', distance: 'km' }, config.units);
     this.radar = Object.assign({ range: this.units.distance === 'km' ? 35 : 25 }, config.radar);
+    this.radar.initialRange = this.radar.range;
     this.defines = Object.assign({}, config.defines);
     this.sortFn = this.getSortFn(
       config.sort ?? [
@@ -426,7 +427,7 @@ class Flightradar24Card extends HTMLElement {
             if (this._selectedFlights && this._selectedFlights.includes(flight.id)) {
               plane.classList.add('selected');
             }
-        
+
             plane.addEventListener('click', () => this.toggleSelectedFlight(flight));
             label.addEventListener('click', () => this.toggleSelectedFlight(flight));
 
@@ -438,7 +439,7 @@ class Flightradar24Card extends HTMLElement {
 
   updateRadarRange(delta) {
     const minRange = this.radar.min_range || 1;
-    const maxRange = this.radar.max_range || 100;
+    const maxRange = this.radar.max_range || Math.max(100, this.radar.initialRange);
     let newRange = this.radar.range + delta;
 
     if (newRange < minRange) newRange = minRange;
