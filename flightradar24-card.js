@@ -61,7 +61,7 @@ class Flightradar24Card extends HTMLElement {
         flight_status: '<div>${joinList(" - ")(tpl.alt_info, tpl.spd_info, tpl.hdg_info)}</div>',
         position_status: '<div>${joinList(" - ")(tpl.dist_info, flight.direction_info)}</div>',
         proximity_info:
-          '<div style="font-weight: bold; font-style: italic;">${flight.is_approaching && flight.ground_speed > 70 && flight.closest_passing_distance < 15 ? `Closest Distance: ${Math.round(flight.closest_passing_distance)} ${units.distance}, ETA: ${Math.round(flight.eta_to_closest_distance)} min` : ""}</div>',
+          '<div style="font-weight: bold; font-style: italic;">${flight.is_approaching && flight.ground_speed > 70 && flight.closest_passing_distance < 15 ? `Closest Distance: ${flight.closest_passing_distance} ${units.distance}, ETA: ${flight.eta_to_closest_distance} min` : ""}</div>',
         flight_element: '${tpl.header}${tpl.aircraft_info_element}${tpl.route_element}${tpl.flight_status}${tpl.position_status}${tpl.proximity_info}',
         radar_range: 'Range: ${radar_range} ${units.distance}'
       },
@@ -1027,8 +1027,9 @@ class Flightradar24Card extends HTMLElement {
         if (flight.is_approaching) {
           let closestPassingLatLon = this.calculateClosestPassingPoint(refLat, refLon, flight.latitude, flight.longitude, flight.heading);
 
-          flight.closest_passing_distance = this.haversine(refLat, refLon, closestPassingLatLon.lat, closestPassingLatLon.lon);
-          flight.eta_to_closest_distance = this.calculateETA(flight.latitude, flight.longitude, closestPassingLatLon.lat, closestPassingLatLon.lon, flight.ground_speed);
+          flight.closest_passing_distance = Math.round(this.haversine(refLat, refLon, closestPassingLatLon.lat, closestPassingLatLon.lon));
+          const eta_to_closest_distance = this.calculateETA(flight.latitude, flight.longitude, closestPassingLatLon.lat, closestPassingLatLon.lon, flight.ground_speed);
+          flight.eta_to_closest_distance = Math.round(eta_to_closest_distance);
 
           // If the plane is descending, calculate time to touchdown
           if (flight.vertical_speed < 0 && flight.altitude > 0) {
@@ -1036,7 +1037,7 @@ class Flightradar24Card extends HTMLElement {
             const touchdownLatLon = this.calculateNewPosition(flight.latitude, flight.longitude, flight.heading, (flight.ground_speed * timeToTouchdown) / 60);
             const touchdownDistance = this.haversine(refLat, refLon, touchdownLatLon.lat, touchdownLatLon.lon);
 
-            if (timeToTouchdown < flight.eta_to_closest_distance) {
+            if (timeToTouchdown < eta_to_closest_distance) {
               flight.is_landing = true;
               flight.eta_to_closest_distance = timeToTouchdown;
               flight.closest_passing_distance = touchdownDistance;
