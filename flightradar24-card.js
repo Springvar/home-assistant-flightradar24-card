@@ -277,6 +277,7 @@ class Flightradar24Card extends HTMLElement {
           const refLon = location.longitude;
 
           this.radar.local_features.forEach((feature) => {
+            if (feature.max_range !== undefined && feature.max_range <= this.radar.range) return;
             if (feature.type === 'outline' && feature.points && feature.points.length > 1) {
               for (let i = 0; i < feature.points.length - 1; i++) {
                 const start = feature.points[i];
