@@ -42,24 +42,24 @@ class Flightradar24Card extends HTMLElement {
           '${flight.aircraft_photo_small ? `<img style="float: right; width: 120px; height: auto; marginLeft: 8px; border: 1px solid black;" src="${flight.aircraft_photo_small}" />` : ""}',
         icon: '${flight.altitude > 0 ? (flight.vertical_speed > 100 ? "airplane-takeoff" : flight.vertical_speed < -100 ? "airplane-landing" : "airplane") : "airport"}',
         icon_element: '<ha-icon style="float: left;" icon="mdi:${tpl.icon}"></ha-icon>',
-        flight_info: '${[flight.airline_short, flight.flight_number, flight.callsign !== flight.flight_number ? flight.callsign : ""].filter((el) => el).join(" - ")}',
+        flight_info: '${joinList(" - ")(flight.airline_short, flight.flight_number, flight.callsign !== flight.flight_number ? flight.callsign : "")}',
         flight_info_element: '<div style="font-weight: bold; padding-left: 5px; padding-top: 5px;">${tpl.flight_info}</div>',
         header: '<div>${tpl.img_element}${tpl.icon_element}${tpl.flight_info_element}</div>',
-        aircraft_info: '${[flight.aircraft_registration, flight.aircraft_model].filter((el) => el).join(" - ")}',
+        aircraft_info: '${joinList(" - ")(flight.aircraft_registration, flight.aircraft_model)}',
         aircraft_info_element: '${tpl.aircraft_info ? `<div>${tpl.aircraft_info}</div>` : ""}',
         departure_info:
           '${flight.altitude === 0 && flight.time_scheduled_departure ? ` (${new Date(flight.time_scheduled_departure * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})` : ""}',
-        origin_info: '${[flight.airport_origin_code_iata, tpl.departure_info, flight.origin_flag].filter((el) => el).join("")}',
+        origin_info: '${joinList("")(flight.airport_origin_code_iata, tpl.departure_info, flight.origin_flag)}',
         arrival_info: '',
-        destination_info: '${[flight.airport_destination_code_iata, tpl.arrival_info, flight.destination_flag].filter((el) => el).join(" ")}',
-        route_info: '${[tpl.origin_info, tpl.destination_info].filter((el) => el).join(" -> ")}',
+        destination_info: '${joinList("")(flight.airport_destination_code_iata, tpl.arrival_info, flight.destination_flag)}',
+        route_info: '${joinList(" -> ")(tpl.origin_info, tpl.destination_info)}',
         route_element: '<div>${tpl.route_info}</div>',
         alt_info: '${flight.alt_in_unit ? "Alt: " + flight.alt_in_unit + flight.climb_descend_indicator : undefined}',
         spd_info: '${flight.spd_in_unit ? "Spd: " + flight.spd_in_unit : undefined}',
         hdg_info: '${flight.heading ? "Hdg: " + flight.heading + "°" : undefined}',
         dist_info: '${flight.dist_in_unit ? "Dist: " + flight.dist_in_unit + flight.approach_indicator : undefined}',
-        flight_status: '<div>${[tpl.alt_info, tpl.spd_info, tpl.hdg_info].filter((el) => el).join(" - ")}</div>',
-        position_status: '<div>${[tpl.dist_info, flight.direction_info].filter((el) => el).join(" - ")}</div>',
+        flight_status: '<div>${joinList(" - ")(tpl.alt_info, tpl.spd_info, tpl.hdg_info)}</div>',
+        position_status: '<div>${joinList(" - "(tpl.dist_info, flight.direction_info)}</div>',
         proximity_info:
           '<div style="font-weight: bold; font-style: italic;">${flight.is_approaching && flight.ground_speed > 70 && flight.closest_passing_distance < 15 ? `Closest Distance: ${Math.round(flight.closest_passing_distance)} ${units.distance}, ETA: ${Math.round(flight.eta_to_closest_distance)} min` : ""}</div>',
         flight_element: '${tpl.header}${tpl.aircraft_info_element}${tpl.route_element}${tpl.flight_status}${tpl.position_status}${tpl.proximity_info}',
@@ -885,9 +885,10 @@ class Flightradar24Card extends HTMLElement {
   }
 
   parseTemplate(templateId, flight) {
+    const joinList = (joinWith) => (...elements) => elements?.filter((e) => e).join(joinWith || ' ')
     const compiledTemplate = this.compileTemplate(this.templates, templateId);
     try {
-      const parsedTemplate = new Function('flight', 'tpl', 'units', 'radar_range', `return \`${compiledTemplate.replace(/\${(.*?)}/g, (_, expr) => `\${${expr}}`)}\``)(flight, {}, this.units, Math.round(this.radar.range));
+      const parsedTemplate = new Function('flight', 'tpl', 'units', 'radar_range', 'joinList', `return \`${compiledTemplate.replace(/\${(.*?)}/g, (_, expr) => `\${${expr}}`)}\``)(flight, {}, this.units, Math.round(this.radar.range), joinList);
       return parsedTemplate !== 'undefined' ? parsedTemplate : "";
     } catch (e) {
       console.error('Error when rendering: ' + compiledTemplate, e);
