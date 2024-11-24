@@ -485,6 +485,27 @@ filter:
         value: true
 ```
 
+#### Example: List aircraft currently visible on radar
+
+```yaml
+type: custom:flightradar24-card
+filter:
+  - field: distance_to_tracker
+    comparator: lte
+    value: ${radar_range}
+```
+
+Note: Depending on your layout and system, there may be unwanted flickering or repositioning of elements as you zoom flights in or out of the active range. To avoid this, set the flag `updateRangeFilterOnTouchEnd` to true to only update the filtered list after the pinch/zoom action stops.
+
+```yaml
+type: custom:flightradar24-card
+updateRangeFilterOnTouchEnd: true
+filter:
+  - field: distance_to_tracker
+    comparator: lte
+    value: ${radar_range}
+```
+
 #### Example: List all aircraft from a given airline ("Delta" in this example), with no radar
 
 ```yaml
