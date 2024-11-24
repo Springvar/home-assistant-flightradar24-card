@@ -505,7 +505,7 @@ class Flightradar24Card extends HTMLElement {
         : undefined;
 
     flight.approach_indicator = flight.ground_speed > 70 ? (flight.is_approaching ? '↓' : flight.is_receding ? '↑' : '') : '';
-    flight.dist_in_unit = `${Math.round(flight.distance_to_tracker)}${this.units.distance}`;
+    flight.dist_in_unit = `${Math.round(flight.distance_to_tracker)} ${this.units.distance}`;
     flight.direction_info = `${Math.round(flight.heading_from_tracker)}° ${flight.cardinal_direction_from_tracker}`;
 
     const flightElement = document.createElement('div');
