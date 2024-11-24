@@ -901,6 +901,8 @@ class Flightradar24Card extends HTMLElement {
       const key = value.slice(2, -1);
       if (key === 'selectedFlights') {
         return this._selectedFlights;
+      } else if(key === 'radar_range') {
+        return this.radar.range;
       } else if (key in this.defines) {
         return this.defines[key];
       } else if (key in this.config.toggles) {
