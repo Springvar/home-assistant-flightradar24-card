@@ -62,7 +62,8 @@ class Flightradar24Card extends HTMLElement {
         position_status: '<div>${[tpl.dist_info, flight.direction_info].filter((el) => el).join(" - ")}</div>',
         proximity_info:
           '<div style="font-weight: bold; font-style: italic;">${flight.is_approaching && flight.ground_speed > 70 && flight.closest_passing_distance < 15 ? `Closest Distance: ${Math.round(flight.closest_passing_distance)} ${units.distance}, ETA: ${Math.round(flight.eta_to_closest_distance)} min` : ""}</div>',
-        flight_element: '${tpl.header}${tpl.aircraft_info_element}${tpl.route_element}${tpl.flight_status}${tpl.position_status}${tpl.proximity_info}'
+        flight_element: '${tpl.header}${tpl.aircraft_info_element}${tpl.route_element}${tpl.flight_status}${tpl.position_status}${tpl.proximity_info}',
+        radar_range: 'Range: ${radar_range} ${units.distance}'
       },
       config.templates,
       {}
@@ -225,7 +226,7 @@ class Flightradar24Card extends HTMLElement {
   renderRadarScreen() {
     const radarInfoDisplay = this.shadowRoot.getElementById('radar-info');
     if (radarInfoDisplay) {
-      const infoElements = [this.config.radar?.hide_range !== true ? `Range: ${Math.round(this.radar.range)}${this.units.distance}` : ''].filter((el) => el);
+      const infoElements = [this.config.radar?.hide_range !== true ? this.parseTemplate('radar_range') : ''].filter((el) => el);
       radarInfoDisplay.innerHTML = infoElements.join('<br />');
     }
 
@@ -886,7 +887,7 @@ class Flightradar24Card extends HTMLElement {
   parseTemplate(templateId, flight) {
     const compiledTemplate = this.compileTemplate(this.templates, templateId);
     try {
-      const parsedTemplate = new Function('flight', 'tpl', 'units', `return \`${compiledTemplate.replace(/\${(.*?)}/g, (_, expr) => `\${${expr}}`)}\``)(flight, {}, this.units);
+      const parsedTemplate = new Function('flight', 'tpl', 'units', 'radar_range', `return \`${compiledTemplate.replace(/\${(.*?)}/g, (_, expr) => `\${${expr}}`)}\``)(flight, {}, this.units, Math.round(this.radar.range));
       return parsedTemplate !== 'undefined' ? parsedTemplate : "";
     } catch (e) {
       console.error('Error when rendering: ' + compiledTemplate, e);
