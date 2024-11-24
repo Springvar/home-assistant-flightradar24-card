@@ -449,8 +449,8 @@ class Flightradar24Card extends HTMLElement {
 
     this.renderRadarScreen();
 
-    if(this.renderDynamicOnRangeChange) {
-      this.renderDynamic()
+    if (this.renderDynamicOnRangeChange && this.config.updateRangeFilterOnTouchEnd !== true) {
+      this.renderDynamic();
     } else {
       this.renderRadar(
         this.radar.filter === true
@@ -890,11 +890,20 @@ class Flightradar24Card extends HTMLElement {
   }
 
   parseTemplate(templateId, flight) {
-    const joinList = (joinWith) => (...elements) => elements?.filter((e) => e).join(joinWith || ' ')
+    const joinList =
+      (joinWith) =>
+      (...elements) =>
+        elements?.filter((e) => e).join(joinWith || ' ');
     const compiledTemplate = this.compileTemplate(this.templates, templateId);
     try {
-      const parsedTemplate = new Function('flight', 'tpl', 'units', 'radar_range', 'joinList', `return \`${compiledTemplate.replace(/\${(.*?)}/g, (_, expr) => `\${${expr}}`)}\``)(flight, {}, this.units, Math.round(this.radar.range), joinList);
-      return parsedTemplate !== 'undefined' ? parsedTemplate : "";
+      const parsedTemplate = new Function('flight', 'tpl', 'units', 'radar_range', 'joinList', `return \`${compiledTemplate.replace(/\${(.*?)}/g, (_, expr) => `\${${expr}}`)}\``)(
+        flight,
+        {},
+        this.units,
+        Math.round(this.radar.range),
+        joinList
+      );
+      return parsedTemplate !== 'undefined' ? parsedTemplate : '';
     } catch (e) {
       console.error('Error when rendering: ' + compiledTemplate, e);
       return '';
@@ -906,7 +915,7 @@ class Flightradar24Card extends HTMLElement {
       const key = value.slice(2, -1);
       if (key === 'selectedFlights') {
         return this._selectedFlights;
-      } else if(key === 'radar_range') {
+      } else if (key === 'radar_range') {
         // Filter is dependent on range
         this.renderDynamicOnRangeChange = true;
         return this.radar.range;
@@ -1094,7 +1103,7 @@ class Flightradar24Card extends HTMLElement {
 
   areHeadingsAligned(direction_to_tracker, heading, margin = 60) {
     const diff = Math.abs((direction_to_tracker - heading + 360) % 360);
-    return diff <= margin || diff >= (360 - margin);
+    return diff <= margin || diff >= 360 - margin;
   }
 
   calculateNewPosition(lat, lon, bearing, distance) {
@@ -1284,6 +1293,9 @@ class Flightradar24Card extends HTMLElement {
   handleTouchEnd() {
     this._initialPinchDistance = null;
     this._initialRadarRange = null;
+    if (this.renderDynamicOnRangeChange && this.config.updateRangeFilterOnTouchEnd) {
+      this.renderDynamic();
+    }
   }
   getPinchDistance(touches) {
     const [touch1, touch2] = touches;
