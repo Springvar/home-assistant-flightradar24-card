@@ -59,7 +59,7 @@ class Flightradar24Card extends HTMLElement {
         hdg_info: '${flight.heading ? "Hdg: " + flight.heading + "°" : undefined}',
         dist_info: '${flight.dist_in_unit ? "Dist: " + flight.dist_in_unit + flight.approach_indicator : undefined}',
         flight_status: '<div>${joinList(" - ")(tpl.alt_info, tpl.spd_info, tpl.hdg_info)}</div>',
-        position_status: '<div>${joinList(" - "(tpl.dist_info, flight.direction_info)}</div>',
+        position_status: '<div>${joinList(" - ")(tpl.dist_info, flight.direction_info)}</div>',
         proximity_info:
           '<div style="font-weight: bold; font-style: italic;">${flight.is_approaching && flight.ground_speed > 70 && flight.closest_passing_distance < 15 ? `Closest Distance: ${Math.round(flight.closest_passing_distance)} ${units.distance}, ETA: ${Math.round(flight.eta_to_closest_distance)} min` : ""}</div>',
         flight_element: '${tpl.header}${tpl.aircraft_info_element}${tpl.route_element}${tpl.flight_status}${tpl.position_status}${tpl.proximity_info}',
