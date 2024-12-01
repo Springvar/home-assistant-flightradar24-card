@@ -1049,8 +1049,8 @@ class Flightradar24Card extends HTMLElement {
 
             if (timeToTouchdown < eta_to_closest_distance) {
               flight.is_landing = true;
-              flight.eta_to_closest_distance = timeToTouchdown;
-              flight.closest_passing_distance = touchdownDistance;
+              flight.closest_passing_distance = Math.round(touchdownDistance);
+              flight.eta_to_closest_distance = Math.round(timeToTouchdown);
               closestPassingLatLon = touchdownLatLon;
             }
           }
