@@ -964,12 +964,15 @@ class Flightradar24Card extends HTMLElement {
     const entityState = this.hass.states[this.config.flights_entity];
     if (entityState) {
       try {
-        this._flightsData = entityState.attributes.flights ? JSON.parse(JSON.stringify(entityState.attributes.flights)) : [];
+        this._flightsData = parseFloat(entityState.state) > 0 && entityState.attributes.flights
+          ? JSON.parse(JSON.stringify(entityState.attributes.flights))
+          : [];
       } catch (error) {
-        console.error('Error fetching or parsing flight data:', error);
+        console.error("Error fetching or parsing flight data:", error);
+        this._flightsData = [];
       }
     } else {
-      console.error('Flights entity state is undefined. Check the configuration.');
+      throw new Error("Flights entity state is undefined. Check the configuration.");
     }
 
     const { moving } = this.calculateFlightData();
