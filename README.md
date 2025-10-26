@@ -16,6 +16,7 @@ Custom card to use with [Flightradar24 integration](https://github.com/AlexandrE
      - [Radar](#radar-configuration)
        - [Radar filter](#radar-filter)
        - [Radar features](#radar-features)
+       - [Radar map background](#radar-map-background)
      - [List](#list-configuration)
      - [Annotations](#annotation-configuration)
      - [Toggles](#toggles-configuration)
@@ -305,6 +306,40 @@ I want them printed as a yaml list on the format:
 
 The desc: fields will be ignored by the Card, but will be useful if you want to add or move coordinates.
 
+##### Radar Map Background
+
+```yaml
+radar:
+  background_map: bw # Options: bw, color, dark, outlines
+  background_map_opacity: 0.7 # Opacity of the map (0=transparent, 1=opaque)
+  background_map_api_key: YOUR_API_KEY # Optional, for some providers
+```
+
+| Option                   | Description                                                                   | Values                            | Default |
+| ------------------------ | ----------------------------------------------------------------------------- | --------------------------------- | ------- |
+| `background_map`         | Type of map background.                                                       | `bw`, `color`, `dark`, `outlines` | `none`  |
+| `background_map_opacity` | Opacity for background map (0 to 1).                                          | 0–1 (float)                       | 1       |
+| `background_map_api_key` | API key for selected tile provider (optional, for providers that require it). | string (optional)                 | –       |
+
+- **`bw`**: Black-and-white (Stamen Toner)
+- **`color`**: Standard OpenStreetMap (colored)
+- **`dark`**: Dark theme map (CartoDB)
+- **`outlines`**: Geographic outlines only
+
+Example:
+
+```yaml
+radar:
+  background_map: color
+  background_map_opacity: 0.5
+```
+
+If `background_map` is configured, the selected map is rendered beneath the radar graphics.
+
+##### Known Issue
+
+**Note:** The zoom levels of the radar overlay and the background map may not always align perfectly. This may cause aircraft icons or overlays to have small positional offsets on the map background. For exact position tracking, trust the radar overlay rather than the basemap.
+
 #### List Configuration
 
 Configure flight list settings with the `list` option.
@@ -314,9 +349,9 @@ list:
   hide: true
 ```
 
-| Name   | Description                                               | Default Value | Constraints               |
-|--------|-----------------------------------------------------------|---------------|---------------------------|
-| `hide` | Option to hide the flight list below the radar card       | `false`       | Must be `true` or `false` |
+| Name   | Description                                         | Default Value | Constraints               |
+| ------ | --------------------------------------------------- | ------------- | ------------------------- |
+| `hide` | Option to hide the flight list below the radar card | `false`       | Must be `true` or `false` |
 
 **Note:** When `list.hide` is enabled, the detailed flight list will not be displayed.
 
@@ -536,7 +571,7 @@ radar:
 
 #### Example: List all approaching and overhead B747 or A380s with toggles to show/hide either
 
-![Template with toggles](resources/example_templates_747_a380_toggle.PNG 'Example')
+![Template with toggles](resources/example_templates_747_a380_toggle.PNG "Example")
 
 Note: Radar will show all tracked flights
 
@@ -593,7 +628,7 @@ filter:
 
 #### Example: Change the flight template to display a tail image instead of airplane icon
 
-![Template with tails](resources/example_templates_tails_dark.PNG 'Example')
+![Template with tails](resources/example_templates_tails_dark.PNG "Example")
 
 ```yaml
 type: custom:flightradar24-card
