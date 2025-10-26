@@ -52,7 +52,7 @@ class Flightradar24Card extends HTMLElement {
         range: this.units.distance === "km" ? 35 : 25,
         background_map: config.radar?.background_map || "none",
         background_map_opacity: config.radar?.background_map_opacity || 1,
-        background_map_api_key: config.radar?.background_map_api_key || ""
+        background_map_api_key: config.radar?.background_map_api_key || "",
       },
       config.radar
     );
@@ -272,7 +272,7 @@ class Flightradar24Card extends HTMLElement {
         ) {
           opacity = Math.max(0, Math.min(1, this.radar.background_map_opacity));
         }
-        mapBg.style.opacity = opacity;        
+        mapBg.style.opacity = opacity;
         radarScreen.appendChild(mapBg);
 
         let range = Math.max(this.radar.range, 1);
@@ -883,14 +883,16 @@ class Flightradar24Card extends HTMLElement {
     const entityState = this.hass.states[this.config.flights_entity];
     if (entityState) {
       try {
-        this._flightsData = entityState.attributes.flights
-          ? JSON.parse(JSON.stringify(entityState.attributes.flights))
-          : [];
+        this._flightsData =
+          parseFloat(entityState.state) > 0 && entityState.attributes.flights
+            ? JSON.parse(JSON.stringify(entityState.attributes.flights))
+            : [];
       } catch (error) {
         console.error("Error fetching or parsing flight data:", error);
+        this._flightsData = [];
       }
     } else {
-      console.error(
+      throw new Error(
         "Flights entity state is undefined. Check the configuration."
       );
     }
