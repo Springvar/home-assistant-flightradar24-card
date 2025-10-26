@@ -1,8 +1,9 @@
+import { renderStyle } from "./style.js";
+
 export function renderStatic(instance) {
-  // Equivalent to: this.shadowRoot.innerHTML = '';
   instance.shadowRoot.innerHTML = '';
 
-  instance.renderStyle();
+  renderStyle(instance);
 
   const card = document.createElement('ha-card');
   card.id = 'flights-card';
@@ -43,6 +44,7 @@ export function renderStatic(instance) {
 
     requestAnimationFrame(() => {
       instance.renderRadarScreen();
+      instance.observeRadarResize();
     });
   }
 
@@ -56,3 +58,4 @@ export function renderStatic(instance) {
   instance.attachEventListeners();
   instance.renderToggles();
 }
+
