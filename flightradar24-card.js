@@ -3,6 +3,7 @@ import { templateConfig } from "./config/templateConfig.js";
 import { sortConfig } from "./config/sortConfig.js";
 import { renderStatic } from "./render/static.js";
 import { renderStyle } from "./render/style.js";
+import { renderFlag } from "./render/flag.js";
 import {
   haversine,
   calculateBearing,
@@ -11,6 +12,8 @@ import {
   getCardinalDirection,
   areHeadingsAligned,
 } from "./utils/geometric.js";
+import { applyFilter, applyConditions } from "./utils/filter.js";
+import { getSortFn } from "./utils/sort.js";
 
 class Flightradar24Card extends HTMLElement {
   _hass;
@@ -50,7 +53,7 @@ class Flightradar24Card extends HTMLElement {
     );
     this.radar.initialRange = this.radar.range;
     this.defines = Object.assign({}, config.defines);
-    this.sortFn = this.getSortFn(config.sort ?? sortConfig);
+    this.sortFn = getSortFn(config.sort ?? sortConfig, this.resolvePlaceholders.bind(this));
     this.templates = Object.assign({}, templateConfig, config.templates);
 
     renderStatic(this);
@@ -98,35 +101,6 @@ class Flightradar24Card extends HTMLElement {
     this._radarResizeObserver.observe(radar);
   }
 
-  renderToggles() {
-    const toggleContainer = this.shadowRoot.getElementById("toggle-container");
-    if (this.config.toggles && toggleContainer) {
-      for (const toggleKey in this.config.toggles) {
-        if (this.config.toggles.hasOwnProperty(toggleKey)) {
-          const toggle = this.config.toggles[toggleKey];
-
-          const toggleElement = document.createElement("div");
-          toggleElement.className = "toggle";
-
-          const label = document.createElement("label");
-          label.textContent = toggle.label;
-
-          const input = document.createElement("ha-switch");
-          input.checked = toggle.default;
-          input.addEventListener("change", () => {
-            this.defines[toggleKey] = input.checked;
-            this.renderDynamic();
-          });
-
-          toggleElement.appendChild(label);
-          toggleElement.appendChild(input);
-
-          toggleContainer.appendChild(toggleElement);
-        }
-      }
-    }
-  }
-
   renderDynamic() {
     const flightsContainer = this.shadowRoot.getElementById("flights");
     if (!flightsContainer) return;
@@ -157,7 +131,7 @@ class Flightradar24Card extends HTMLElement {
         : this.config.filter
       : undefined;
     const flightsData = filter
-      ? this.applyFilter(this._flightsData, filter)
+      ? applyFilter(this._flightsData, filter, this.resolvePlaceholders.bind(this))
       : this._flightsData;
     flightsData.sort(this.sortFn);
 
@@ -167,7 +141,7 @@ class Flightradar24Card extends HTMLElement {
           this.radar.filter === true
             ? flightsData
             : this.radar.filter && typeof this.radar.filter === "object"
-            ? this.applyFilter(this._flightsData, this.radar.filter)
+            ? applyFilter(this._flightsData, this.radar.filter, this.resolvePlaceholders.bind(this))
             : this._flightsData
         );
       });
@@ -517,9 +491,9 @@ class Flightradar24Card extends HTMLElement {
     } else {
       this.renderRadar(
         this.radar.filter === true
-          ? this.applyFilter(this._flightsData, this.config.filter)
+          ? applyFilter(this._flightsData, this.config.filter, this.resolvePlaceholders.bind(this))
           : this.radar.filter && typeof this.radar.filter === "object"
-          ? this.applyFilter(this._flightsData, this.radar.filter)
+          ? applyFilter(this._flightsData, this.radar.filter, this.resolvePlaceholders.bind(this))
           : this._flightsData
       );
     }
@@ -550,13 +524,13 @@ class Flightradar24Card extends HTMLElement {
       "airport_destination_country_code",
     ].forEach((field) => (flight[field] = this.flightField(flight, field)));
     flight.origin_flag = flight.airport_origin_country_code
-      ? this.renderFlag(
+      ? renderFlag(
           flight.airport_origin_country_code,
           flight.airport_origin_country_name
         ).outerHTML
       : "";
     flight.destination_flag = flight.airport_destination_country_code
-      ? this.renderFlag(
+      ? renderFlag(
           flight.airport_destination_country_code,
           flight.airport_destination_country_name
         ).outerHTML
@@ -617,105 +591,6 @@ class Flightradar24Card extends HTMLElement {
     return flightElement;
   }
 
-  renderFlag(countryCode, countryName) {
-    const flagElement = document.createElement("img");
-    flagElement.setAttribute(
-      "src",
-      `https://flagsapi.com/${countryCode}/shiny/16.png`
-    );
-    flagElement.setAttribute("title", `${countryName}`);
-    flagElement.style.position = "relative";
-    flagElement.style.top = "3px";
-    flagElement.style.left = "2px";
-    return flagElement;
-  }
-
-  applyFilter(flights, filter) {
-    return flights.filter((flight) => this.applyConditions(flight, filter));
-  }
-
-  applyConditions(flight, conditions) {
-    if (Array.isArray(conditions)) {
-      return conditions.every((condition) =>
-        this.applyCondition(flight, condition)
-      );
-    } else {
-      return this.applyCondition(flight, conditions);
-    }
-  }
-
-  applyCondition(flight, condition) {
-    const { field, defined, defaultValue, _, comparator } = condition;
-    const value = this.resolvePlaceholders(condition.value);
-
-    let result = true;
-
-    if (condition.type === "AND") {
-      result = condition.conditions.every((cond) =>
-        this.applyCondition(flight, cond)
-      );
-    } else if (condition.type === "OR") {
-      result = condition.conditions.some((cond) =>
-        this.applyCondition(flight, cond)
-      );
-    } else if (condition.type === "NOT") {
-      result = !this.applyCondition(flight, condition.condition);
-    } else {
-      const comparand =
-        flight[field] ??
-        (defined
-          ? this.resolvePlaceholders("${" + defined + "}", defaultValue)
-          : undefined);
-
-      switch (comparator) {
-        case "eq":
-          result = comparand === value;
-          break;
-        case "lt":
-          result = Number(comparand) < Number(value);
-          break;
-        case "lte":
-          result = Number(comparand) <= Number(value);
-          break;
-        case "gt":
-          result = Number(comparand) > Number(value);
-          break;
-        case "gte":
-          result = Number(comparand) >= Number(value);
-          break;
-        case "oneOf": {
-          result = (
-            Array.isArray(value)
-              ? value
-              : typeof value === "string"
-              ? value.split(",").map((v) => v.trim())
-              : []
-          ).includes(comparand);
-          break;
-        }
-        case "containsOneOf": {
-          result =
-            comparand &&
-            (Array.isArray(value)
-              ? value
-              : typeof value === "string"
-              ? value.split(",").map((v) => v.trim())
-              : []
-            ).some((val) => comparand.includes(val));
-          break;
-        }
-        default:
-          result = false;
-      }
-    }
-
-    if (condition.debugIf === result) {
-      console.debug("applyCondition", condition, flight, result);
-    }
-
-    return result;
-  }
-
   flightField(flight, field) {
     let text = flight[field];
     if (this.config.annotate) {
@@ -723,7 +598,7 @@ class Flightradar24Card extends HTMLElement {
       this.config.annotate
         .filter((a) => a.field === field)
         .forEach((a) => {
-          if (this.applyConditions(flight, a.conditions)) {
+          if (applyConditions(flight, a.conditions, this.resolvePlaceholders.bind(this))) {
             f[field] = a.render.replace(/\$\{([^}]*)\}/g, (_, p1) => f[p1]);
           }
         });
@@ -1068,96 +943,6 @@ class Flightradar24Card extends HTMLElement {
       (groundSpeed * (this.units.distance === "km" ? 1.852 : 1.15078)) / 60;
     const eta = distance / groundSpeedDistanceUnitsPrMin;
     return eta;
-  }
-
-  parseSortField(obj, field) {
-    return field.split(" ?? ").reduce((acc, cur) => acc ?? obj[cur], undefined);
-  }
-  getSortFn(sortConfig) {
-    return ((a, b) => {
-      for (let criterion of sortConfig) {
-        const { field, comparator, order = "ASC" } = criterion;
-        const value = this.resolvePlaceholders(criterion.value);
-
-        const fieldA = this.parseSortField(a, field);
-        const fieldB = this.parseSortField(b, field);
-
-        let result = 0;
-
-        switch (comparator) {
-          case "eq":
-            if (fieldA === value && fieldB !== value) {
-              result = 1;
-            } else if (fieldA !== value && fieldB === value) {
-              result = -1;
-            }
-            break;
-          case "lt":
-            if (fieldA < value && fieldB >= value) {
-              result = 1;
-            } else if (fieldA >= value && fieldB < value) {
-              result = -1;
-            }
-            break;
-          case "lte":
-            if (fieldA <= value && fieldB > value) {
-              result = 1;
-            } else if (fieldA > value && fieldB <= value) {
-              result = -1;
-            }
-            break;
-          case "gt":
-            if (fieldA > value && fieldB <= value) {
-              result = 1;
-            } else if (fieldA <= value && fieldB > value) {
-              result = -1;
-            }
-            break;
-          case "gte":
-            if (fieldA >= value && fieldB < value) {
-              result = 1;
-            } else if (fieldA < value && fieldB >= value) {
-              result = -1;
-            }
-            break;
-          case "oneOf":
-            if (value !== undefined) {
-              const isAInValue = value.includes(fieldA);
-              const isBInValue = value.includes(fieldB);
-              if (isAInValue && !isBInValue) {
-                result = 1;
-              } else if (!isAInValue && isBInValue) {
-                result = -1;
-              }
-            }
-            break;
-          case "containsOneOf":
-            if (value !== undefined) {
-              const isAContainsValue = value.some((val) =>
-                fieldA.includes(val)
-              );
-              const isBContainsValue = value.some((val) =>
-                fieldB.includes(val)
-              );
-              if (isAContainsValue && !isBContainsValue) {
-                result = 1;
-              } else if (!isAContainsValue && isBContainsValue) {
-                result = -1;
-              }
-            }
-            break;
-          default:
-            result = fieldA - fieldB;
-            break;
-        }
-
-        if (result !== 0) {
-          return order.toUpperCase() === "DESC" ? -result : result;
-        }
-      }
-
-      return 0;
-    }).bind(this);
   }
 
   attachEventListeners() {
