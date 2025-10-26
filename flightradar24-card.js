@@ -26,12 +26,11 @@ class Flightradar24Card extends HTMLElement {
     super();
 
     this.attachShadow({ mode: "open" });
-
-    this._updateRequired = true;
+          this._updateRequired = true;
     this._flightsData = [];
     this.config = null;
     this._hass = null;
-  }
+        }
 
   setConfig(config) {
     if (!config) {
@@ -50,7 +49,7 @@ class Flightradar24Card extends HTMLElement {
     this.radar = Object.assign(
       { range: this.units.distance === "km" ? 35 : 25 },
       config.radar
-    );
+      );
     this.radar.initialRange = this.radar.range;
     this.defines = Object.assign({}, config.defines);
     this.sortFn = getSortFn(config.sort ?? sortConfig, this.resolvePlaceholders.bind(this));
@@ -58,7 +57,7 @@ class Flightradar24Card extends HTMLElement {
 
     renderStatic(this);
     this.observeRadarResize();
-  }
+    }
 
   set hass(hass) {
     const oldHass = this._hass;
@@ -72,13 +71,13 @@ class Flightradar24Card extends HTMLElement {
       this._updateRequired = false;
       this.fetchFlightsData();
       this.renderRadarScreen();
-      this.renderDynamic();
-    }
-  }
+              this.renderDynamic();
+            }
+          }
 
   connectedCallback() {
     this.observeRadarResize();
-  }
+      }
 
   disconnectedCallback() {
     if (this._radarResizeObserver) {
@@ -109,9 +108,9 @@ class Flightradar24Card extends HTMLElement {
     if (this.list && this.list.hide === true) {
       flightsContainer.style.display = "none";
       return;
-    } else {
+        } else {
       flightsContainer.style.display = "";
-    }
+        }
 
     const filter = this.config.filter
       ? this._selectedFlights && this._selectedFlights.length > 0
@@ -130,24 +129,38 @@ class Flightradar24Card extends HTMLElement {
           ]
         : this.config.filter
       : undefined;
-    const flightsData = filter
-      ? applyFilter(this._flightsData, filter, this.resolvePlaceholders.bind(this))
-      : this._flightsData;
-    flightsData.sort(this.sortFn);
+
+    const flightsTotal = this._flightsData.length;
+    const flightsFiltered = filter ? applyFilter(this._flightsData, filter, this.resolvePlaceholders.bind(this)) : this._flightsData;
+    const flightsShown = flightsFiltered.length;
+
+    flightsFiltered.sort(this.sortFn);
 
     if (this.radar.hide !== true) {
       requestAnimationFrame(() => {
         this.renderRadar(
           this.radar.filter === true
-            ? flightsData
+            ? flightsFiltered
             : this.radar.filter && typeof this.radar.filter === "object"
             ? applyFilter(this._flightsData, this.radar.filter, this.resolvePlaceholders.bind(this))
             : this._flightsData
-        );
+      );
       });
     }
 
-    if (flightsData.length === 0) {
+    if (this.list && this.list.showListStatus === true) {
+      this.flightsContext = {
+        shown: flightsShown,
+        total: flightsTotal,
+        filtered: flightsFiltered.length
+      };
+      const listStatusDiv = document.createElement("div");
+      listStatusDiv.className = "list-status";
+      listStatusDiv.innerHTML = this.parseTemplate("list_status");
+      flightsContainer.appendChild(listStatusDiv);
+    }
+
+    if (flightsShown === 0) {
       if (this.config.no_flights_message !== "") {
         const noFlightsMessage = document.createElement("div");
         noFlightsMessage.className = "no-flights-message";
@@ -155,8 +168,11 @@ class Flightradar24Card extends HTMLElement {
         flightsContainer.appendChild(noFlightsMessage);
       }
     } else {
-      flightsData.forEach((flight) => {
+      flightsFiltered.forEach((flight, idx) => {
         const flightElement = this.renderFlight(flight);
+        if(idx === 0) {
+          flightElement.className += " first";
+        }
         flightsContainer.appendChild(flightElement);
       });
     }
@@ -171,12 +187,12 @@ class Flightradar24Card extends HTMLElement {
           : "",
       ].filter((el) => el);
       radarInfoDisplay.innerHTML = infoElements.join("<br />");
-    }
+  }
 
     const radarScreen = this.shadowRoot.getElementById("radar-screen");
     if (radarScreen) {
       radarScreen.innerHTML = "";
-    }
+  }
 
     renderStyle(this);
 
@@ -207,14 +223,14 @@ class Flightradar24Card extends HTMLElement {
         ring.style.top = Math.floor(radarCenterY - radius) + "px";
         ring.style.left = Math.floor(radarCenterX - radius) + "px";
         radarScreen.appendChild(ring);
-      }
+    }
 
       for (let angle = 0; angle < 360; angle += 45) {
         const line = document.createElement("div");
         line.className = "dotted-line";
         line.style.transform = `rotate(${angle - 90}deg)`;
         radarScreen.appendChild(line);
-      }
+  }
 
       if (this.radar.local_features && this.hass) {
         const location = this.getLocation();
@@ -223,7 +239,7 @@ class Flightradar24Card extends HTMLElement {
           const refLon = location.longitude;
 
           this.radar.local_features.forEach((feature) => {
-            if (
+    if (
               feature.max_range !== undefined &&
               feature.max_range <= this.radar.range
             )
@@ -232,7 +248,7 @@ class Flightradar24Card extends HTMLElement {
               feature.type === "outline" &&
               feature.points &&
               feature.points.length > 1
-            ) {
+    ) {
               for (let i = 0; i < feature.points.length - 1; i++) {
                 const start = feature.points[i];
                 const end = feature.points[i + 1];
@@ -302,8 +318,8 @@ class Flightradar24Card extends HTMLElement {
                   }deg)`;
 
                   radarScreen.appendChild(outlineLine);
-                }
-              }
+    }
+  }
             } else {
               const { lat: featLat, lon: featLon } = feature.position;
 
@@ -661,7 +677,9 @@ class Flightradar24Card extends HTMLElement {
         elements?.filter((e) => e).join(joinWith || " ");
     const compiledTemplate = this.compileTemplate(this.templates, templateId);
     try {
+      let context = flight;
       const parsedTemplate = new Function(
+        "flights",
         "flight",
         "tpl",
         "units",
@@ -671,7 +689,7 @@ class Flightradar24Card extends HTMLElement {
           /\${(.*?)}/g,
           (_, expr) => `\${${expr}}`
         )}\``
-      )(flight, {}, this.units, Math.round(this.radar.range), joinList);
+      )(this.flightsContext, context, {}, this.units, Math.round(this.radar.range), joinList);
       return parsedTemplate !== "undefined" ? parsedTemplate : "";
     } catch (e) {
       console.error("Error when rendering: " + compiledTemplate, e);
@@ -1045,3 +1063,4 @@ class Flightradar24Card extends HTMLElement {
 }
 
 customElements.define("flightradar24-card", Flightradar24Card);
+

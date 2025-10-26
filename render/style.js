@@ -1,6 +1,6 @@
 export function renderStyle(instance) {
   // Remove any previously injected style
-  const oldStyle = instance.shadowRoot.querySelector('style[data-fr24-style]');
+  const oldStyle = instance.shadowRoot.querySelector("style[data-fr24-style]");
   if (oldStyle) oldStyle.remove();
 
   const radarPrimaryColor =
@@ -13,7 +13,7 @@ export function renderStyle(instance) {
     instance.radar["feature-color"] || "var(--secondary-text-color)";
 
   const style = document.createElement("style");
-  style.setAttribute('data-fr24-style', '1');
+  style.setAttribute("data-fr24-style", "1");
   style.textContent = `
     :host {
       --radar-primary-color: ${radarPrimaryColor};
@@ -30,6 +30,9 @@ export function renderStyle(instance) {
     #flights .flight {
       margin-top: 16px;
       margin-bottom: 16px;
+    }
+    #flights .flight.first {
+      margin-top: 0px;
     }
     #flights .flight.selected {
       margin-left: -3px;
