@@ -1,0 +1,13 @@
+{
+  "name": "flightradar24-card",
+  "version": "1.0.0",
+  "description": "Home Assistant custom card for Flightradar24 integration",
+  "devDependencies": {
+    "rollup": "^3.29.4",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-commonjs": "^24.1.0"
+  },
+  "scripts": {
+    "build": "rollup -c"
+  }
+}

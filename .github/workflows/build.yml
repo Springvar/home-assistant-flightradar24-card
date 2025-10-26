@@ -1,0 +1,35 @@
+name: Bundle Flightradar24 Card
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Build card with Rollup
+        run: npm run build
+
+      - name: Upload release files as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: |
+            dist/flightradar24-card.js
+            hacs.json
+            README.md
+            LICENSE
