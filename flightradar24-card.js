@@ -34,7 +34,6 @@ class Flightradar24Card extends HTMLElement {
     if (!config) {
       throw new Error("Configuration is missing.");
     }
-
     this.config = Object.assign({}, config);
     this.config.flights_entity =
       config.flights_entity ?? "sensor.flightradar24_current_in_area";
@@ -43,6 +42,7 @@ class Flightradar24Card extends HTMLElement {
       config.no_flights_message ??
       "No flights are currently visible. Please check back later.";
 
+    this.list = Object.assign({ hide: false }, config.list);
     this.units = Object.assign({}, unitsConfig, config.units);
     this.radar = Object.assign(
       { range: this.units.distance === "km" ? 35 : 25 },
@@ -92,7 +92,7 @@ class Flightradar24Card extends HTMLElement {
       this._radarResizeObserver.disconnect();
     }
     this._radarResizeObserver = new ResizeObserver(() => {
-    this.renderRadarScreen();
+      this.renderRadarScreen();
       this.renderRadar(this._flightsData);
     });
     this._radarResizeObserver.observe(radar);
@@ -115,7 +115,7 @@ class Flightradar24Card extends HTMLElement {
           input.checked = toggle.default;
           input.addEventListener("change", () => {
             this.defines[toggleKey] = input.checked;
-      this.renderDynamic();
+            this.renderDynamic();
           });
 
           toggleElement.appendChild(label);
@@ -131,6 +131,13 @@ class Flightradar24Card extends HTMLElement {
     const flightsContainer = this.shadowRoot.getElementById("flights");
     if (!flightsContainer) return;
     flightsContainer.innerHTML = "";
+
+    if (this.list && this.list.hide === true) {
+      flightsContainer.style.display = "none";
+      return;
+    } else {
+      flightsContainer.style.display = "";
+    }
 
     const filter = this.config.filter
       ? this._selectedFlights && this._selectedFlights.length > 0
@@ -148,7 +155,7 @@ class Flightradar24Card extends HTMLElement {
             },
           ]
         : this.config.filter
-        : undefined;
+      : undefined;
     const flightsData = filter
       ? this.applyFilter(this._flightsData, filter)
       : this._flightsData;
@@ -162,9 +169,9 @@ class Flightradar24Card extends HTMLElement {
             : this.radar.filter && typeof this.radar.filter === "object"
             ? this.applyFilter(this._flightsData, this.radar.filter)
             : this._flightsData
-    );
+        );
       });
-  }
+    }
 
     if (flightsData.length === 0) {
       if (this.config.no_flights_message !== "") {
@@ -236,22 +243,22 @@ class Flightradar24Card extends HTMLElement {
       }
 
       if (this.radar.local_features && this.hass) {
-    const location = this.getLocation();
-    if (location) {
-      const refLat = location.latitude;
-      const refLon = location.longitude;
+        const location = this.getLocation();
+        if (location) {
+          const refLat = location.latitude;
+          const refLon = location.longitude;
 
           this.radar.local_features.forEach((feature) => {
-          if (
+            if (
               feature.max_range !== undefined &&
               feature.max_range <= this.radar.range
             )
               return;
-    if (
+            if (
               feature.type === "outline" &&
               feature.points &&
               feature.points.length > 1
-    ) {
+            ) {
               for (let i = 0; i < feature.points.length - 1; i++) {
                 const start = feature.points[i];
                 const end = feature.points[i + 1];
@@ -270,7 +277,6 @@ class Flightradar24Card extends HTMLElement {
                   end.lon,
                   this.units.distance
                 );
-
                 if (
                   startDistance <= clippingRange ||
                   endDistance <= clippingRange
@@ -322,8 +328,8 @@ class Flightradar24Card extends HTMLElement {
                   }deg)`;
 
                   radarScreen.appendChild(outlineLine);
-    }
-  }
+                }
+              }
             } else {
               const { lat: featLat, lon: featLon } = feature.position;
 

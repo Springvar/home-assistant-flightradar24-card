@@ -123,9 +123,12 @@
       flights_entity: "sensor.flightradar24_current_in_area",
       projection_interval: 5,
       no_flights_message: "No flights available in demo.",
+      list: {
+        hide: false
+      },
       radar: {
-        range: 40,
         hide: false,
+        range: 40,
         local_features: [
           {
             type: "outline",

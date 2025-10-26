@@ -16,6 +16,7 @@ Custom card to use with [Flightradar24 integration](https://github.com/AlexandrE
      - [Radar](#radar-configuration)
        - [Radar filter](#radar-filter)
        - [Radar features](#radar-features)
+     - [List](#list-configuration)
      - [Annotations](#annotation-configuration)
      - [Toggles](#toggles-configuration)
      - [Defines](#defines-configuration)
@@ -303,6 +304,21 @@ I want them printed as a yaml list on the format:
 ```
 
 The desc: fields will be ignored by the Card, but will be useful if you want to add or move coordinates.
+
+#### List Configuration
+
+Configure flight list settings with the `list` option.
+
+```yaml
+list:
+  hide: true
+```
+
+| Name   | Description                                               | Default Value | Constraints               |
+|--------|-----------------------------------------------------------|---------------|---------------------------|
+| `hide` | Option to hide the flight list below the radar card       | `false`       | Must be `true` or `false` |
+
+**Note:** When `list.hide` is enabled, the detailed flight list will not be displayed.
 
 #### Annotation Configuration
 
