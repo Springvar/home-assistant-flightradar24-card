@@ -1,6 +1,7 @@
 import { unitsConfig } from './config/unitsConfig.js';
 import { templateConfig } from './config/templateConfig.js';
 import { sortConfig } from './config/sortConfig.js';
+import { renderStatic } from './render/static.js';
 
 class Flightradar24Card extends HTMLElement {
   _hass;
@@ -38,7 +39,7 @@ class Flightradar24Card extends HTMLElement {
     this.sortFn = this.getSortFn(config.sort ?? sortConfig);
     this.templates = Object.assign({}, templateConfig, config.templates);
 
-    this.renderStatic();
+    renderStatic(this);
   }
 
   set hass(hass) {
@@ -55,64 +56,6 @@ class Flightradar24Card extends HTMLElement {
       this.renderRadarScreen();
       this.renderDynamic();
     }
-  }
-
-  renderStatic() {
-    this.shadowRoot.innerHTML = '';
-
-    this.renderStyle();
-
-    const card = document.createElement('ha-card');
-    card.id = 'flights-card';
-
-    if (this.radar.hide !== true) {
-      const radarContainer = document.createElement('div');
-      radarContainer.id = 'radar-container';
-
-      const radarOverlay = document.createElement('div');
-      radarOverlay.id = 'radar-overlay';
-      radarContainer.appendChild(radarOverlay);
-
-      const radarInfoDisplay = document.createElement('div');
-      radarInfoDisplay.id = 'radar-info';
-      radarContainer.appendChild(radarInfoDisplay);
-
-      const toggleContainer = document.createElement('div');
-      toggleContainer.id = 'toggle-container';
-      radarContainer.appendChild(toggleContainer);
-
-      const radar = document.createElement('div');
-      radar.id = 'radar';
-
-      const radarScreen = document.createElement('div');
-      radarScreen.id = 'radar-screen';
-      radar.appendChild(radarScreen);
-
-      const tracker = document.createElement('div');
-      tracker.id = 'tracker';
-      radar.appendChild(tracker);
-
-      const planesContainer = document.createElement('div');
-      planesContainer.id = 'planes';
-      radar.appendChild(planesContainer);
-
-      radarContainer.appendChild(radar);
-      card.appendChild(radarContainer);
-
-      requestAnimationFrame(() => {
-        this.renderRadarScreen();
-      });
-    }
-
-    const flightsContainer = document.createElement('div');
-    flightsContainer.id = 'flights';
-
-    card.appendChild(flightsContainer);
-
-    this.shadowRoot.appendChild(card);
-
-    this.attachEventListeners();
-    this.renderToggles();
   }
 
   renderToggles() {
@@ -241,10 +184,10 @@ class Flightradar24Card extends HTMLElement {
       }
 
       if (this.radar.local_features && this.hass) {
-        const location = this.getLocation();
-        if (location) {
-          const refLat = location.latitude;
-          const refLon = location.longitude;
+    const location = this.getLocation();
+    if (location) {
+      const refLat = location.latitude;
+      const refLon = location.longitude;
 
           this.radar.local_features.forEach((feature) => {
             if (feature.max_range !== undefined && feature.max_range <= this.radar.range) return;
@@ -275,9 +218,9 @@ class Flightradar24Card extends HTMLElement {
                   outlineLine.style.transform = `rotate(${Math.atan2(endY - startY, endX - startX) * (180 / Math.PI)}deg)`;
 
                   radarScreen.appendChild(outlineLine);
-                }
+        }
               }
-            } else {
+        } else {
               const { lat: featLat, lon: featLon } = feature.position;
 
               const distance = this.haversine(refLat, refLon, featLat, featLon);
@@ -304,7 +247,7 @@ class Flightradar24Card extends HTMLElement {
                   runway.style.transform = `rotate(${heading - 90}deg)`;
 
                   radarScreen.appendChild(runway);
-                }
+        }
                 if (feature.type === 'location') {
                   const locationDot = document.createElement('div');
                   locationDot.className = 'location-dot';
@@ -325,8 +268,8 @@ class Flightradar24Card extends HTMLElement {
 
                     label.style.top = featureY - labelHeight - 4 + 'px';
                     label.style.left = featureX - labelWidth / 2 + 'px';
-                  }
-                }
+    }
+  }
               }
             }
           });
@@ -341,67 +284,67 @@ class Flightradar24Card extends HTMLElement {
 
     const radar = this.shadowRoot.getElementById('radar');
     if (radar) {
-      const radarWidth = radar.clientWidth;
-      const radarHeight = radar.clientHeight;
-      const radarRange = this.radar.range;
+    const radarWidth = radar.clientWidth;
+    const radarHeight = radar.clientHeight;
+    const radarRange = this.radar.range;
 
       const scaleFactor = radarWidth / (radarRange * 2); // Adjust based on the radar width
-      const clippingRange = radarRange * 1.15;
+    const clippingRange = radarRange * 1.15;
 
-      const radarCenterX = radarWidth / 2;
-      const radarCenterY = radarHeight / 2;
+    const radarCenterX = radarWidth / 2;
+    const radarCenterY = radarHeight / 2;
 
-      flightsData
-        .slice()
-        .reverse()
-        .forEach((flight) => {
-          const distance = flight.distance_to_tracker;
+    flightsData
+      .slice()
+      .reverse()
+      .forEach((flight) => {
+        const distance = flight.distance_to_tracker;
 
-          if (distance <= clippingRange) {
-            const plane = document.createElement('div');
-            plane.className = 'plane';
+        if (distance <= clippingRange) {
+          const plane = document.createElement('div');
+          plane.className = 'plane';
 
-            const x = radarCenterX + Math.cos(((flight.heading_from_tracker - 90) * Math.PI) / 180) * distance * scaleFactor;
-            const y = radarCenterY + Math.sin(((flight.heading_from_tracker - 90) * Math.PI) / 180) * distance * scaleFactor;
+          const x = radarCenterX + Math.cos(((flight.heading_from_tracker - 90) * Math.PI) / 180) * distance * scaleFactor;
+          const y = radarCenterY + Math.sin(((flight.heading_from_tracker - 90) * Math.PI) / 180) * distance * scaleFactor;
 
             plane.style.top = y + 'px';
             plane.style.left = x + 'px';
 
-            const arrow = document.createElement('div');
-            arrow.className = 'arrow';
+          const arrow = document.createElement('div');
+          arrow.className = 'arrow';
 
             arrow.style.transform = `rotate(${flight.heading}deg)`; // Rotate arrow based on flight heading
 
-            plane.appendChild(arrow);
+          plane.appendChild(arrow);
 
-            const label = document.createElement('div');
-            label.className = 'callsign-label';
-            label.textContent = flight.callsign ?? flight.aircraft_registration ?? 'n/a';
+          const label = document.createElement('div');
+          label.className = 'callsign-label';
+          label.textContent = flight.callsign ?? flight.aircraft_registration ?? 'n/a';
 
             planesContainer.appendChild(label);
 
-            const labelRect = label.getBoundingClientRect();
-            const labelWidth = labelRect.width + 3;
-            const labelHeight = labelRect.height + 6;
+          const labelRect = label.getBoundingClientRect();
+          const labelWidth = labelRect.width + 3;
+          const labelHeight = labelRect.height + 6;
 
             label.style.top = y - labelHeight + 'px'; // Offset by the label's height
             label.style.left = x - labelWidth + 'px'; // Offset by the label's width
 
-            if (flight.altitude <= 0) {
-              plane.classList.add('plane-small');
-            } else {
-              plane.classList.add('plane-medium');
-            }
-            if (this._selectedFlights && this._selectedFlights.includes(flight.id)) {
-              plane.classList.add('selected');
-            }
+          if (flight.altitude <= 0) {
+            plane.classList.add('plane-small');
+    } else {
+            plane.classList.add('plane-medium');
+    }
+          if (this._selectedFlights && this._selectedFlights.includes(flight.id)) {
+            plane.classList.add('selected');
+  }
 
-            plane.addEventListener('click', () => this.toggleSelectedFlight(flight));
-            label.addEventListener('click', () => this.toggleSelectedFlight(flight));
+          plane.addEventListener('click', () => this.toggleSelectedFlight(flight));
+          label.addEventListener('click', () => this.toggleSelectedFlight(flight));
 
-            planesContainer.appendChild(plane);
-          }
-        });
+          planesContainer.appendChild(plane);
+  }
+      });
     }
   }
 
@@ -948,7 +891,7 @@ class Flightradar24Card extends HTMLElement {
           if (this._hass) {
             const { projected } = this.calculateFlightData();
             if (projected) {
-              this.renderDynamic();
+            this.renderDynamic();
             }
           }
         }, this.config.projection_interval * 1000);

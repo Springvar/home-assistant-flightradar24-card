@@ -1,0 +1,58 @@
+export function renderStatic(instance) {
+  // Equivalent to: this.shadowRoot.innerHTML = '';
+  instance.shadowRoot.innerHTML = '';
+
+  instance.renderStyle();
+
+  const card = document.createElement('ha-card');
+  card.id = 'flights-card';
+
+  if (instance.radar.hide !== true) {
+    const radarContainer = document.createElement('div');
+    radarContainer.id = 'radar-container';
+
+    const radarOverlay = document.createElement('div');
+    radarOverlay.id = 'radar-overlay';
+    radarContainer.appendChild(radarOverlay);
+
+    const radarInfoDisplay = document.createElement('div');
+    radarInfoDisplay.id = 'radar-info';
+    radarContainer.appendChild(radarInfoDisplay);
+
+    const toggleContainer = document.createElement('div');
+    toggleContainer.id = 'toggle-container';
+    radarContainer.appendChild(toggleContainer);
+
+    const radar = document.createElement('div');
+    radar.id = 'radar';
+
+    const radarScreen = document.createElement('div');
+    radarScreen.id = 'radar-screen';
+    radar.appendChild(radarScreen);
+
+    const tracker = document.createElement('div');
+    tracker.id = 'tracker';
+    radar.appendChild(tracker);
+
+    const planesContainer = document.createElement('div');
+    planesContainer.id = 'planes';
+    radar.appendChild(planesContainer);
+
+    radarContainer.appendChild(radar);
+    card.appendChild(radarContainer);
+
+    requestAnimationFrame(() => {
+      instance.renderRadarScreen();
+    });
+  }
+
+  const flightsContainer = document.createElement('div');
+  flightsContainer.id = 'flights';
+
+  card.appendChild(flightsContainer);
+
+  instance.shadowRoot.appendChild(card);
+
+  instance.attachEventListeners();
+  instance.renderToggles();
+}
