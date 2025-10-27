@@ -1,6 +1,6 @@
 name: CI — Build (Rollup)
 
-# Run on pushes to main, PRs, and tags (so releases that push a tag also build)
+# Run on pushes to main, PRs, tag pushes (so tag-based releases build), and manual dispatch
 on:
   push:
     branches: [ main ]
@@ -10,7 +10,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-# Keep only one concurrent run per ref to avoid duplicate builds
+# Prevent duplicate concurrent runs for the same ref
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
@@ -34,7 +34,7 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      - name: Restore npm cache
+      - name: Cache npm
         uses: actions/cache@v4
         with:
           path: ~/.npm
@@ -45,16 +45,29 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Read package.json into output (for conditional steps)
+        id: pkg
+        run: |
+          if [ -f package.json ]; then
+            echo "pkg<<EOF" >> $GITHUB_OUTPUT
+            cat package.json >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "pkg<<EOF" >> $GITHUB_OUTPUT
+            echo "{}" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run lint (if configured)
-        if: fileExists('package.json') && contains(fromJSON(needs.__noop.outputs.pkg||'{}').scripts || '', 'lint') == true
+        if: contains(steps.pkg.outputs.pkg, '"lint"')
         run: npm run lint
         continue-on-error: true
 
       - name: Build (Rollup)
         run: npm run build
 
-      - name: Run tests (if any)
-        if: contains(steps.set-scripts.outputs.scripts || '', 'test')
+      - name: Run tests (if configured)
+        if: contains(steps.pkg.outputs.pkg, '"test"')
         run: npm test
         continue-on-error: true
 
