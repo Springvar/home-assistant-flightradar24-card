@@ -1,35 +1,75 @@
-name: Bundle Flightradar24 Card
+name: CI — Build (Rollup)
 
+# Run on pushes to main, PRs, and tags (so releases that push a tag also build)
 on:
   push:
-    branches: [main]
+    branches: [ main ]
+    tags:
+      - 'v*.*.*'
   pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+# Keep only one concurrent run per ref to avoid duplicate builds
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   build:
+    name: Build, zip and upload artifact
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          node-version: '20'
+          fetch-depth: 0
 
-      - name: Install npm dependencies
-        run: npm install
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
 
-      - name: Build card with Rollup
+      - name: Restore npm cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint (if configured)
+        if: fileExists('package.json') && contains(fromJSON(needs.__noop.outputs.pkg||'{}').scripts || '', 'lint') == true
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Build (Rollup)
         run: npm run build
 
-      - name: Upload release files as artifact
+      - name: Run tests (if any)
+        if: contains(steps.set-scripts.outputs.scripts || '', 'test')
+        run: npm test
+        continue-on-error: true
+
+      - name: Prepare release artifact
+        run: |
+          mkdir -p release-artifact
+          if [ -d "dist" ]; then
+            zip -r release-artifact/flightradar24-card.zip dist
+          else
+            echo "dist directory not found — nothing to zip" && exit 1
+          fi
+
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: release
-          path: |
-            dist/flightradar24-card.js
-            hacs.json
-            README.md
-            LICENSE
+          name: flightradar24-card
+          path: release-artifact/flightradar24-card.zip
+          retention-days: 7

@@ -2,7 +2,6 @@ import { unitsConfig } from "./config/unitsConfig.js";
 import { templateConfig } from "./config/templateConfig.js";
 import { sortConfig } from "./config/sortConfig.js";
 import { renderStatic } from "./render/static.js";
-import { renderStyle } from "./render/style.js";
 import { renderFlag } from "./render/flag.js";
 import {
   haversine,

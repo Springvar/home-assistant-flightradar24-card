@@ -1,0 +1,87 @@
+name: Build and attach Rollup artifact to release
+
+# Triggers:
+# - When a release is published (typical "create release" flow)
+# - Manual dispatch (useful to create a release from the UI)
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag for release (e.g. v1.2.3)'
+        required: true
+      name:
+        description: 'Release name'
+        required: false
+      body:
+        description: 'Release notes'
+        required: false
+      prerelease:
+        description: 'Pre-release? (true/false)'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (Rollup)
+        run: npm run build
+
+      - name: Prepare artifact zip
+        run: |
+          mkdir -p release-artifact
+          if [ -d "dist" ]; then
+            zip -r release-artifact/flightradar24-card.zip dist
+          else
+            echo "dist directory not found, failing" && exit 1
+          fi
+
+      - name: Create release (when manually triggered)
+        if: github.event_name == 'workflow_dispatch'
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          name: ${{ github.event.inputs.name }}
+          body: ${{ github.event.inputs.body }}
+          draft: false
+          prerelease: ${{ github.event.inputs.prerelease }}
+
+      - name: Upload release asset (release published)
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: release-artifact/flightradar24-card.zip
+          asset_name: flightradar24-card.zip
+          asset_content_type: application/zip
+
+      - name: Upload release asset (created by this workflow)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: release-artifact/flightradar24-card.zip
+          asset_name: flightradar24-card.zip
+          asset_content_type: application/zip
