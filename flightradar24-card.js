@@ -304,17 +304,25 @@ class Flightradar24Card extends HTMLElement {
           });
           window.L.tileLayer(tileUrl, tileOpts).addTo(this._leafletMap);
         }, 0);
+      } else {
+        const radarScreenBackground = document.createElement('div');
+        radarScreenBackground.id = 'radar-screen-background';
+        radarScreen.appendChild(radarScreenBackground);
       }
 
       const radarWidth = this.shadowRoot.getElementById("radar").clientWidth;
       const radarHeight = this.shadowRoot.getElementById("radar").clientHeight;
       const radarRange = this.radar.range;
+
       const scaleFactor = radarWidth / (radarRange * 2);
       const clippingRange = radarRange * 1.15;
+
       const radarCenterX = radarWidth / 2;
       const radarCenterY = radarHeight / 2;
+
       const ringDistance = this.radar.ring_distance ?? 10;
       const ringCount = Math.floor(radarRange / ringDistance);
+
       for (let i = 1; i <= ringCount; i++) {
         const radius = i * ringDistance * scaleFactor;
         const ring = document.createElement("div");

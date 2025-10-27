@@ -57,7 +57,7 @@ export function getSortFn(sortConfig, resolvePlaceholders = (v) => v) {
           }
           break;
         case "oneOf":
-          if (value !== undefined) {
+          if (value !== undefined && value !== null) {
             const isAInValue = value.includes(fieldA);
             const isBInValue = value.includes(fieldB);
             if (isAInValue && !isBInValue) {
@@ -68,7 +68,7 @@ export function getSortFn(sortConfig, resolvePlaceholders = (v) => v) {
           }
           break;
         case "containsOneOf":
-          if (value !== undefined) {
+          if (value !== undefined && value !== null) {
             const isAContainsValue = value.some((val) => fieldA.includes(val));
             const isBContainsValue = value.some((val) => fieldB.includes(val));
             if (isAContainsValue && !isBContainsValue) {
