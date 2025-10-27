@@ -1,35 +1,90 @@
-name: Bundle Flightradar24 Card
+name: CI — Build (Rollup)
 
+# Run on pushes to main, PRs, tag pushes (so tag-based releases build), and manual dispatch
 on:
   push:
-    branches: [main]
+    branches: [ main ]
+    tags:
+      - 'v*.*.*'
   pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+# Prevent duplicate concurrent runs for the same ref
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   build:
+    name: Build, zip and upload artifact
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          node-version: '20'
+          fetch-depth: 0
 
-      - name: Install npm dependencies
-        run: npm install
+      - name: Setup Node.js 18 and Yarn cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'yarn'
 
-      - name: Build card with Rollup
-        run: npm run build
+      - name: Cache yarn cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/yarn
+            ~/.config/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
 
-      - name: Upload release files as artifact
+      - name: Install dependencies (Yarn)
+        run: yarn install --frozen-lockfile
+
+      - name: Read package.json into output (for conditional steps)
+        id: pkg
+        run: |
+          if [ -f package.json ]; then
+            echo "pkg<<EOF" >> $GITHUB_OUTPUT
+            cat package.json >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "pkg<<EOF" >> $GITHUB_OUTPUT
+            echo "{}" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run lint (if configured)
+        if: contains(steps.pkg.outputs.pkg, '"lint"')
+        run: yarn lint
+        continue-on-error: true
+
+      - name: Build (Rollup)
+        run: yarn build
+
+      - name: Run tests (if configured)
+        if: contains(steps.pkg.outputs.pkg, '"test"')
+        run: yarn test
+        continue-on-error: true
+
+      - name: Prepare release artifact
+        run: |
+          mkdir -p release-artifact
+          if [ -d "dist" ]; then
+            zip -r release-artifact/flightradar24-card.zip dist
+          else
+            echo "dist directory not found — nothing to zip" && exit 1
+          fi
+
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: release
-          path: |
-            dist/flightradar24-card.js
-            hacs.json
-            README.md
-            LICENSE
+          name: flightradar24-card
+          path: release-artifact/flightradar24-card.zip
+          retention-days: 7
