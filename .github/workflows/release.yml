@@ -31,18 +31,30 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Use Node.js
+      - name: Setup Node.js 18 and Yarn cache
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
+          cache: 'yarn'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Cache yarn cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/yarn
+            ~/.config/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Install dependencies (Yarn)
+        run: yarn install --frozen-lockfile
 
       - name: Build (Rollup)
-        run: npm run build
+        run: yarn build
 
       - name: Prepare artifact zip
         run: |

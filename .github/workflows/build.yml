@@ -28,22 +28,24 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js 18
+      - name: Setup Node.js 18 and Yarn cache
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
+          cache: 'yarn'
 
-      - name: Cache npm
+      - name: Cache yarn cache
         uses: actions/cache@v4
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          path: |
+            ~/.cache/yarn
+            ~/.config/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-node-
+            ${{ runner.os }}-yarn-
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies (Yarn)
+        run: yarn install --frozen-lockfile
 
       - name: Read package.json into output (for conditional steps)
         id: pkg
@@ -60,15 +62,15 @@ jobs:
 
       - name: Run lint (if configured)
         if: contains(steps.pkg.outputs.pkg, '"lint"')
-        run: npm run lint
+        run: yarn lint
         continue-on-error: true
 
       - name: Build (Rollup)
-        run: npm run build
+        run: yarn build
 
       - name: Run tests (if configured)
         if: contains(steps.pkg.outputs.pkg, '"test"')
-        run: npm test
+        run: yarn test
         continue-on-error: true
 
       - name: Prepare release artifact
