@@ -56,15 +56,41 @@ jobs:
       - name: Build (Rollup)
         run: yarn build
 
-      - name: Prepare artifact zip
-        run: |
-          mkdir -p release-artifact
-          if [ -d "dist" ]; then
-            zip -r release-artifact/flightradar24-card.zip dist
-          else
-            echo "dist directory not found, failing" && exit 1
-          fi
+      # === Release event handling (true GitHub Release) ===
+      - name: Upload release asset (release published)
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: dist/flightradar24-card.js
+          asset_name: flightradar24-card.js
+          asset_content_type: application/javascript
 
+      - name: Upload README.md (release published)
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: README.md
+          asset_name: README.md
+          asset_content_type: text/markdown
+
+      - name: Upload LICENSE (release published)
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: LICENSE
+          asset_name: LICENSE
+          asset_content_type: text/plain
+
+      # === Manual workflow_dispatch event handling (UI-triggered Release) ===
       - name: Create release (when manually triggered)
         if: github.event_name == 'workflow_dispatch'
         id: create_release
@@ -76,17 +102,6 @@ jobs:
           draft: false
           prerelease: ${{ github.event.inputs.prerelease }}
 
-      - name: Upload release asset (release published)
-        if: github.event_name == 'release'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: release-artifact/flightradar24-card.zip
-          asset_name: flightradar24-card.zip
-          asset_content_type: application/zip
-
       - name: Upload release asset (created by this workflow)
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-release-asset@v1
@@ -94,6 +109,28 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: release-artifact/flightradar24-card.zip
-          asset_name: flightradar24-card.zip
-          asset_content_type: application/zip
+          asset_path: dist/flightradar24-card.js
+          asset_name: flightradar24-card.js
+          asset_content_type: application/javascript
+
+      - name: Upload README.md (created by this workflow)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: README.md
+          asset_name: README.md
+          asset_content_type: text/markdown
+
+      - name: Upload LICENSE (created by this workflow)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: LICENSE
+          asset_name: LICENSE
+          asset_content_type: text/plain

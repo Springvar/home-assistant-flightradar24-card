@@ -77,7 +77,7 @@ jobs:
         run: |
           mkdir -p release-artifact
           if [ -d "dist" ]; then
-            zip -r release-artifact/flightradar24-card.zip dist
+            zip -r release-artifact/flightradar24-card.zip dist hacs.json LICENSE README.md
           else
             echo "dist directory not found — nothing to zip" && exit 1
           fi
