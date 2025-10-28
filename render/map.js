@@ -1,5 +1,5 @@
 import { getLocation } from "../utils/location.js";
-
+import { haversine } from "../utils/geometric.js";
 
 /**
  * Ensures Leaflet CSS/JS are loaded into shadowRoot *if needed*.
@@ -32,7 +32,6 @@ export function ensureLeafletLoadedIfNeeded(cardState, shadowRoot, onReady) {
       script.onerror = () => script.remove();
       shadowRoot.appendChild(script);
     } else {
-      // Script loading: poll for window.L
       const poll = setInterval(() => {
         if (window.L) {
           clearInterval(poll);
@@ -41,7 +40,6 @@ export function ensureLeafletLoadedIfNeeded(cardState, shadowRoot, onReady) {
       }, 50);
     }
   } else {
-    // Radar map not needed: call onReady immediately (no Leaflet required)
     onReady();
   }
 }
@@ -105,10 +103,25 @@ export function setupRadarMapBg(cardState, radarScreen) {
   } else {
     mapBg.style.opacity = opacity;
   }
+ 
+  mapBg.style.transform = "scale(1)";
 
   const location = getLocation(cardState);
-  const radarRange = Math.max(dimensions.range, 1);
-  const zoom = 10 + Math.floor(Math.log2(35 / radarRange));
+  const radarRange = Math.max(dimensions.range, 1); // in km by assumption. If in mi, convert!
+  const rangeKm = config.units === "mi" ? radarRange * 1.60934 : radarRange;
+
+  const lat = location.latitude || 0;
+  const lon = location.longitude || 0;
+
+  const rad = Math.PI / 180;
+  const km_per_deg_lat = 111.13209 - 0.56605 * Math.cos(2 * lat * rad) + 0.0012 * Math.cos(4 * lat * rad);
+  const km_per_deg_lon = 111.320 * Math.cos(lat * rad) - 0.094 * Math.cos(3 * lat * rad);
+  const deltaLat = rangeKm / km_per_deg_lat;
+  const deltaLon = rangeKm / km_per_deg_lon;
+  const bounds = [
+    [lat - deltaLat, lon - deltaLon],
+    [lat + deltaLat, lon + deltaLon],
+  ];
   const type = config.radar.background_map || "bw";
   let [tileUrl, tileOpts] = TILE_LAYERS[type] || TILE_LAYERS.bw;
   if ("api_key" in tileOpts && config.radar.background_map_api_key) {
@@ -122,8 +135,6 @@ export function setupRadarMapBg(cardState, radarScreen) {
   if (window.L) {
     if (!cardState._leafletMap) {
       cardState._leafletMap = window.L.map(mapBg, {
-        center: [location.latitude || 0, location.longitude || 0],
-        zoom: zoom,
         attributionControl: false,
         zoomControl: false,
         dragging: false,
@@ -135,16 +146,35 @@ export function setupRadarMapBg(cardState, radarScreen) {
         pointerEvents: false,
       });
     } else {
-      cardState._leafletMap.setView(
-        [location.latitude || 0, location.longitude || 0],
-        zoom
-      );
       cardState._leafletMap.eachLayer((layer) => {
         cardState._leafletMap.removeLayer(layer);
       });
     }
     window.L.tileLayer(tileUrl, tileOpts).addTo(cardState._leafletMap);
-  }
 
+    cardState._leafletMap.fitBounds(bounds, { animate: false, padding: [0, 0] });
+
+    // --- After fitBounds, measure actual map span ---
+    const mapContainer = cardState._leafletMap.getContainer();
+    const widthPx = mapContainer.offsetWidth;
+    const heightPx = mapContainer.offsetHeight;
+
+    const centerLatLng = window.L.latLng(lat, lon);
+    const pixelCenter = cardState._leafletMap.latLngToContainerPoint(centerLatLng);
+
+    const pixelLeft = window.L.point(0, heightPx/2);
+    const pixelRight = window.L.point(widthPx, heightPx/2);
+
+    const latLngLeft = cardState._leafletMap.containerPointToLatLng(pixelLeft);
+    const latLngRight = cardState._leafletMap.containerPointToLatLng(pixelRight);
+
+
+    let kmAcross = 1;
+    kmAcross = haversine(latLngLeft.lat, latLngLeft.lng, latLngRight.lat, latLngRight.lng, "km");
+    const desiredKmAcross = rangeKm * 2;
+
+    const scaleCorrection = kmAcross / desiredKmAcross;
+    mapBg.style.transform = `scale(${scaleCorrection})`;
+  }
   return mapBg;
 }
