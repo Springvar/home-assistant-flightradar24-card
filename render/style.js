@@ -1,16 +1,12 @@
-export function renderStyle(instance) {
-  // Remove any previously injected style
-  const oldStyle = instance.shadowRoot.querySelector("style[data-fr24-style]");
+export function renderStyle(cardState, shadowRoot) {
+  const oldStyle = shadowRoot.querySelector("style[data-fr24-style]");
   if (oldStyle) oldStyle.remove();
 
-  const radarPrimaryColor =
-    instance.radar["primary-color"] || "var(--dark-primary-color)";
-  const radarAccentColor =
-    instance.radar["accent-color"] || "var(--accent-color)";
-  const callsignLabelColor =
-    instance.radar["callsign-label-color"] || "var(--primary-background-color)";
-  const featureColor =
-    instance.radar["feature-color"] || "var(--secondary-text-color)";
+  const radar = cardState.radar || {};
+  const radarPrimaryColor = radar["primary-color"] || "var(--dark-primary-color)";
+  const radarAccentColor = radar["accent-color"] || "var(--accent-color)";
+  const callsignLabelColor = radar["callsign-label-color"] || "var(--primary-background-color)";
+  const featureColor = radar["feature-color"] || "var(--secondary-text-color)";
 
   const style = document.createElement("style");
   style.setAttribute("data-fr24-style", "1");
@@ -246,5 +242,5 @@ export function renderStyle(instance) {
       opacity: 0.35;
     }
   `;
-  instance.shadowRoot.appendChild(style);
+  shadowRoot.appendChild(style);
 }

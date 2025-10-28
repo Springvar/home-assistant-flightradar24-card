@@ -1,8 +1,3 @@
-/**
- * Parses a sort field that may use fallback syntax: 'field1 ?? field2'.
- * @param {Object} obj Object to retrieve fields from
- * @param {string} field Field string, possibly with '??'
- */
 export function parseSortField(obj, field) {
   return field.split(" ?? ").reduce((acc, cur) => acc ?? obj[cur], undefined);
 }
@@ -57,7 +52,7 @@ export function getSortFn(sortConfig, resolvePlaceholders = (v) => v) {
           }
           break;
         case "oneOf":
-          if (value !== undefined && value !== null) {
+          if (value !== undefined && value !== null && (Array.isArray(value) || typeof value === "string")) {
             const isAInValue = value.includes(fieldA);
             const isBInValue = value.includes(fieldB);
             if (isAInValue && !isBInValue) {
@@ -68,9 +63,9 @@ export function getSortFn(sortConfig, resolvePlaceholders = (v) => v) {
           }
           break;
         case "containsOneOf":
-          if (value !== undefined && value !== null) {
-            const isAContainsValue = value.some((val) => fieldA.includes(val));
-            const isBContainsValue = value.some((val) => fieldB.includes(val));
+          if (Array.isArray(value) && value.length > 0) {
+            const isAContainsValue = value.some(val => (Array.isArray(fieldA) || typeof fieldA === "string") && fieldA.includes(val));
+            const isBContainsValue = value.some(val => (Array.isArray(fieldB) || typeof fieldB === "string") && fieldB.includes(val));
             if (isAContainsValue && !isBContainsValue) {
               result = 1;
             } else if (!isAContainsValue && isBContainsValue) {
