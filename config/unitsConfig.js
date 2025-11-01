@@ -1,5 +1,5 @@
 export const unitsConfig = {
-  altitude: 'ft',
-  speed: 'kts',
-  distance: 'km'
+    altitude: 'ft',
+    speed: 'kts',
+    distance: 'km'
 };
