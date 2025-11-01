@@ -154,13 +154,9 @@ export function setupRadarMapBg(cardState, radarScreen) {
 
     cardState._leafletMap.fitBounds(bounds, { animate: false, padding: [0, 0] });
 
-    // --- After fitBounds, measure actual map span ---
     const mapContainer = cardState._leafletMap.getContainer();
     const widthPx = mapContainer.offsetWidth;
     const heightPx = mapContainer.offsetHeight;
-
-    const centerLatLng = window.L.latLng(lat, lon);
-    const pixelCenter = cardState._leafletMap.latLngToContainerPoint(centerLatLng);
 
     const pixelLeft = window.L.point(0, heightPx/2);
     const pixelRight = window.L.point(widthPx, heightPx/2);
