@@ -13,7 +13,7 @@ const defaults = {
     radar: {
         range: unitsConfig.distance === 'km' ? 35 : 25,
         background_map: 'none',
-        background_map_opacity: 1,
+        background_map_opacity: 0,
         background_map_api_key: ''
     },
     sort: sortConfig,
@@ -88,5 +88,14 @@ export class Flightradar24CardState {
 
     setRenderDynamic(fn) {
         this.renderDynamicFn = fn;
+    }
+
+    setToggleValue(toggleKey, value) {
+        if (this.config && this.config.toggles) {
+            this.defines[toggleKey] = ['true', true, 1].includes(value);
+            if (typeof this.renderDynamicFn === 'function') {
+                this.renderDynamicFn();
+            }
+        }
     }
 }

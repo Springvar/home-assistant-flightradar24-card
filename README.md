@@ -9,22 +9,22 @@ Custom card to use with [Flightradar24 integration](https://github.com/AlexandrE
 1. [Introduction](#introduction)
 2. [Installation](#installation)
 3. [Configuration](#configuration)
-   - [Basic Configuration](#basic-configuration)
-   - [Advanced Configuration](#advanced-configuration)
-     - [Sort](#sort-configuration)
-     - [Filter](#filter-configuration)
-     - [Radar](#radar-configuration)
-       - [Radar filter](#radar-filter)
-       - [Radar features](#radar-features)
-       - [Radar map background](#radar-map-background)
-     - [List](#list-configuration)
-     - [Annotations](#annotation-configuration)
-     - [Toggles](#toggles-configuration)
-     - [Defines](#defines-configuration)
-     - [Templates](#templates-configuration)
+    - [Basic Configuration](#basic-configuration)
+    - [Advanced Configuration](#advanced-configuration)
+        - [Sort](#sort-configuration)
+        - [Filter](#filter-configuration)
+        - [Radar](#radar-configuration)
+            - [Radar filter](#radar-filter)
+            - [Radar features](#radar-features)
+            - [Radar map background](#radar-map-background)
+        - [List](#list-configuration)
+        - [Annotations](#annotation-configuration)
+        - [Toggles](#toggles-configuration)
+        - [Defines](#defines-configuration)
+        - [Templates](#templates-configuration)
 4. [Usage](#usage)
-   - [Features](#features)
-   - [Examples](#examples)
+    - [Features](#features)
+    - [Examples](#examples)
 5. [Support](#support)
 
 ## Introduction
@@ -56,19 +56,19 @@ To install the card, follow these steps:
 
 1. **Download the Card**:
 
-   - Download the latest release from the [GitHub repository](https://github.com/your-repo/home-assistant-flightradar24-card/releases).
+    - Download the latest release from the [GitHub repository](https://github.com/your-repo/home-assistant-flightradar24-card/releases).
 
 2. **Add to Home Assistant**:
 
-   - Place the downloaded files in a `flightradar24` directory under your `www` directory inside your Home Assistant configuration directory.
+    - Place the downloaded files in a `flightradar24` directory under your `www` directory inside your Home Assistant configuration directory.
 
 3. **Add the Custom Card to Lovelace**:
-   - Edit your Lovelace dashboard and add the custom card:
-     ```yaml
-     resources:
-       - url: /local/flightradar24/flightradar24-card.js
-         type: module
-     ```
+    - Edit your Lovelace dashboard and add the custom card:
+        ```yaml
+        resources:
+            - url: /local/flightradar24/flightradar24-card.js
+              type: module
+        ```
 
 ## Configuration
 
@@ -100,16 +100,16 @@ To sort the displayed flights with a custom sort order, use the sort option.
 
 ```yaml
 sort:
-  - field: id
-    comparator: oneOf
-    value: ${selectedFlights}
-    order: desc
-  - field: altitude
-    comparator: eq
-    value: 0
-    order: asc
-  - field: distance_to_tracker
-    order: asc
+    - field: id
+      comparator: oneOf
+      value: ${selectedFlights}
+      order: desc
+    - field: altitude
+      comparator: eq
+      value: 0
+      order: asc
+    - field: distance_to_tracker
+      order: asc
 ```
 
 | Name         | Description                                                                                                                                   | Default Value | Constraints                                                      |
@@ -125,22 +125,22 @@ To filter the displayed flights, use the filter option.
 
 ```yaml
 filter:
-  - type: OR
-    conditions:
-      - field: distance_to_tracker
-        comparator: lte
-        value: 15
-      - type: AND
-        conditions:
-          - field: closest_passing_distance
+    - type: OR
+      conditions:
+          - field: distance_to_tracker
             comparator: lte
             value: 15
-          - field: is_approaching
-            comparator: eq
-            value: true
-      - field: altitude
-        comparator: lte
-        value: 2500
+          - type: AND
+            conditions:
+                - field: closest_passing_distance
+                  comparator: lte
+                  value: 15
+                - field: is_approaching
+                  comparator: eq
+                  value: true
+          - field: altitude
+            comparator: lte
+            value: 2500
 ```
 
 ##### Group conditions
@@ -171,17 +171,17 @@ Configure radar settings with the radar option.
 
 ```yaml
 radar:
-  range: 35
-  filter: false
-  primary-color: rgb(0,200,100) // Default colors defined by theme
-  feature-color: rgb(0,100,20)
+    range: 35
+    filter: false
+    primary-color: rgb(0,200,100) // Default colors defined by theme
+    feature-color: rgb(0,100,20)
 ```
 
 To hide the radar:
 
 ```yaml
 radar:
-  hide: true
+    hide: true
 ```
 
 | Name                   | Description                                          | Default Value                     | Constraints                                           |
@@ -204,10 +204,10 @@ You can filter the flights displayed on the radar using a filter configuration s
 
 ```yaml
 radar:
-  filter:
-    - field: altitude
-      comparator: lte
-      value: 5000
+    filter:
+        - field: altitude
+          comparator: lte
+          value: 5000
 ```
 
 ##### Radar Features
@@ -224,12 +224,12 @@ Add locations to the radar.
 
 ```yaml
 radar:
-  local_features:
-    - type: location
-      label: Trondheim
-      position:
-        lat: 63.430472
-        lon: 10.394964
+    local_features:
+        - type: location
+          label: Trondheim
+          position:
+              lat: 63.430472
+              lon: 10.394964
 ```
 
 | Name       | Description               | Default Value | Constraints                    |
@@ -251,13 +251,13 @@ Add runways to the radar.
 
 ```yaml
 radar:
-  local_features:
-    - type: runway
-      position:
-        lat: 63.457647
-        lon: 10.894486
-      heading: 86.7
-      length: 9052
+    local_features:
+        - type: runway
+          position:
+              lat: 63.457647
+              lon: 10.894486
+          heading: 86.7
+          length: 9052
 ```
 
 | Name       | Description                                      | Default Value | Constraints                    |
@@ -273,15 +273,15 @@ Add geographic outlines to the radar.
 
 ```yaml
 radar:
-  local_features:
-    - type: outline
-      points:
-        - lat: 63.642064
-          lon: 9.713992
-        - lat: 63.443223
-          lon: 9.974975
-        - lat: 63.353184
-          lon: 9.912988
+    local_features:
+        - type: outline
+          points:
+              - lat: 63.642064
+                lon: 9.713992
+              - lat: 63.443223
+                lon: 9.974975
+              - lat: 63.353184
+                lon: 9.912988
 ```
 
 | Name     | Description                         | Default Value | Constraints                       |
@@ -310,28 +310,28 @@ The desc: fields will be ignored by the Card, but will be useful if you want to 
 
 ```yaml
 radar:
-  background_map: bw # Options: bw, color, dark, outlines
-  background_map_opacity: 0.7 # Opacity of the map (0=transparent, 1=opaque)
-  background_map_api_key: YOUR_API_KEY # Optional, for some providers
+    background_map: bw # Options: bw, color, dark, outlines
+    background_map_opacity: 0.7 # Opacity of the map (0=transparent, 1=opaque)
+    background_map_api_key: YOUR_API_KEY # Optional, for some providers
 ```
 
 | Option                   | Description                                                                   | Values                            | Default |
 | ------------------------ | ----------------------------------------------------------------------------- | --------------------------------- | ------- |
 | `background_map`         | Type of map background.                                                       | `bw`, `color`, `dark`, `outlines` | `none`  |
-| `background_map_opacity` | Opacity for background map (0 to 1).                                          | 0–1 (float)                       | 1       |
+| `background_map_opacity` | Opacity for background map (0 [visible] to 1 [transparent]).                  | 0–1 (float)                       | 0       |
 | `background_map_api_key` | API key for selected tile provider (optional, for providers that require it). | string (optional)                 | –       |
 
-- **`bw`**: Black-and-white (Stamen Toner)
-- **`color`**: Standard OpenStreetMap (colored)
-- **`dark`**: Dark theme map (CartoDB)
-- **`outlines`**: Geographic outlines only
+-   **`bw`**: Black-and-white (Stamen Toner)
+-   **`color`**: Standard OpenStreetMap (colored)
+-   **`dark`**: Dark theme map (CartoDB)
+-   **`outlines`**: Geographic outlines only
 
 Example:
 
 ```yaml
 radar:
-  background_map: color
-  background_map_opacity: 0.5
+    background_map: color
+    background_map_opacity: 0.5
 ```
 
 If `background_map` is configured, the selected map is rendered beneath the radar graphics.
@@ -346,7 +346,7 @@ Configure flight list settings with the `list` option.
 
 ```yaml
 list:
-  hide: true
+    hide: true
 ```
 
 | Name   | Description                                         | Default Value | Constraints               |
@@ -361,12 +361,12 @@ Control how single fields are rendered based on conditions. Add annotations to h
 
 ```yaml
 annotate:
-  - field: aircraft_registration
-    render: <i>${aircraft_registration}</i>
-    conditions:
-      - field: aircraft_registration
-        comparator: oneOf
-        value: [LN-NIE, PH-EXV]
+    - field: aircraft_registration
+      render: <i>${aircraft_registration}</i>
+      conditions:
+          - field: aircraft_registration
+            comparator: oneOf
+            value: [LN-NIE, PH-EXV]
 ```
 
 | Name         | Description                           | Default Value | Constraints                                |
@@ -381,32 +381,32 @@ Toggle buttons control flags which can be used by the filters. Add toggle button
 
 ```yaml
 toggles:
-  list_all:
-    label: List all
-    default: false
+    list_all:
+        label: List all
+        default: false
 filter:
-  - type: OR
-    conditions:
-      - defined: list_all
-        defaultValue: false
-        comparator: eq
-        value: true
-      - type: OR
-        conditions:
-          - field: distance_to_tracker
-            comparator: lte
-            value: 15
-          - type: AND
+    - type: OR
+      conditions:
+          - defined: list_all
+            defaultValue: false
+            comparator: eq
+            value: true
+          - type: OR
             conditions:
-              - field: closest_passing_distance
-                comparator: lte
-                value: 15
-              - field: is_approaching
-                comparator: eq
-                value: true
-          - field: altitude
-            comparator: lte
-            value: 2500
+                - field: distance_to_tracker
+                  comparator: lte
+                  value: 15
+                - type: AND
+                  conditions:
+                      - field: closest_passing_distance
+                        comparator: lte
+                        value: 15
+                      - field: is_approaching
+                        comparator: eq
+                        value: true
+                - field: altitude
+                  comparator: lte
+                  value: 2500
 ```
 
 | Name      | Description                                            | Default Value | Constraints               |
@@ -421,20 +421,20 @@ Use the defines option to create reusable condition values.
 
 ```yaml
 defines:
-  aircraftsOfDisinterest:
-    - Helicopter
-    - LocalPilot1
+    aircraftsOfDisinterest:
+        - Helicopter
+        - LocalPilot1
 filter:
-  - type: NOT
-    condition:
-      type: OR
-      conditions:
-        - field: aircraft_model
-          comparator: containsOneOf
-          value: ${aircraftsOfDisinterest}
-        - field: callsign
-          comparator: containsOneOf
-          value: ${aircraftsOfDisinterest}
+    - type: NOT
+      condition:
+          type: OR
+          conditions:
+              - field: aircraft_model
+                comparator: containsOneOf
+                value: ${aircraftsOfDisinterest}
+              - field: callsign
+                comparator: containsOneOf
+                value: ${aircraftsOfDisinterest}
 ```
 
 | Name             | Description                               | Default Value | Constraints      |
@@ -506,12 +506,12 @@ In addition you will find these fields defined
 
 The Flightradar24 Integration Card offers the following features:
 
-- Display real-time flight data from Flightradar24.
-- Customizable radar view with range, projection interval, and colors.
-- Add custom locations, runways, and geographic outlines.
-- Filter flights based on various criteria.
-- Annotate specific flights with custom conditions.
-- Toggle options to control flight visibility.
+-   Display real-time flight data from Flightradar24.
+-   Customizable radar view with range, projection interval, and colors.
+-   Add custom locations, runways, and geographic outlines.
+-   Filter flights based on various criteria.
+-   Annotate specific flights with custom conditions.
+-   Toggle options to control flight visibility.
 
 ### Examples
 
@@ -522,18 +522,18 @@ Note: Radar will show all tracked flights
 ```yaml
 type: custom:flightradar24-card
 toggles:
-  show_on_ground:
-    label: Show aircraft on the ground
-    default: false
+    show_on_ground:
+        label: Show aircraft on the ground
+        default: false
 filter:
-  - type: OR
-    conditions:
-      - field: altitude
-        comparator: gt
-        value: 0
-      - defined: show_on_ground
-        comparator: eq
-        value: true
+    - type: OR
+      conditions:
+          - field: altitude
+            comparator: gt
+            value: 0
+          - defined: show_on_ground
+            comparator: eq
+            value: true
 ```
 
 #### Example: List aircraft currently visible on radar
@@ -541,9 +541,9 @@ filter:
 ```yaml
 type: custom:flightradar24-card
 filter:
-  - field: distance_to_tracker
-    comparator: lte
-    value: ${radar_range}
+    - field: distance_to_tracker
+      comparator: lte
+      value: ${radar_range}
 ```
 
 Note: Depending on your layout and system, there may be unwanted flickering or repositioning of elements as you zoom flights in or out of the active range. To avoid this, set the flag `updateRangeFilterOnTouchEnd` to true to only update the filtered list after the pinch/zoom action stops.
@@ -552,9 +552,9 @@ Note: Depending on your layout and system, there may be unwanted flickering or r
 type: custom:flightradar24-card
 updateRangeFilterOnTouchEnd: true
 filter:
-  - field: distance_to_tracker
-    comparator: lte
-    value: ${radar_range}
+    - field: distance_to_tracker
+      comparator: lte
+      value: ${radar_range}
 ```
 
 #### Example: List all aircraft from a given airline ("Delta" in this example), with no radar
@@ -562,82 +562,82 @@ filter:
 ```yaml
 type: custom:flightradar24-card
 filter:
-  - field: airline_short
-    comparator: eq
-    value: Delta
+    - field: airline_short
+      comparator: eq
+      value: Delta
 radar:
-  hide: true
+    hide: true
 ```
 
 #### Example: List all approaching and overhead B747 or A380s with toggles to show/hide either
 
-![Template with toggles](resources/example_templates_747_a380_toggle.PNG "Example")
+![Template with toggles](resources/example_templates_747_a380_toggle.PNG 'Example')
 
 Note: Radar will show all tracked flights
 
 ```yaml
 type: custom:flightradar24-card
 defines:
-  boeing_747_icao_codes:
-    - B741
-    - B742
-    - B743
-    - BLCF
-    - B74S
-    - B74R
-    - B748
-    - B744
-    - B748
+    boeing_747_icao_codes:
+        - B741
+        - B742
+        - B743
+        - BLCF
+        - B74S
+        - B74R
+        - B748
+        - B744
+        - B748
 toggles:
-  show_b747s:
-    label: 747s
-    default: true
-  show_a380s:
-    label: A380s
-    default: true
+    show_b747s:
+        label: 747s
+        default: true
+    show_a380s:
+        label: A380s
+        default: true
 filter:
-  - type: AND
-    conditions:
-      - type: OR
-        conditions:
-          - type: AND
+    - type: AND
+      conditions:
+          - type: OR
             conditions:
-              - field: aircraft_code
-                comparator: oneOf
-                value: ${boeing_747_icao_codes}
-              - defined: show_b747s
-                comparator: eq
-                value: true
-          - type: AND
-            conditions:
-              - field: aircraft_code
-                comparator: eq
-                value: A388
-              - defined: show_a380s
-                comparator: eq
-                value: true
-  - type: OR
-    conditions:
-      - field: is_approaching
-        comparator: eq
-        value: true
-      - field: distance_to_tracker
-        comparator: lt
-        value: 10
+                - type: AND
+                  conditions:
+                      - field: aircraft_code
+                        comparator: oneOf
+                        value: ${boeing_747_icao_codes}
+                      - defined: show_b747s
+                        comparator: eq
+                        value: true
+                - type: AND
+                  conditions:
+                      - field: aircraft_code
+                        comparator: eq
+                        value: A388
+                      - defined: show_a380s
+                        comparator: eq
+                        value: true
+    - type: OR
+      conditions:
+          - field: is_approaching
+            comparator: eq
+            value: true
+          - field: distance_to_tracker
+            comparator: lt
+            value: 10
 ```
 
 #### Example: Change the flight template to display a tail image instead of airplane icon
 
-![Template with tails](resources/example_templates_tails_dark.PNG "Example")
+![Template with tails](resources/example_templates_tails_dark.PNG 'Example')
 
 ```yaml
 type: custom:flightradar24-card
 templates:
-  tail_image: >-
-    <img style="float: left; margin-right: 5px;"
-    src="https://content.airhex.com/content/logos/airlines_${flight.airline_icao}_90_90_f.png?proportions=keep"
-    />
-  header: ${tpl.tail_image}${tpl.flight_info_element}
+    tail_image: >-
+        <img style="float: left; margin-right: 5px;"
+        src="https://content.airhex.com/content/logos/airlines_${flight.airline_icao}_90_90_f.png?proportions=keep"
+        />
+    header: ${tpl.tail_image}${tpl.flight_info_element}
 ```
 
 Note: Here we add a new tail_image template, and update the header template (which previously referenced the icon template) to include our new tail_image template.
@@ -646,8 +646,8 @@ Note: Here we add a new tail_image template, and update the header template (whi
 
 For support, you can:
 
-- Open an issue on the GitHub repository.
-- Join the Home Assistant community forums and ask for help in the relevant threads.
-- Check the documentation for more details and troubleshooting tips.
+-   Open an issue on the GitHub repository.
+-   Join the Home Assistant community forums and ask for help in the relevant threads.
+-   Check the documentation for more details and troubleshooting tips.
 
 Feel free to reach out if you encounter any issues or have suggestions for improvements. Your feedback is highly appreciated!
