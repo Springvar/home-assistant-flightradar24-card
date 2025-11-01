@@ -5,11 +5,7 @@ export function renderRadar(cardState) {
     if (radar && radar.filter === true) {
         flightsToRender = cardState.flightsFiltered || flights;
     } else if (radar && radar.filter && typeof radar.filter === 'object') {
-        flightsToRender = applyFilter(flights, radar.filter, (value, defaultValue) =>
-            resolvePlaceholders(value, defines, config, radar, selectedFlights, defaultValue, (v) => {
-                cardState.renderDynamicOnRangeChange = v;
-            })
-        );
+        flightsToRender = applyFilter(cardState, radar.filter);
     } else {
         flightsToRender = flights;
     }

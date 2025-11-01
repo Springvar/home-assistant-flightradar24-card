@@ -125,13 +125,7 @@ class Flightradar24Card extends HTMLElement {
             : undefined;
 
         const flightsTotal = this.cardState.flights.length;
-        const flightsFiltered = filter
-            ? applyFilter(this.cardState.flights, filter, (value, defaultValue) =>
-                  resolvePlaceholders(value, this.cardState.defines, this.cardState.config, this.cardState.radar, this.cardState.selectedFlights, defaultValue, (v) => {
-                      this.cardState.renderDynamicOnRangeChange = v;
-                  })
-              )
-            : this.cardState.flights;
+        const flightsFiltered = filter ? applyFilter(this.cardState, filter) : this.cardState.flights;
         const flightsShown = flightsFiltered.length;
 
         flightsFiltered.sort(this.cardState.sortFn);
