@@ -315,12 +315,13 @@ radar:
     background_map_api_key: YOUR_API_KEY # Optional, for some providers
 ```
 
-| Option                   | Description                                                                   | Values                            | Default |
-| ------------------------ | ----------------------------------------------------------------------------- | --------------------------------- | ------- |
-| `background_map`         | Type of map background.                                                       | `bw`, `color`, `dark`, `outlines` | `none`  |
-| `background_map_opacity` | Opacity for background map (0 [visible] to 1 [transparent]).                  | 0–1 (float)                       | 0       |
-| `background_map_api_key` | API key for selected tile provider (optional, for providers that require it). | string (optional)                 | –       |
+| Option                   | Description                                                                                                                | Values                                      | Default |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ------- |
+| `background_map`         | Type of map background. <br> - `system`: Auto-selects 'dark' or 'color' style to match Home Assistant or system Dark Mode. | `system`, `bw`, `color`, `dark`, `outlines` | `none`  |
+| `background_map_opacity` | Opacity for background map (0 [visible] to 1 [transparent]).                                                               | 0–1 (float)                                 | 0       |
+| `background_map_api_key` | API key for selected tile provider (optional, for providers that require it).                                              | string (optional)                           | –       |
 
+-   **`system`**: Automatically uses a dark map (`dark`) in dark mode and a standard colored map (`color`) in light mode, matching your Home Assistant or operating system theme.
 -   **`bw`**: Black-and-white (Stamen Toner)
 -   **`color`**: Standard OpenStreetMap (colored)
 -   **`dark`**: Dark theme map (CartoDB)
@@ -334,7 +335,7 @@ radar:
     background_map_opacity: 0.5
 ```
 
-If `background_map` is configured, the selected map is rendered beneath the radar graphics.
+If `background_map` is configured, the selected map is rendered beneath the radar graphics. Use transparency to blend the map with the radar background color.
 
 ##### Known Issue
 
@@ -347,11 +348,13 @@ Configure flight list settings with the `list` option.
 ```yaml
 list:
     hide: true
+    showListStatus: true
 ```
 
-| Name   | Description                                         | Default Value | Constraints               |
-| ------ | --------------------------------------------------- | ------------- | ------------------------- |
-| `hide` | Option to hide the flight list below the radar card | `false`       | Must be `true` or `false` |
+| Name             | Description                                                                       | Default Value | Constraints               |
+| ---------------- | --------------------------------------------------------------------------------- | ------------- | ------------------------- |
+| `hide`           | Option to hide the flight list below the radar card                               | `false`       | Must be `true` or `false` |
+| `showListStatus` | Show a summary/status line above the list showing flights listed and total count. | `false`       | Must be `true` or `false` |
 
 **Note:** When `list.hide` is enabled, the detailed flight list will not be displayed.
 

@@ -136,7 +136,7 @@ class Flightradar24Card extends HTMLElement {
             });
         }
 
-        if (this.cardState.list && this.cardState.list.showListStatus === true) {
+        if (this.cardState.list && this.cardState.list.showListStatus === true && flightsTotal > 0) {
             this.cardState.flightsContext = {
                 shown: flightsShown,
                 total: flightsTotal,

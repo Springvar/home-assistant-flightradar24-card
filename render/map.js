@@ -62,7 +62,12 @@ export function setupRadarMapBg(cardState, radarScreen) {
                 subdomains: ['a', 'b', 'c']
             }
         ],
-        dark: ['https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', { attribution: '&copy; CartoDB' }],
+        dark: [
+            'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+            {
+                attribution: '&copy; CartoDB'
+            }
+        ],
         outlines: [
             'https://tiles.stadiamaps.com/tiles/stamen_toner_lines/{z}/{x}/{y}.png',
             {
@@ -70,7 +75,8 @@ export function setupRadarMapBg(cardState, radarScreen) {
                 attribution: 'Map tiles by Stamen Design, hosted by Stadia Maps; Data by OpenStreetMap',
                 subdomains: []
             }
-        ]
+        ],
+        system: null
     };
 
     let opacity = typeof config.radar.background_map_opacity === 'number' ? Math.max(0, Math.min(1, config.radar.background_map_opacity)) : 1;
@@ -92,10 +98,11 @@ export function setupRadarMapBg(cardState, radarScreen) {
         mapBg.style.opacity = opacity;
     }
 
-    mapBg.style.transform = 'scale(1)';
+    // Make sure there are no transformation before applying "clean map"
+    mapBg.style.transform = '';
 
     const location = getLocation(cardState);
-    const radarRange = Math.max(dimensions.range, 1); // in km by assumption. If in mi, convert!
+    const radarRange = Math.max(dimensions.range, 1);
     const rangeKm = config.units === 'mi' ? radarRange * 1.60934 : radarRange;
 
     const lat = location.latitude || 0;
@@ -110,13 +117,24 @@ export function setupRadarMapBg(cardState, radarScreen) {
         [lat - deltaLat, lon - deltaLon],
         [lat + deltaLat, lon + deltaLon]
     ];
-    const type = config.radar.background_map || 'bw';
+    let type = config.radar.background_map || 'bw';
+    if (type === 'system') {
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        let haDark = false;
+        try {
+            haDark = window.parent && window.parent.document && window.parent.document.body.classList.contains('dark');
+        } catch (e) {}
+        if (haDark || prefersDark) {
+            type = 'dark';
+        } else {
+            type = 'color';
+        }
+    }
     let [tileUrl, tileOpts] = TILE_LAYERS[type] || TILE_LAYERS.bw;
-    if ('api_key' in tileOpts && config.radar.background_map_api_key) {
+    if (tileOpts && 'api_key' in tileOpts && config.radar.background_map_api_key) {
         tileUrl = tileUrl + tileOpts.api_key + encodeURIComponent(config.radar.background_map_api_key);
     }
 
-    // Only run if window.L is available
     if (window.L) {
         if (!cardState._leafletMap) {
             cardState._leafletMap = window.L.map(mapBg, {
@@ -140,8 +158,8 @@ export function setupRadarMapBg(cardState, radarScreen) {
         cardState._leafletMap.fitBounds(bounds, { animate: false, padding: [0, 0] });
 
         const mapContainer = cardState._leafletMap.getContainer();
-        const widthPx = mapContainer.offsetWidth;
         const heightPx = mapContainer.offsetHeight;
+        const widthPx = mapContainer.offsetWidth;
 
         const pixelLeft = window.L.point(0, heightPx / 2);
         const pixelRight = window.L.point(widthPx, heightPx / 2);
@@ -149,8 +167,7 @@ export function setupRadarMapBg(cardState, radarScreen) {
         const latLngLeft = cardState._leafletMap.containerPointToLatLng(pixelLeft);
         const latLngRight = cardState._leafletMap.containerPointToLatLng(pixelRight);
 
-        let kmAcross = 1;
-        kmAcross = haversine(latLngLeft.lat, latLngLeft.lng, latLngRight.lat, latLngRight.lng, 'km');
+        let kmAcross = haversine(latLngLeft.lat, latLngLeft.lng, latLngRight.lat, latLngRight.lng, 'km');
         const desiredKmAcross = rangeKm * 2;
 
         const scaleCorrection = kmAcross / desiredKmAcross;

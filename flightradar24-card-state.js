@@ -8,7 +8,7 @@ const defaults = {
     flights_entity: 'sensor.flightradar24_current_in_area',
     projection_interval: 5,
     no_flights_message: 'No flights are currently visible. Please check back later.',
-    list: { hide: false },
+    list: { hide: false, showListStatus: true },
     units: unitsConfig,
     radar: {
         range: unitsConfig.distance === 'km' ? 35 : 25,
