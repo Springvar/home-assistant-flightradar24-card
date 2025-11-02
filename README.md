@@ -337,10 +337,6 @@ radar:
 
 If `background_map` is configured, the selected map is rendered beneath the radar graphics. Use transparency to blend the map with the radar background color.
 
-##### Known Issue
-
-**Note:** The zoom levels of the radar overlay and the background map may not always align perfectly. This may cause aircraft icons or overlays to have small positional offsets on the map background. For exact position tracking, trust the radar overlay rather than the basemap.
-
 #### List Configuration
 
 Configure flight list settings with the `list` option.
