@@ -101,6 +101,12 @@ export function setupRadarMapBg(cardState, radarScreen) {
     // Make sure there are no transformation before applying "clean map"
     mapBg.style.transform = '';
 
+    // If _leafletMap exists but is bound to wrong (detached) DOM node, destroy it
+    if (cardState._leafletMap && cardState._leafletMap.getContainer() !== mapBg) {
+        cardState._leafletMap.remove();
+        cardState._leafletMap = null;
+    }
+
     const location = getLocation(cardState);
     const radarRange = Math.max(dimensions.range, 1);
     const rangeKm = config.units === 'mi' ? radarRange * 1.60934 : radarRange;
