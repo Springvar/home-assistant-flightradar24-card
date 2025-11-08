@@ -32,6 +32,7 @@ class Flightradar24Card extends HTMLElement {
 
     set hass(hass) {
         this.cardState.hass = hass;
+        this.subscribeToStateChanges(hass);
         if (this._updateRequired) {
             this._updateRequired = false;
             this.fetchFlightsData();
