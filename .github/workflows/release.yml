@@ -64,8 +64,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: dist/flightradar24-card.js
-          asset_name: flightradar24-card.js
+          asset_path: dist/home-assistant-flightradar24-card.js
+          asset_name: home-assistant-flightradar24-card.js
           asset_content_type: application/javascript
 
       - name: Upload README.md (release published)
@@ -109,8 +109,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/flightradar24-card.js
-          asset_name: flightradar24-card.js
+          asset_path: dist/home-assistant-flightradar24-card.js
+          asset_name: home-assistant-flightradar24-card.js
           asset_content_type: application/javascript
 
       - name: Upload README.md (created by this workflow)
