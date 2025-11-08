@@ -69,5 +69,7 @@ export function renderStatic(cardState, mainCard) {
 
     renderStyle(cardState, mainCard.shadowRoot);
 
-    renderToggles(cardState, cardState.dom?.toggleContainer);
+    if (cardState.dom?.toggleContainer) {
+        renderToggles(cardState, cardState.dom.toggleContainer);
+    }
 }

@@ -1,4 +1,5 @@
 export function renderToggles(cardState, toggleContainer) {
+    if (!toggleContainer) return;
     toggleContainer.innerHTML = '';
     const toggles = cardState.config.toggles || {};
     const haSwitchAvailable = !!window.customElements && !!customElements.get('ha-switch');

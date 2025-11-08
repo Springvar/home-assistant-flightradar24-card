@@ -77,8 +77,10 @@ class Flightradar24Card extends HTMLElement {
             centerX: width / 2,
             centerY: height / 2
         };
-        renderRadarScreen(this.cardState);
-        renderRadar(this.cardState);
+        if (this.cardState.radar.hide !== true) {
+            renderRadarScreen(this.cardState);
+            renderRadar(this.cardState);
+        }
     }
 
     observeRadarResize() {

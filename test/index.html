@@ -1,214 +1,175 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Flightradar24 Card Demo</title>
-    <script type="module" src="../flightradar24-card.js"></script>
-    <style>
-      :root {
-        --primary-color: #03a9f4;
-        --accent-color: #ff9800;
-        --primary-background-color: #fafafa;
-        --secondary-background-color: #e0e0e0;
-        --ha-card-background: #fff;
-        --ha-card-box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.12);
-        --primary-text-color: #212121;
-        --secondary-text-color: #757575;
-        --info-color: #2196f3;
-        --success-color: #43a047;
-        --warning-color: #fb8c00;
-        --error-color: #c0392b;
-        --dark-primary-color: #7cdb00;
-      }
+    <head>
+        <meta charset="UTF-8" />
+        <title>Flightradar24 Card Demo</title>
+        <script type="module" src="../flightradar24-card.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+        <style>
+            :root {
+                --primary-color: #03a9f4;
+                --accent-color: #ff9800;
+                --primary-background-color: #fafafa;
+                --secondary-background-color: #e0e0e0;
+                --ha-card-background: #fff;
+                --ha-card-box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.12);
+                --primary-text-color: #212121;
+                --secondary-text-color: #757575;
+                --info-color: #2196f3;
+                --success-color: #43a047;
+                --warning-color: #fb8c00;
+                --error-color: #c0392b;
+                --dark-primary-color: #7cdb00;
+            }
+            body {
+                background: #fafafa;
+                font-family: sans-serif;
+                margin: 0;
+                padding: 2em;
+            }
+            flightradar24-card {
+                max-width: 800px;
+                display: block;
+                margin: 2em auto;
+            }
+        </style>
+    </head>
+    <body>
+        <flightradar24-card id="fr24card"></flightradar24-card>
+        <script>
+            const dummyFlights = [
+                {
+                    id: 'TEST_NO01',
+                    flight_number: 'NO123',
+                    callsign: 'VAERNES01',
+                    aircraft_registration: 'LN001',
+                    aircraft_model: 'B737',
+                    aircraft_code: 'B737',
+                    airline: 'Norwegian',
+                    airline_short: 'NO',
+                    airline_iata: 'DY',
+                    airline_icao: 'NAX',
+                    airport_origin_name: 'Oslo Gardermoen',
+                    airport_origin_code_iata: 'OSL',
+                    airport_origin_country_name: 'Norway',
+                    airport_origin_country_code: 'NO',
+                    airport_destination_name: 'Trondheim Værnes',
+                    airport_destination_code_iata: 'TRD',
+                    airport_destination_country_name: 'Norway',
+                    airport_destination_country_code: 'NO',
+                    latitude: 63.4578,
+                    longitude: 10.452,
+                    altitude: 700,
+                    vertical_speed: -300,
+                    ground_speed: 145,
+                    heading: 92,
+                    distance_to_tracker: 6,
+                    heading_from_tracker: 45,
+                    cardinal_direction_from_tracker: 'NE',
+                    approach_indicator: '↓'
+                },
+                {
+                    id: 'TEST_NO02',
+                    flight_number: 'NO456',
+                    callsign: 'ORLAND01',
+                    aircraft_registration: 'LN002',
+                    aircraft_model: 'F-16',
+                    aircraft_code: 'F16',
+                    airline: 'Norwegian Air Force',
+                    airline_short: 'NOAF',
+                    airline_iata: '',
+                    airline_icao: 'NOAF',
+                    airport_origin_name: 'Bodø',
+                    airport_origin_code_iata: 'BOO',
+                    airport_origin_country_name: 'Norway',
+                    airport_origin_country_code: 'NO',
+                    airport_destination_name: 'Ørland',
+                    airport_destination_code_iata: 'OLA',
+                    airport_destination_country_name: 'Norway',
+                    airport_destination_country_code: 'NO',
+                    latitude: 63.7,
+                    longitude: 9.61,
+                    altitude: 850,
+                    vertical_speed: -320,
+                    ground_speed: 170,
+                    heading: 150,
+                    distance_to_tracker: 32,
+                    heading_from_tracker: 250,
+                    cardinal_direction_from_tracker: 'SW',
+                    approach_indicator: '↓'
+                },
+                {
+                    id: 'TEST_NO03',
+                    flight_number: 'NO789',
+                    callsign: 'TRANZIT01',
+                    aircraft_registration: 'LN003',
+                    aircraft_model: 'A320',
+                    aircraft_code: 'A320',
+                    airline: 'Scandinavian',
+                    airline_short: 'SK',
+                    airline_iata: 'SK',
+                    airline_icao: 'SAS',
+                    airport_origin_name: 'Tromsø',
+                    airport_origin_code_iata: 'TOS',
+                    airport_origin_country_name: 'Norway',
+                    airport_origin_country_code: 'NO',
+                    airport_destination_name: 'Amsterdam',
+                    airport_destination_code_iata: 'AMS',
+                    airport_destination_country_name: 'Netherlands',
+                    airport_destination_country_code: 'NL',
+                    latitude: 63.8,
+                    longitude: 10.97,
+                    altitude: 19800,
+                    vertical_speed: 0,
+                    ground_speed: 470,
+                    heading: 225,
+                    distance_to_tracker: 5,
+                    heading_from_tracker: 315,
+                    cardinal_direction_from_tracker: 'NW',
+                    approach_indicator: ''
+                }
+            ];
 
-      body {
-        background: #fafafa;
-        font-family: sans-serif;
-        margin: 0;
-        padding: 2em;
-      }
+            const dummyHass = {
+                states: {
+                    'sensor.flightradar24_current_in_area': {
+                        state: dummyFlights.length.toString(),
+                        attributes: {
+                            flights: dummyFlights
+                        }
+                    }
+                },
+                config: {
+                    latitude: 63.4041,
+                    longitude: 10.4301
+                },
+                connection: {
+                    subscribeEvents: (fn, event) => {}
+                }
+            };
 
-      flightradar24-card {
-        max-width: 800px;
-        display: block;
-        margin: 2em auto;
-      }
-    </style>
-  </head>
+            function getConfigFile() {
+                const params = new URLSearchParams(window.location.search);
+                const cfgName = params.get('config');
+                return cfgName ? `${cfgName}.yaml` : 'config.yaml';
+            }
 
-  <body>
-    <flightradar24-card id="fr24card"></flightradar24-card>
-    <script>
-      const dummyFlights = [
-        {
-          id: "TEST_NO01",
-          flight_number: "NO123",
-          callsign: "VAERNES01",
-          aircraft_registration: "LN001",
-          aircraft_model: "B737",
-          aircraft_code: "B737",
-          airline: "Norwegian",
-          airline_short: "NO",
-          airline_iata: "DY",
-          airline_icao: "NAX",
-          airport_origin_name: "Oslo Gardermoen",
-          airport_origin_code_iata: "OSL",
-          airport_origin_country_name: "Norway",
-          airport_origin_country_code: "NO",
-          airport_destination_name: "Trondheim Værnes",
-          airport_destination_code_iata: "TRD",
-          airport_destination_country_name: "Norway",
-          airport_destination_country_code: "NO",
-           latitude: 63.4578,
-          longitude: 10.652,
-          altitude: 700,
-          vertical_speed: -300,
-          ground_speed: 145,
-          heading: 92,
-          distance_to_tracker: 6,
-          heading_from_tracker: 45,
-          cardinal_direction_from_tracker: "NE",
-          approach_indicator: "↓",
-        },
-        {
-          id: "TEST_NO02",
-          flight_number: "NO456",
-          callsign: "ORLAND01",
-          aircraft_registration: "LN002",
-          aircraft_model: "F-16",
-          aircraft_code: "F16",
-          airline: "Norwegian Air Force",
-          airline_short: "NOAF",
-          airline_iata: "",
-          airline_icao: "NOAF",
-          airport_origin_name: "Bodø",
-          airport_origin_code_iata: "BOO",
-          airport_origin_country_name: "Norway",
-          airport_origin_country_code: "NO",
-          airport_destination_name: "Ørland",
-          airport_destination_code_iata: "OLA",
-          airport_destination_country_name: "Norway",
-          airport_destination_country_code: "NO",
-          latitude: 63.7,
-          longitude: 9.61,
-          altitude: 850,
-          vertical_speed: -320,
-          ground_speed: 170,
-          heading: 150,
-          distance_to_tracker: 32,
-          heading_from_tracker: 250,
-          cardinal_direction_from_tracker: "SW",
-          approach_indicator: "↓",
-        },
-        {
-          id: "TEST_NO03",
-          flight_number: "NO789",
-          callsign: "TRANZIT01",
-          aircraft_registration: "LN003",
-          aircraft_model: "A320",
-          aircraft_code: "A320",
-          airline: "Scandinavian",
-          airline_short: "SK",
-          airline_iata: "SK",
-          airline_icao: "SAS",
-          airport_origin_name: "Tromsø",
-          airport_origin_code_iata: "TOS",
-          airport_origin_country_name: "Norway",
-          airport_origin_country_code: "NO",
-          airport_destination_name: "Amsterdam",
-          airport_destination_code_iata: "AMS",
-          airport_destination_country_name: "Netherlands",
-          airport_destination_country_code: "NL",
-          latitude: 63.8,
-          longitude: 10.97,
-          altitude: 19800,
-          vertical_speed: 0,
-          ground_speed: 470,
-          heading: 225,
-          distance_to_tracker: 5,
-          heading_from_tracker: 315,
-          cardinal_direction_from_tracker: "NW",
-          approach_indicator: "",
-        },
-      ];
-
-      const cardConfig = {
-        units: { altitude: "ft", speed: "kts", distance: "km" },
-        flights_entity: "sensor.flightradar24_current_in_area",
-        projection_interval: 5,
-        no_flights_message: "No flights available in demo.",
-        toggles: {
-          list_all: {
-            label: "Show me",
-            default: "false",
-          },
-        },
-        list: {
-          hide: false,
-          showListStatus: true,
-        },
-        radar: {
-          background_map: "color",
-          background_map_opacity: 0.5,
-          hide: false,
-          range: 60,
-          local_features: [
-            {
-              type: "location",
-              position: { lat: 63.4041, lon: 10.4301 },
-              label: "Risvollan",
-            },
-            {
-              type: "location",
-              position: { lat: 63.4578, lon: 10.924 },
-              label: "Trondheim Værnes",
-            },
-            {
-              type: "runway",
-              position: { lat: 63.4578, lon: 10.924 },
-              heading: 92,
-              length: 2999,
-              label: "Værnes RWY 09/27",
-            },
-            {
-              type: "location",
-              position: { lat: 63.6989, lon: 9.604 },
-              label: "Ørland",
-            },
-            {
-              type: "runway",
-              position: { lat: 63.6989, lon: 9.604 },
-              heading: 150,
-              length: 2714,
-              label: "Ørland RWY 15/33",
-            },
-          ],
-        },
-      };
-
-      const dummyHass = {
-        states: {
-          "sensor.flightradar24_current_in_area": {
-            state: dummyFlights.length.toString(),
-            attributes: {
-              flights: dummyFlights,
-            },
-          },
-        },
-        config: {
-          latitude: 63.4041,
-          longitude: 10.4301,
-        },
-        connection: {
-          subscribeEvents: (fn, event) => {},
-        },
-      };
-
-      window.customElements.whenDefined("flightradar24-card").then(() => {
-        const card = document.getElementById("fr24card");
-        card.setConfig(cardConfig);
-        card.hass = dummyHass;
-      });
-    </script>
-  </body>
+            fetch(getConfigFile())
+                .then(resp => {
+                    if (!resp.ok) throw new Error("Config file not found");
+                    return resp.text();
+                })
+                .then(yamlSource => {
+                    const cardConfig = window.jsyaml.load(yamlSource);
+            window.customElements.whenDefined('flightradar24-card').then(() => {
+                const card = document.getElementById('fr24card');
+                card.setConfig(cardConfig);
+                card.hass = dummyHass;
+            });
+                })
+                .catch(e => {
+                    console.error("Error loading config:", e);
+                });
+        </script>
+    </body>
 </html>

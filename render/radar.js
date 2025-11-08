@@ -1,5 +1,5 @@
 export function renderRadar(cardState) {
-    const { flights, radar, defines, config, selectedFlights, dimensions, dom } = cardState;
+    const { flights, radar, selectedFlights, dimensions, dom } = cardState;
 
     let flightsToRender;
     if (radar && radar.filter === true) {
@@ -11,6 +11,7 @@ export function renderRadar(cardState) {
     }
 
     const planesContainer = dom?.planesContainer || document.getElementById('planes');
+    if (!planesContainer) return;
     planesContainer.innerHTML = '';
 
     const { range: radarRange, scaleFactor, centerX: radarCenterX, centerY: radarCenterY } = dimensions;
