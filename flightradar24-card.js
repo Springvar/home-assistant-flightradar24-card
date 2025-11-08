@@ -100,8 +100,8 @@ class Flightradar24Card extends HTMLElement {
     renderDynamic() {
         const flightsContainer = this.shadowRoot.getElementById('flights');
         if (!flightsContainer) return;
-        flightsContainer.innerHTML = '';
 
+        const fragment = document.createDocumentFragment();
         if (this.cardState.list && this.cardState.list.hide === true) {
             flightsContainer.style.display = 'none';
             return;
@@ -155,7 +155,7 @@ class Flightradar24Card extends HTMLElement {
                     (...elements) =>
                         elements?.filter((e) => e).join(joinWith || ' ')
             );
-            flightsContainer.appendChild(listStatusDiv);
+            fragment.appendChild(listStatusDiv);
         }
 
         if (flightsShown === 0) {
@@ -163,7 +163,7 @@ class Flightradar24Card extends HTMLElement {
                 const noFlightsMessage = document.createElement('div');
                 noFlightsMessage.className = 'no-flights-message';
                 noFlightsMessage.textContent = this.cardState.config.no_flights_message;
-                flightsContainer.appendChild(noFlightsMessage);
+                fragment.appendChild(noFlightsMessage);
             }
         } else {
             flightsFiltered.forEach((flight, idx) => {
@@ -171,9 +171,12 @@ class Flightradar24Card extends HTMLElement {
                 if (idx === 0) {
                     flightElement.className += ' first';
                 }
-                flightsContainer.appendChild(flightElement);
+                fragment.appendChild(flightElement);
             });
         }
+
+        flightsContainer.innerHTML = '';
+        flightsContainer.appendChild(fragment);
     }
 
     updateRadarRange(delta) {
