@@ -2,41 +2,41 @@ import { getLocation } from '../utils/location.js';
 import { haversine } from '../utils/geometric.js';
 
 /**
- * Ensures Leaflet CSS/JS are loaded into shadowRoot *if needed*.
- * Only loads if cardState wants a map background.
+ * Ensures Leaflet CSS/JS are loaded into shadowRoot if needed.
+ * Only loads if cardState wants a map background and radar is shown.
  */
 export function ensureLeafletLoadedIfNeeded(cardState, shadowRoot, onReady) {
-    if (cardState.radar && cardState.radar.background_map && cardState.radar.background_map !== 'none') {
-        if (window.L) {
-            onReady();
-            return;
-        }
-        if (!shadowRoot.querySelector('#leaflet-css-loader')) {
-            const link = document.createElement('link');
-            link.id = 'leaflet-css-loader';
-            link.rel = 'stylesheet';
-            link.href = 'https://unpkg.com/leaflet/dist/leaflet.css';
-            shadowRoot.appendChild(link);
-        }
-        if (!shadowRoot.querySelector('#leaflet-js-loader')) {
-            const script = document.createElement('script');
-            script.id = 'leaflet-js-loader';
-            script.src = 'https://unpkg.com/leaflet/dist/leaflet.js';
-            script.async = true;
-            script.defer = true;
-            script.onload = onReady;
-            script.onerror = () => script.remove();
-            shadowRoot.appendChild(script);
-        } else {
-            const poll = setInterval(() => {
-                if (window.L) {
-                    clearInterval(poll);
-                    onReady();
-                }
-            }, 50);
-        }
-    } else {
+    // Only load if radar is shown and a map is requested
+    if (!(cardState.radar && cardState.radar.hide !== true && cardState.radar.background_map && cardState.radar.background_map !== 'none')) {
+        return;
+    }
+    if (window.L) {
         onReady();
+        return;
+    }
+    if (!shadowRoot.querySelector('#leaflet-css-loader')) {
+        const link = document.createElement('link');
+        link.id = 'leaflet-css-loader';
+        link.rel = 'stylesheet';
+        link.href = 'https://unpkg.com/leaflet/dist/leaflet.css';
+        shadowRoot.appendChild(link);
+    }
+    if (!shadowRoot.querySelector('#leaflet-js-loader')) {
+        const script = document.createElement('script');
+        script.id = 'leaflet-js-loader';
+        script.src = 'https://unpkg.com/leaflet/dist/leaflet.js';
+        script.async = true;
+        script.defer = true;
+        script.onload = onReady;
+        script.onerror = () => script.remove();
+        shadowRoot.appendChild(script);
+    } else {
+        const poll = setInterval(() => {
+            if (window.L) {
+                clearInterval(poll);
+                onReady();
+            }
+        }, 50);
     }
 }
 

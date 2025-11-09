@@ -37,6 +37,7 @@ class Flightradar24Card extends HTMLElement {
             this._updateRequired = false;
             this.fetchFlightsData();
             this.updateCardDimensions();
+
             ensureLeafletLoadedIfNeeded(this.cardState, this.shadowRoot, () => {
                 renderRadarScreen(this.cardState);
                 renderRadar(this.cardState);
@@ -126,13 +127,11 @@ class Flightradar24Card extends HTMLElement {
                   ]
                 : this.cardState.config.filter
             : undefined;
-
         const flightsTotal = this.cardState.flights.length;
         const flightsFiltered = filter ? applyFilter(this.cardState, filter) : this.cardState.flights;
         const flightsShown = flightsFiltered.length;
 
         flightsFiltered.sort(this.cardState.sortFn);
-
         if (this.cardState.radar.hide !== true) {
             requestAnimationFrame(() => {
                 renderRadar(this.cardState);
