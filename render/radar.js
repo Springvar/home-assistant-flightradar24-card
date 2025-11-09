@@ -10,7 +10,7 @@ export function renderRadar(cardState) {
         flightsToRender = flights;
     }
 
-    const planesContainer = dom?.planesContainer || document.getElementById('planes');
+    const planesContainer = dom?.planesContainer || (cardState.mainCard?.shadowRoot && cardState.mainCard.shadowRoot.getElementById('planes'));
     if (!planesContainer) return;
     planesContainer.innerHTML = '';
 

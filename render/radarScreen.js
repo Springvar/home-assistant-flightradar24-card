@@ -21,7 +21,10 @@ export function renderRadarScreen(cardState) {
         radarInfoDisplay.innerHTML = infoElements.join('<br />');
     }
 
-    const radarScreen = dom?.radarScreen || (dom && dom.radarContainer?.querySelector('#radar-screen')) || document.getElementById('radar-screen');
+    const radarScreen =
+        dom?.radarScreen ||
+        (dom && dom.radarContainer?.querySelector('#radar-screen')) ||
+        (cardState.mainCard?.shadowRoot && cardState.mainCard.shadowRoot.getElementById('radar-screen'));
     if (!radarScreen) return;
 
     // Only remove overlays, not the background map div
