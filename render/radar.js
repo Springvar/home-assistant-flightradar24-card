@@ -1,3 +1,5 @@
+import { applyFilter } from '../utils/filter.js';
+
 export function renderRadar(cardState) {
     const { flights, radar, selectedFlights, dimensions, dom } = cardState;
 
