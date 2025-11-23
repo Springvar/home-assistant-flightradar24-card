@@ -2,7 +2,14 @@ import { renderStatic } from './render/static.js';
 import { renderFlag } from './render/flag.js';
 import { renderRadarScreen } from './render/radarScreen.js';
 import { renderRadar } from './render/radar.js';
-import { haversine, calculateBearing, calculateNewPosition, calculateClosestPassingPoint, getCardinalDirection, areHeadingsAligned } from './utils/geometric.js';
+import {
+    haversine,
+    calculateBearing,
+    calculateNewPosition,
+    calculateClosestPassingPoint,
+    getCardinalDirection,
+    areHeadingsAligned
+} from './utils/geometric.js';
 import { applyFilter, applyConditions } from './utils/filter.js';
 import { parseTemplate, resolvePlaceholders } from './utils/template.js';
 import { setupZoomHandlers } from './utils/zoom.js';
@@ -15,6 +22,7 @@ class Flightradar24Card extends HTMLElement {
     _zoomCleanup;
     _updateRequired = true;
     _timer = null;
+    _unsubscribeStateChanges = null;
 
     constructor() {
         super();
@@ -41,21 +49,34 @@ class Flightradar24Card extends HTMLElement {
     set hass(hass) {
         try {
             this.cardState.hass = hass;
-            this.subscribeToStateChanges(hass);
+
+            if (!this._unsubscribeStateChanges) {
+                this._unsubscribeStateChanges = this.subscribeToStateChanges(hass);
+            }
+
             if (this._updateRequired) {
                 this._updateRequired = false;
-                this.fetchFlightsData();
-                this.updateCardDimensions();
 
-                ensureLeafletLoadedIfNeeded(this.cardState, this.shadowRoot, () => {
-                    try {
-                        renderRadarScreen(this.cardState);
-                        renderRadar(this.cardState);
-                    } catch (e) {
-                        console.error('[FR24Card] Leaflet render error:', e);
-                    }
-                });
-                this.renderDynamic();
+                // Defer data fetching and heavy operations to avoid long task flagging
+                setTimeout(() => {
+                    this.fetchFlightsData();
+                    requestAnimationFrame(() => {
+                        this.updateCardDimensions();
+
+                        ensureLeafletLoadedIfNeeded(this.cardState, this.shadowRoot, () => {
+                            try {
+                                renderRadarScreen(this.cardState);
+                                renderRadar(this.cardState);
+                            } catch (e) {
+                                console.error('[FR24Card] Leaflet render error:', e);
+                            }
+                        });
+
+                        requestAnimationFrame(() => {
+                            this.renderDynamic();
+                        });
+                    });
+                }, 0);
             }
         } catch (e) {
             console.error('[FR24Card] set hass error:', e);
@@ -84,6 +105,10 @@ class Flightradar24Card extends HTMLElement {
                 this._zoomCleanup();
                 this._zoomCleanup = null;
             }
+            if (this._unsubscribeStateChanges) {
+                this._unsubscribeStateChanges();
+                this._unsubscribeStateChanges = null;
+            }
         } catch (e) {
             console.error('[FR24Card] disconnectedCallback error:', e);
         }
@@ -96,17 +121,24 @@ class Flightradar24Card extends HTMLElement {
             const height = radarElem?.clientHeight || 400;
             const range = this.cardState.radar.range;
             const scaleFactor = width / (range * 2);
-            this.cardState.dimensions = {
-                width,
-                height,
-                range,
-                scaleFactor,
-                centerX: width / 2,
-                centerY: height / 2
-            };
-            if (this.cardState.radar.hide !== true) {
-                renderRadarScreen(this.cardState);
-                renderRadar(this.cardState);
+            if (
+                width !== this.cardState.width ||
+                height !== this.cardState.height ||
+                range !== this.cardState.range ||
+                scaleFactor !== this.cardState.scaleFactor
+            ) {
+                this.cardState.dimensions = {
+                    width,
+                    height,
+                    range,
+                    scaleFactor,
+                    centerX: width / 2,
+                    centerY: height / 2
+                };
+                if (this.cardState.radar.hide !== true) {
+                    renderRadarScreen(this.cardState);
+                    renderRadar(this.cardState);
+                }
             }
         } catch (e) {
             console.error('[FR24Card] updateCardDimensions error:', e);
@@ -263,7 +295,9 @@ class Flightradar24Card extends HTMLElement {
                 'airport_destination_country_name',
                 'airport_destination_country_code'
             ].forEach((field) => (flight[field] = this.flightField(flight, field)));
-            flight.origin_flag = flight.airport_origin_country_code ? renderFlag(flight.airport_origin_country_code, flight.airport_origin_country_name).outerHTML : '';
+            flight.origin_flag = flight.airport_origin_country_code
+                ? renderFlag(flight.airport_origin_country_code, flight.airport_origin_country_name).outerHTML
+                : '';
             flight.destination_flag = flight.airport_destination_country_code
                 ? renderFlag(flight.airport_destination_country_code, flight.airport_destination_country_name).outerHTML
                 : '';
@@ -357,7 +391,7 @@ class Flightradar24Card extends HTMLElement {
     subscribeToStateChanges(hass) {
         try {
             if (!this.cardState.config.test && this.cardState.config.update !== false) {
-                hass.connection.subscribeEvents((event) => {
+                return hass.connection.subscribeEvents((event) => {
                     try {
                         if (event.data.entity_id === this.cardState.config.flights_entity || event.data.entity_id === this.cardState.config.location_tracker) {
                             this._updateRequired = true;
@@ -370,6 +404,7 @@ class Flightradar24Card extends HTMLElement {
         } catch (e) {
             console.error('[FR24Card] subscribeToStateChanges error:', e);
         }
+        return () => {};
     }
 
     fetchFlightsData() {
@@ -378,7 +413,8 @@ class Flightradar24Card extends HTMLElement {
             const entityState = this.cardState.hass.states[this.cardState.config.flights_entity];
             if (entityState) {
                 try {
-                    this.cardState.flights = parseFloat(entityState.state) > 0 && entityState.attributes.flights ? JSON.parse(JSON.stringify(entityState.attributes.flights)) : [];
+                    this.cardState.flights =
+                        parseFloat(entityState.state) > 0 && entityState.attributes.flights ? JSON.parse(JSON.stringify(entityState.attributes.flights)) : [];
                 } catch (error) {
                     console.error('Error fetching or parsing flight data:', error);
                     this.cardState.flights = [];
@@ -435,7 +471,12 @@ class Flightradar24Card extends HTMLElement {
 
                         flight._timestamp = currentTime;
 
-                        const newPosition = calculateNewPosition(flight.latitude, flight.longitude, flight.heading, ((flight.ground_speed * 1.852) / 3600) * timeElapsed);
+                        const newPosition = calculateNewPosition(
+                            flight.latitude,
+                            flight.longitude,
+                            flight.heading,
+                            ((flight.ground_speed * 1.852) / 3600) * timeElapsed
+                        );
 
                         flight.latitude = newPosition.lat;
                         flight.longitude = newPosition.lon;
@@ -458,7 +499,9 @@ class Flightradar24Card extends HTMLElement {
                     if (flight.is_approaching) {
                         let closestPassingLatLon = calculateClosestPassingPoint(refLat, refLon, flight.latitude, flight.longitude, flight.heading);
 
-                        flight.closest_passing_distance = Math.round(haversine(refLat, refLon, closestPassingLatLon.lat, closestPassingLatLon.lon, this.cardState.units.distance));
+                        flight.closest_passing_distance = Math.round(
+                            haversine(refLat, refLon, closestPassingLatLon.lat, closestPassingLatLon.lon, this.cardState.units.distance)
+                        );
                         const eta_to_closest_distance = this.calculateETA(
                             flight.latitude,
                             flight.longitude,
@@ -470,7 +513,12 @@ class Flightradar24Card extends HTMLElement {
 
                         if (flight.vertical_speed < 0 && flight.altitude > 0) {
                             const timeToTouchdown = flight.altitude / Math.abs(flight.vertical_speed);
-                            const touchdownLatLon = calculateNewPosition(flight.latitude, flight.longitude, flight.heading, (flight.ground_speed * timeToTouchdown) / 60);
+                            const touchdownLatLon = calculateNewPosition(
+                                flight.latitude,
+                                flight.longitude,
+                                flight.heading,
+                                (flight.ground_speed * timeToTouchdown) / 60
+                            );
                             const touchdownDistance = haversine(refLat, refLon, touchdownLatLon.lat, touchdownLatLon.lon, this.cardState.units.distance);
 
                             if (timeToTouchdown < eta_to_closest_distance) {
@@ -481,7 +529,9 @@ class Flightradar24Card extends HTMLElement {
                             }
                         }
 
-                        flight.heading_from_tracker_to_closest_passing = Math.round(calculateBearing(refLat, refLon, closestPassingLatLon.lat, closestPassingLatLon.lon));
+                        flight.heading_from_tracker_to_closest_passing = Math.round(
+                            calculateBearing(refLat, refLon, closestPassingLatLon.lat, closestPassingLatLon.lon)
+                        );
                     } else {
                         delete flight.closest_passing_distance;
                         delete flight.eta_to_closest_distance;

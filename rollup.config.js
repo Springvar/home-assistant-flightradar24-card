@@ -1,5 +1,6 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
+import { terser } from 'rollup-plugin-terser';
 
 export default {
     input: 'flightradar24-card.js',
@@ -8,5 +9,16 @@ export default {
         format: 'es',
         sourcemap: false
     },
-    plugins: [resolve(), commonjs()]
+    plugins: [
+        resolve(),
+        commonjs(),
+        terser({
+            format: {
+                comments: false,
+                beautify: true
+            },
+            compress: false,
+            mangle: false
+        })
+    ]
 };
