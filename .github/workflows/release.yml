@@ -57,7 +57,7 @@ jobs:
         run: |
           VERSION="${GITHUB_REF#refs/tags/}"
           VERSION="${VERSION#v}"
-          sed -i "s/___CARD_VERSION___/${VERSION}/g" flightradar24-card.js
+          sed -i "0,/___CARD_VERSION___/s//${VERSION}/" flightradar24-card.js
 
       - name: Build (Rollup)
         run: yarn build

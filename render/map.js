@@ -1,13 +1,21 @@
 import { getLocation } from '../utils/location.js';
 import { haversine } from '../utils/geometric.js';
 
+const VALID_MAPS = new Set(['bw', 'color', 'dark', 'outlines', 'system']);
+
+export function shouldRenderRadarBackgroundMap(cardState) {
+    const radar = cardState?.radar;
+    if (!radar || radar.hide === true) return false;
+    if (!VALID_MAPS.has(radar.background_map)) return false;
+    return true;
+}
+
 /**
  * Ensures Leaflet CSS/JS are loaded into shadowRoot if needed.
  * Only loads if cardState wants a map background and radar is shown.
  */
 export function ensureLeafletLoadedIfNeeded(cardState, shadowRoot, onReady) {
-    // Only load if radar is shown and a map is requested
-    if (!(cardState.radar && cardState.radar.hide !== true && cardState.radar.background_map && cardState.radar.background_map !== 'none')) {
+    if (!shouldRenderRadarBackgroundMap(cardState)) {
         return;
     }
     if (window.L) {
@@ -46,6 +54,23 @@ export function ensureLeafletLoadedIfNeeded(cardState, shadowRoot, onReady) {
  */
 export function setupRadarMapBg(cardState, radarScreen) {
     const { config, dimensions } = cardState;
+
+    if (!shouldRenderRadarBackgroundMap(cardState)) {
+        // Remove Leaflet map if it exists
+        if (cardState._leafletMap) {
+            cardState._leafletMap.remove();
+            cardState._leafletMap = null;
+        }
+        // Remove map background DOM node if it exists
+        const oldMapBg = radarScreen.querySelector('#radar-map-bg');
+        if (oldMapBg) {
+            oldMapBg.remove();
+        }
+        return;
+    }
+
+    const type = config?.radar?.background_map;
+
     const TILE_LAYERS = {
         bw: [
             'https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png',
@@ -98,10 +123,8 @@ export function setupRadarMapBg(cardState, radarScreen) {
         mapBg.style.opacity = opacity;
     }
 
-    // Make sure there are no transformation before applying "clean map"
     mapBg.style.transform = '';
 
-    // If _leafletMap exists but is bound to wrong (detached) DOM node, destroy it
     if (cardState._leafletMap && cardState._leafletMap.getContainer() !== mapBg) {
         cardState._leafletMap.remove();
         cardState._leafletMap = null;
@@ -123,7 +146,7 @@ export function setupRadarMapBg(cardState, radarScreen) {
         [lat - deltaLat, lon - deltaLon],
         [lat + deltaLat, lon + deltaLon]
     ];
-    let type = config.radar.background_map || 'bw';
+    let resolvedType = type;
     if (type === 'system') {
         const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         let haDark = false;
@@ -131,12 +154,12 @@ export function setupRadarMapBg(cardState, radarScreen) {
             haDark = window.parent && window.parent.document && window.parent.document.body.classList.contains('dark');
         } catch (e) {}
         if (haDark || prefersDark) {
-            type = 'dark';
+            resolvedType = 'dark';
         } else {
-            type = 'color';
+            resolvedType = 'color';
         }
     }
-    let [tileUrl, tileOpts] = TILE_LAYERS[type] || TILE_LAYERS.bw;
+    let [tileUrl, tileOpts] = TILE_LAYERS[resolvedType] || TILE_LAYERS.bw;
     if (tileOpts && 'api_key' in tileOpts && config.radar.background_map_api_key) {
         tileUrl = tileUrl + tileOpts.api_key + encodeURIComponent(config.radar.background_map_api_key);
     }

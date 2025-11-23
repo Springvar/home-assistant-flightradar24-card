@@ -18,10 +18,8 @@ import { ensureLeafletLoadedIfNeeded } from './render/map.js';
 import { Flightradar24CardState } from './flightradar24-card-state.js';
 
 const FR24_CARD_VERSION = '___CARD_VERSION___';
-const FR24_CARD_NAME = 'FLIGHTRADAR24-CARD';
-
 if (FR24_CARD_VERSION !== '___CARD_VERSION___') {
-    console.info(`%c${FR24_CARD_NAME}%c v${FR24_CARD_VERSION} `, 'color: #236597; font-weight: bold', 'color: inherit; font-weight: normal');
+    console.info(`%cFLIGHTRADAR24-CARD%c v${FR24_CARD_VERSION} `, 'color: #236597; font-weight: bold', 'color: inherit; font-weight: normal');
 }
 
 class Flightradar24Card extends HTMLElement {
