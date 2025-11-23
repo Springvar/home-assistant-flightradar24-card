@@ -53,6 +53,12 @@ jobs:
       - name: Install dependencies (Yarn)
         run: yarn install --frozen-lockfile
 
+      - name: Inject release tag as card version
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/}"
+          VERSION="${VERSION#v}"
+          sed -i "s/___CARD_VERSION___/${VERSION}/g" flightradar24-card.js
+
       - name: Build (Rollup)
         run: yarn build
 
