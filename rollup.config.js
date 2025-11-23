@@ -13,12 +13,20 @@ export default {
         resolve(),
         commonjs(),
         terser({
+            ecma: 2020,
+            module: true,
+            toplevel: true,
             format: {
-                comments: false,
-                beautify: true
+                comments: false
             },
-            compress: false,
-            mangle: false
+            compress: {
+                passes: 3,
+                drop_debugger: true,
+                pure_getters: true
+            },
+            mangle: {
+                toplevel: true
+            }
         })
     ]
 };
