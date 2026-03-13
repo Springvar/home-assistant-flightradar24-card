@@ -56,7 +56,10 @@ class Flightradar24Card extends HTMLElement {
             this.cardState.hass = hass;
 
             if (!this._unsubscribeStateChanges) {
-                this._unsubscribeStateChanges = this.subscribeToStateChanges(hass);
+                this._unsubscribeStateChanges = true; // guard against re-entry while awaiting
+                this.subscribeToStateChanges(hass).then(unsub => {
+                    this._unsubscribeStateChanges = unsub;
+                });
             }
 
             if (this._updateRequired) {
@@ -110,7 +113,7 @@ class Flightradar24Card extends HTMLElement {
                 this._zoomCleanup();
                 this._zoomCleanup = null;
             }
-            if (this._unsubscribeStateChanges) {
+            if (this._unsubscribeStateChanges && typeof this._unsubscribeStateChanges === 'function') {
                 this._unsubscribeStateChanges();
                 this._unsubscribeStateChanges = null;
             }
@@ -393,10 +396,10 @@ class Flightradar24Card extends HTMLElement {
         }
     }
 
-    subscribeToStateChanges(hass) {
+    async subscribeToStateChanges(hass) {
         try {
             if (!this.cardState.config.test && this.cardState.config.update !== false) {
-                return hass.connection.subscribeEvents((event) => {
+                return await hass.connection.subscribeEvents((event) => {
                     try {
                         if (event.data.entity_id === this.cardState.config.flights_entity || event.data.entity_id === this.cardState.config.location_tracker) {
                             this._updateRequired = true;
