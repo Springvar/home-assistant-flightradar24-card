@@ -27,7 +27,7 @@ class Flightradar24Card extends HTMLElement {
     _zoomCleanup;
     _updateRequired = true;
     _timer = null;
-    _unsubscribeStateChanges = null;
+    _unsubStateChangesPromise = null;
 
     constructor() {
         super();
@@ -55,8 +55,8 @@ class Flightradar24Card extends HTMLElement {
         try {
             this.cardState.hass = hass;
 
-            if (!this._unsubscribeStateChanges) {
-                this._unsubscribeStateChanges = this.subscribeToStateChanges(hass);
+            if (!this._unsubStateChangesPromise) {
+                this._unsubStateChangesPromise = this.subscribeToStateChanges(hass);
             }
 
             if (this._updateRequired) {
@@ -110,9 +110,9 @@ class Flightradar24Card extends HTMLElement {
                 this._zoomCleanup();
                 this._zoomCleanup = null;
             }
-            if (this._unsubscribeStateChanges) {
-                this._unsubscribeStateChanges();
-                this._unsubscribeStateChanges = null;
+            if (this._unsubStateChangesPromise) {
+                this._unsubStateChangesPromise.then((unsub) => unsub());
+                this._unsubStateChangesPromise = null;
             }
         } catch (e) {
             console.error('[FR24Card] disconnectedCallback error:', e);
@@ -184,23 +184,24 @@ class Flightradar24Card extends HTMLElement {
                 flightsContainer.style.display = '';
             }
 
-            const filter = this.cardState.config.filter
-                ? this.cardState.selectedFlights && this.cardState.selectedFlights.length > 0
-                    ? [
-                          {
-                              type: 'OR',
-                              conditions: [
-                                  {
-                                      field: 'id',
-                                      comparator: 'oneOf',
-                                      value: this.cardState.selectedFlights
-                                  },
-                                  { type: 'AND', conditions: this.cardState.config.filter }
-                              ]
-                          }
-                      ]
-                    : this.cardState.config.filter
-                : undefined;
+            const filter =
+                this.cardState.config.filter ?
+                    this.cardState.selectedFlights && this.cardState.selectedFlights.length > 0 ?
+                        [
+                            {
+                                type: 'OR',
+                                conditions: [
+                                    {
+                                        field: 'id',
+                                        comparator: 'oneOf',
+                                        value: this.cardState.selectedFlights
+                                    },
+                                    { type: 'AND', conditions: this.cardState.config.filter }
+                                ]
+                            }
+                        ]
+                    :   this.cardState.config.filter
+                :   undefined;
             const flightsTotal = this.cardState.flights.length;
             const flightsFiltered = filter ? applyFilter(this.cardState, filter) : this.cardState.flights;
             const flightsShown = flightsFiltered.length;
@@ -300,33 +301,40 @@ class Flightradar24Card extends HTMLElement {
                 'airport_destination_country_name',
                 'airport_destination_country_code'
             ].forEach((field) => (flight[field] = this.flightField(flight, field)));
-            flight.origin_flag = flight.airport_origin_country_code
-                ? renderFlag(flight.airport_origin_country_code, flight.airport_origin_country_name).outerHTML
-                : '';
-            flight.destination_flag = flight.airport_destination_country_code
-                ? renderFlag(flight.airport_destination_country_code, flight.airport_destination_country_name).outerHTML
-                : '';
+            flight.origin_flag =
+                flight.airport_origin_country_code ? renderFlag(flight.airport_origin_country_code, flight.airport_origin_country_name).outerHTML : '';
+            flight.destination_flag =
+                flight.airport_destination_country_code ?
+                    renderFlag(flight.airport_destination_country_code, flight.airport_destination_country_name).outerHTML
+                :   '';
 
-            flight.climb_descend_indicator = Math.abs(flight.vertical_speed) > 100 ? (flight.vertical_speed > 100 ? '↑' : '↓') : '';
+            flight.climb_descend_indicator =
+                Math.abs(flight.vertical_speed) > 100 ?
+                    flight.vertical_speed > 100 ?
+                        '↑'
+                    :   '↓'
+                :   '';
             flight.alt_in_unit =
-                flight.altitude >= 17750
-                    ? `FL${Math.round(flight.altitude / 1000) * 10}`
-                    : flight.altitude > 0
-                    ? this.cardState.units.altitude === 'm'
-                        ? `${Math.round(flight.altitude * 0.3048)} m`
-                        : `${Math.round(flight.altitude)} ft`
-                    : undefined;
+                flight.altitude >= 17750 ? `FL${Math.round(flight.altitude / 1000) * 10}`
+                : flight.altitude > 0 ?
+                    this.cardState.units.altitude === 'm' ?
+                        `${Math.round(flight.altitude * 0.3048)} m`
+                    :   `${Math.round(flight.altitude)} ft`
+                :   undefined;
 
             flight.spd_in_unit =
-                flight.ground_speed > 0
-                    ? this.cardState.units.speed === 'kmh'
-                        ? `${Math.round(flight.ground_speed * 1.852)} km/h`
-                        : this.cardState.units.speed === 'mph'
-                        ? `${Math.round(flight.ground_speed * 1.15078)} mph`
-                        : `${Math.round(flight.ground_speed)} kts`
-                    : undefined;
+                flight.ground_speed > 0 ?
+                    this.cardState.units.speed === 'kmh' ? `${Math.round(flight.ground_speed * 1.852)} km/h`
+                    : this.cardState.units.speed === 'mph' ? `${Math.round(flight.ground_speed * 1.15078)} mph`
+                    : `${Math.round(flight.ground_speed)} kts`
+                :   undefined;
 
-            flight.approach_indicator = flight.ground_speed > 70 ? (flight.is_approaching ? '↓' : flight.is_receding ? '↑' : '') : '';
+            flight.approach_indicator =
+                flight.ground_speed > 70 ?
+                    flight.is_approaching ? '↓'
+                    : flight.is_receding ? '↑'
+                    : ''
+                :   '';
             flight.dist_in_unit = `${Math.round(flight.distance_to_tracker)} ${this.cardState.units.distance}`;
             flight.direction_info = `${Math.round(flight.heading_from_tracker)}° ${flight.cardinal_direction_from_tracker}`;
 
@@ -409,7 +417,7 @@ class Flightradar24Card extends HTMLElement {
         } catch (e) {
             console.error('[FR24Card] subscribeToStateChanges error:', e);
         }
-        return () => {};
+        return Promise.resolve(() => {});
     }
 
     fetchFlightsData() {
