@@ -1,7 +1,7 @@
-import { renderStatic } from './render/static.js';
-import { renderFlag } from './render/flag.js';
-import { renderRadarScreen } from './render/radarScreen.js';
-import { renderRadar } from './render/radar.js';
+import { renderStatic } from './render/static';
+import { renderRadarScreen } from './render/radarScreen';
+import { renderRadar } from './render/radar';
+import { renderFlight } from './render/flight';
 import {
     haversine,
     calculateBearing,
@@ -9,25 +9,31 @@ import {
     calculateClosestPassingPoint,
     getCardinalDirection,
     areHeadingsAligned
-} from './utils/geometric.js';
-import { applyFilter, applyConditions } from './utils/filter.js';
-import { parseTemplate, resolvePlaceholders } from './utils/template.js';
-import { setupZoomHandlers } from './utils/zoom.js';
-import { getLocation } from './utils/location.js';
-import { ensureLeafletLoadedIfNeeded } from './render/map.js';
-import { Flightradar24CardState } from './flightradar24-card-state.js';
+} from './utils/geometric';
+import { applyFilter } from './utils/filter';
+import { parseTemplate } from './utils/template';
+import { setupZoomHandlers } from './utils/zoom';
+import { getLocation } from './utils/location';
+import { ensureLeafletLoadedIfNeeded } from './render/map';
+import { Flightradar24CardState } from './flightradar24-card-state';
+import type { Flight, ExtendedFlight } from './types/flight';
+import type { Hass, HassConnection } from './types/hass';
+import type { CardConfig, Condition } from './types/config';
+import type { MainCard } from './types/cardState';
 
 const FR24_CARD_VERSION = '___CARD_VERSION___';
 if (FR24_CARD_VERSION !== '___CARD_VERSION___') {
     console.info(`%cFLIGHTRADAR24-CARD%c v${FR24_CARD_VERSION} `, 'color: #236597; font-weight: bold', 'color: inherit; font-weight: normal');
 }
 
-class Flightradar24Card extends HTMLElement {
-    _radarResizeObserver;
-    _zoomCleanup;
+class Flightradar24Card extends HTMLElement implements MainCard {
+    _radarResizeObserver: ResizeObserver | null = null;
+    _zoomCleanup: (() => void) | null = null;
     _updateRequired = true;
-    _timer = null;
-    _unsubStateChangesPromise = null;
+    _timer: ReturnType<typeof setInterval> | null = null;
+    _unsubStateChangesPromise: Promise<() => void> | null = null;
+    cardState: Flightradar24CardState;
+    shadowRoot!: ShadowRoot;
 
     constructor() {
         super();
@@ -37,10 +43,11 @@ class Flightradar24Card extends HTMLElement {
             this.cardState.setRenderDynamic(() => this.renderDynamic());
         } catch (e) {
             console.error('[FR24Card] constructor error:', e);
+            this.cardState = new Flightradar24CardState();
         }
     }
 
-    setConfig(config) {
+    setConfig(config: CardConfig): void {
         try {
             if (!config) throw new Error('Configuration is missing.');
             this.cardState.setConfig(config);
@@ -51,7 +58,7 @@ class Flightradar24Card extends HTMLElement {
         }
     }
 
-    set hass(hass) {
+    set hass(hass: Hass) {
         try {
             this.cardState.hass = hass;
 
@@ -88,7 +95,7 @@ class Flightradar24Card extends HTMLElement {
         }
     }
 
-    connectedCallback() {
+    connectedCallback(): void {
         try {
             this.observeRadarResize();
         } catch (e) {
@@ -96,13 +103,13 @@ class Flightradar24Card extends HTMLElement {
         }
     }
 
-    disconnectedCallback() {
+    disconnectedCallback(): void {
         try {
             if (this._radarResizeObserver) {
                 this._radarResizeObserver.disconnect();
                 this._radarResizeObserver = null;
             }
-            if (this.cardState._leafletMap && this.cardState._leafletMap.remove) {
+            if (this.cardState._leafletMap) {
                 this.cardState._leafletMap.remove();
                 this.cardState._leafletMap = null;
             }
@@ -119,18 +126,18 @@ class Flightradar24Card extends HTMLElement {
         }
     }
 
-    updateCardDimensions() {
+    updateCardDimensions(): void {
         try {
-            const radarElem = this.shadowRoot.getElementById('radar');
+            const radarElem = this.shadowRoot?.getElementById('radar');
             const width = radarElem?.clientWidth || 400;
             const height = radarElem?.clientHeight || 400;
             const range = this.cardState.radar.range;
             const scaleFactor = width / (range * 2);
             if (
-                width !== this.cardState.width ||
-                height !== this.cardState.height ||
-                range !== this.cardState.range ||
-                scaleFactor !== this.cardState.scaleFactor
+                width !== this.cardState.dimensions.width ||
+                height !== this.cardState.dimensions.height ||
+                range !== this.cardState.dimensions.range ||
+                scaleFactor !== this.cardState.dimensions.scaleFactor
             ) {
                 this.cardState.dimensions = {
                     width,
@@ -150,9 +157,9 @@ class Flightradar24Card extends HTMLElement {
         }
     }
 
-    observeRadarResize() {
+    observeRadarResize(): void {
         try {
-            const radar = this.shadowRoot.getElementById('radar');
+            const radar = this.shadowRoot?.getElementById('radar');
             if (!radar) return;
             if (this._radarResizeObserver) this._radarResizeObserver.disconnect();
             this._radarResizeObserver = new ResizeObserver(() => {
@@ -163,17 +170,17 @@ class Flightradar24Card extends HTMLElement {
                 }
             });
             this._radarResizeObserver.observe(radar);
-            const radarOverlay = this.shadowRoot.getElementById('radar-overlay');
+            const radarOverlay = this.shadowRoot?.getElementById('radar-overlay') || null;
             if (this._zoomCleanup) this._zoomCleanup();
-            this._zoomCleanup = setupZoomHandlers(this.cardState, radarOverlay);
+            this._zoomCleanup = setupZoomHandlers(this.cardState as Parameters<typeof setupZoomHandlers>[0], radarOverlay);
         } catch (e) {
             console.error('[FR24Card] observeRadarResize error:', e);
         }
     }
 
-    renderDynamic() {
+    renderDynamic(): void {
         try {
-            const flightsContainer = this.shadowRoot.getElementById('flights');
+            const flightsContainer = this.shadowRoot?.getElementById('flights');
             if (!flightsContainer) return;
 
             const fragment = document.createDocumentFragment();
@@ -184,19 +191,19 @@ class Flightradar24Card extends HTMLElement {
                 flightsContainer.style.display = '';
             }
 
-            const filter =
+            const filter: Condition[] | undefined =
                 this.cardState.config.filter ?
                     this.cardState.selectedFlights && this.cardState.selectedFlights.length > 0 ?
                         [
                             {
-                                type: 'OR',
+                                type: 'OR' as const,
                                 conditions: [
                                     {
                                         field: 'id',
-                                        comparator: 'oneOf',
+                                        comparator: 'oneOf' as const,
                                         value: this.cardState.selectedFlights
                                     },
-                                    { type: 'AND', conditions: this.cardState.config.filter }
+                                    { type: 'AND' as const, conditions: this.cardState.config.filter }
                                 ]
                             }
                         ]
@@ -229,8 +236,8 @@ class Flightradar24Card extends HTMLElement {
                     this.cardState,
                     'list_status',
                     null,
-                    (joinWith) =>
-                        (...elements) =>
+                    (joinWith: string) =>
+                        (...elements: (string | undefined)[]) =>
                             elements?.filter((e) => e).join(joinWith || ' ')
                 );
                 fragment.appendChild(listStatusDiv);
@@ -240,12 +247,12 @@ class Flightradar24Card extends HTMLElement {
                 if (this.cardState.config.no_flights_message !== '') {
                     const noFlightsMessage = document.createElement('div');
                     noFlightsMessage.className = 'no-flights-message';
-                    noFlightsMessage.textContent = this.cardState.config.no_flights_message;
+                    noFlightsMessage.textContent = this.cardState.config.no_flights_message || '';
                     fragment.appendChild(noFlightsMessage);
                 }
             } else {
                 flightsFiltered.forEach((flight, idx) => {
-                    const flightElement = this.renderFlight(flight);
+                    const flightElement = renderFlight(this.cardState, flight);
                     if (idx === 0) {
                         flightElement.className += ' first';
                     }
@@ -260,10 +267,10 @@ class Flightradar24Card extends HTMLElement {
         }
     }
 
-    updateRadarRange(delta) {
+    updateRadarRange(delta: number): void {
         try {
             const minRange = this.cardState.radar.min_range || 1;
-            const maxRange = this.cardState.radar.max_range || Math.max(100, this.cardState.radar.initialRange);
+            const maxRange = this.cardState.radar.max_range || Math.max(100, this.cardState.radar.initialRange || 35);
             let newRange = this.cardState.radar.range + delta;
             if (newRange < minRange) newRange = minRange;
             if (newRange > maxRange) newRange = maxRange;
@@ -277,134 +284,10 @@ class Flightradar24Card extends HTMLElement {
         }
     }
 
-    renderFlight(_flight) {
-        try {
-            const flight = Object.assign({}, _flight);
-            [
-                'flight_number',
-                'callsign',
-                'aircraft_registration',
-                'aircraft_model',
-                'aircraft_code',
-                'airline',
-                'airline_short',
-                'airline_iata',
-                'airline_icao',
-                'airport_origin_name',
-                'airport_origin_code_iata',
-                'airport_origin_code_icao',
-                'airport_origin_country_name',
-                'airport_origin_country_code',
-                'airport_destination_name',
-                'airport_destination_code_iata',
-                'airport_destination_code_icao',
-                'airport_destination_country_name',
-                'airport_destination_country_code'
-            ].forEach((field) => (flight[field] = this.flightField(flight, field)));
-            flight.origin_flag =
-                flight.airport_origin_country_code ? renderFlag(flight.airport_origin_country_code, flight.airport_origin_country_name).outerHTML : '';
-            flight.destination_flag =
-                flight.airport_destination_country_code ?
-                    renderFlag(flight.airport_destination_country_code, flight.airport_destination_country_name).outerHTML
-                :   '';
-
-            flight.climb_descend_indicator =
-                Math.abs(flight.vertical_speed) > 100 ?
-                    flight.vertical_speed > 100 ?
-                        '↑'
-                    :   '↓'
-                :   '';
-            flight.alt_in_unit =
-                flight.altitude >= 17750 ? `FL${Math.round(flight.altitude / 1000) * 10}`
-                : flight.altitude > 0 ?
-                    this.cardState.units.altitude === 'm' ?
-                        `${Math.round(flight.altitude * 0.3048)} m`
-                    :   `${Math.round(flight.altitude)} ft`
-                :   undefined;
-
-            flight.spd_in_unit =
-                flight.ground_speed > 0 ?
-                    this.cardState.units.speed === 'kmh' ? `${Math.round(flight.ground_speed * 1.852)} km/h`
-                    : this.cardState.units.speed === 'mph' ? `${Math.round(flight.ground_speed * 1.15078)} mph`
-                    : `${Math.round(flight.ground_speed)} kts`
-                :   undefined;
-
-            flight.approach_indicator =
-                flight.ground_speed > 70 ?
-                    flight.is_approaching ? '↓'
-                    : flight.is_receding ? '↑'
-                    : ''
-                :   '';
-            flight.dist_in_unit = `${Math.round(flight.distance_to_tracker)} ${this.cardState.units.distance}`;
-            flight.direction_info = `${Math.round(flight.heading_from_tracker)}° ${flight.cardinal_direction_from_tracker}`;
-
-            const flightElement = document.createElement('div');
-            flightElement.style.clear = 'both';
-            flightElement.className = 'flight';
-
-            if (this.cardState.selectedFlights && this.cardState.selectedFlights.includes(flight.id)) {
-                flightElement.className += ' selected';
-            }
-
-            flightElement.innerHTML = parseTemplate(
-                this.cardState,
-                'flight_element',
-                flight,
-                (joinWith) =>
-                    (...elements) =>
-                        elements?.filter((e) => e).join(joinWith || ' ')
-            );
-            flightElement.addEventListener('click', () => this.cardState.toggleSelectedFlight(flight));
-
-            return flightElement;
-        } catch (e) {
-            console.error('[FR24Card] renderFlight error:', e);
-            const errorElem = document.createElement('div');
-            errorElem.className = 'flight error';
-            errorElem.textContent = `Error rendering flight: ${e}`;
-            return errorElem;
-        }
-    }
-
-    flightField(flight, field) {
-        try {
-            let text = flight[field];
-            if (this.cardState.config.annotate) {
-                const f = Object.assign({}, flight);
-                this.cardState.config.annotate
-                    .filter((a) => a.field === field)
-                    .forEach((a) => {
-                        if (
-                            applyConditions(flight, a.conditions, (value, defaultValue) =>
-                                resolvePlaceholders(
-                                    value,
-                                    this.cardState.defines,
-                                    this.cardState.config,
-                                    this.cardState.radar,
-                                    this.cardState.selectedFlights,
-                                    defaultValue,
-                                    (v) => {
-                                        this.cardState.renderDynamicOnRangeChange = v;
-                                    }
-                                )
-                            )
-                        ) {
-                            f[field] = a.render.replace(/\$\{([^}]*)\}/g, (_, p1) => f[p1]);
-                        }
-                    });
-                text = f[field];
-            }
-            return text;
-        } catch (e) {
-            console.error(`[FR24Card] flightField error for field '${field}':`, e);
-            return '';
-        }
-    }
-
-    subscribeToStateChanges(hass) {
+    subscribeToStateChanges(hass: Hass): Promise<() => void> {
         try {
             if (!this.cardState.config.test && this.cardState.config.update !== false) {
-                return hass.connection.subscribeEvents((event) => {
+                return (hass.connection as HassConnection).subscribeEvents((event: { data: { entity_id: string } }) => {
                     try {
                         if (event.data.entity_id === this.cardState.config.flights_entity || event.data.entity_id === this.cardState.config.location_tracker) {
                             this._updateRequired = true;
@@ -420,10 +303,13 @@ class Flightradar24Card extends HTMLElement {
         return Promise.resolve(() => {});
     }
 
-    fetchFlightsData() {
+    fetchFlightsData(): void {
         try {
-            this._timer = clearInterval(this._timer);
-            const entityState = this.cardState.hass.states[this.cardState.config.flights_entity];
+            if (this._timer) {
+                clearInterval(this._timer);
+                this._timer = null;
+            }
+            const entityState = this.cardState.hass?.states[this.cardState.config.flights_entity || ''];
             if (entityState) {
                 try {
                     this.cardState.flights =
@@ -439,7 +325,6 @@ class Flightradar24Card extends HTMLElement {
             const { moving } = this.calculateFlightData();
             if (this.cardState.config.projection_interval) {
                 if (moving && !this._timer) {
-                    clearInterval(this._timer);
                     this._timer = setInterval(() => {
                         try {
                             if (this.cardState.hass) {
@@ -452,8 +337,9 @@ class Flightradar24Card extends HTMLElement {
                             console.error('[FR24Card] projectionInterval setInterval error:', e);
                         }
                     }, this.cardState.config.projection_interval * 1000);
-                } else if (!moving) {
+                } else if (!moving && this._timer) {
                     clearInterval(this._timer);
+                    this._timer = null;
                 }
             }
         } catch (e) {
@@ -461,7 +347,7 @@ class Flightradar24Card extends HTMLElement {
         }
     }
 
-    calculateFlightData() {
+    calculateFlightData(): { projected: boolean; moving: boolean } {
         try {
             let projected = false;
             let moving = false;
@@ -472,17 +358,17 @@ class Flightradar24Card extends HTMLElement {
                 const refLon = location.longitude;
 
                 this.cardState.flights.forEach((flight) => {
-                    if (!flight._timestamp) {
-                        flight._timestamp = currentTime;
+                    if (!(flight as ExtendedFlight)._timestamp) {
+                        (flight as ExtendedFlight)._timestamp = currentTime;
                     }
 
                     moving = moving || flight.ground_speed > 0;
 
-                    const timeElapsed = currentTime - flight._timestamp;
+                    const timeElapsed = currentTime - ((flight as ExtendedFlight)._timestamp || currentTime);
                     if (timeElapsed > 1) {
                         projected = true;
 
-                        flight._timestamp = currentTime;
+                        (flight as ExtendedFlight)._timestamp = currentTime;
 
                         const newPosition = calculateNewPosition(
                             flight.latitude,
@@ -494,8 +380,8 @@ class Flightradar24Card extends HTMLElement {
                         flight.latitude = newPosition.lat;
                         flight.longitude = newPosition.lon;
                         const newAltitude = Math.max(flight.altitude + (timeElapsed / 60) * flight.vertical_speed, 0);
-                        if (flight.landed || (newAltitude !== flight.altitude && newAltitude === 0)) {
-                            flight.landed = true;
+                        if ((flight as ExtendedFlight).landed || (newAltitude !== flight.altitude && newAltitude === 0)) {
+                            (flight as ExtendedFlight).landed = true;
                             flight.ground_speed = Math.max(flight.ground_speed - 15 * timeElapsed, 15);
                         }
                         flight.altitude = newAltitude;
@@ -535,7 +421,7 @@ class Flightradar24Card extends HTMLElement {
                             const touchdownDistance = haversine(refLat, refLon, touchdownLatLon.lat, touchdownLatLon.lon, this.cardState.units.distance);
 
                             if (timeToTouchdown < eta_to_closest_distance) {
-                                flight.is_landing = true;
+                                (flight as ExtendedFlight).is_landing = true;
                                 flight.closest_passing_distance = Math.round(touchdownDistance);
                                 flight.eta_to_closest_distance = Math.round(timeToTouchdown);
                                 closestPassingLatLon = touchdownLatLon;
@@ -549,7 +435,7 @@ class Flightradar24Card extends HTMLElement {
                         delete flight.closest_passing_distance;
                         delete flight.eta_to_closest_distance;
                         delete flight.heading_from_tracker_to_closest_passing;
-                        delete flight.is_landing;
+                        delete (flight as ExtendedFlight).is_landing;
                     }
                 });
             } else {
@@ -563,7 +449,7 @@ class Flightradar24Card extends HTMLElement {
         }
     }
 
-    calculateETA(fromLat, fromLon, toLat, toLon, groundSpeed) {
+    calculateETA(fromLat: number, fromLon: number, toLat: number, toLon: number, groundSpeed: number): number {
         try {
             const distance = haversine(fromLat, fromLon, toLat, toLon, this.cardState.units.distance);
             if (groundSpeed === 0) {
@@ -578,7 +464,7 @@ class Flightradar24Card extends HTMLElement {
         }
     }
 
-    toggleSelectedFlight(flight) {
+    toggleSelectedFlight(flight: Flight): void {
         try {
             if (!this.cardState.selectedFlights) this.cardState.selectedFlights = [];
             if (!this.cardState.selectedFlights.includes(flight.id)) {
@@ -592,7 +478,7 @@ class Flightradar24Card extends HTMLElement {
         }
     }
 
-    get hass() {
+    get hass(): Hass | null {
         return this.cardState.hass;
     }
 }

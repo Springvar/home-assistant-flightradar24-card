@@ -1,0 +1,14 @@
+flights_entity: sensor.flightradar24_current_in_area
+radar:
+  range: 50
+  min_range: 5
+  max_range: 100
+  ring_distance: 10
+  background_map: none
+units:
+  altitude: ft
+  speed: kts
+  distance: km
+sort:
+  - field: distance
+    order: asc

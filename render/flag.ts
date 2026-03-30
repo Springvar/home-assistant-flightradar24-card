@@ -1,4 +1,4 @@
-export function renderFlag(countryCode, countryName) {
+export function renderFlag(countryCode: string, countryName: string): HTMLImageElement {
     const flagElement = document.createElement('img');
     flagElement.setAttribute('src', `https://flagsapi.com/${countryCode}/shiny/16.png`);
     flagElement.setAttribute('title', `${countryName}`);

@@ -1,12 +1,56 @@
-import { getLocation } from '../utils/location.js';
-import { haversine } from '../utils/geometric.js';
+import { getLocation } from '../utils/location';
+import { haversine } from '../utils/geometric';
+import type { CardState, LeafletMap } from '../types/cardState';
 
-const VALID_MAPS = new Set(['bw', 'color', 'dark', 'outlines', 'system']);
+declare global {
+    interface Window {
+        L: LeafletStatic;
+    }
+}
 
-export function shouldRenderRadarBackgroundMap(cardState) {
+interface LeafletStatic {
+    map(element: HTMLElement, options: LeafletMapOptions): LeafletMap;
+    tileLayer(url: string, options: TileLayerOptions): TileLayer;
+    point(x: number, y: number): LeafletPoint;
+}
+
+interface LeafletMapOptions {
+    attributionControl: boolean;
+    zoomControl: boolean;
+    dragging: boolean;
+    scrollWheelZoom: boolean;
+    boxZoom: boolean;
+    doubleClickZoom: boolean;
+    keyboard: boolean;
+    touchZoom: boolean;
+    pointerEvents: boolean;
+}
+
+interface TileLayer {
+    addTo(map: LeafletMap): TileLayer;
+}
+
+interface TileLayerOptions {
+    api_key?: string;
+    attribution?: string;
+    subdomains?: string[];
+}
+
+interface LeafletPoint {
+    x: number;
+    y: number;
+}
+
+type LatLngBoundsLiteral = [[number, number], [number, number]];
+
+type BackgroundMapType = 'none' | 'system' | 'bw' | 'color' | 'dark' | 'outlines';
+
+const VALID_MAPS = new Set<string>(['bw', 'color', 'dark', 'outlines', 'system']);
+
+export function shouldRenderRadarBackgroundMap(cardState: CardState): boolean {
     const radar = cardState?.radar;
     if (!radar || radar.hide === true) return false;
-    if (!VALID_MAPS.has(radar.background_map)) return false;
+    if (!radar.background_map || !VALID_MAPS.has(radar.background_map)) return false;
     return true;
 }
 
@@ -14,7 +58,7 @@ export function shouldRenderRadarBackgroundMap(cardState) {
  * Ensures Leaflet CSS/JS are loaded into shadowRoot if needed.
  * Only loads if cardState wants a map background and radar is shown.
  */
-export function ensureLeafletLoadedIfNeeded(cardState, shadowRoot, onReady) {
+export function ensureLeafletLoadedIfNeeded(cardState: CardState, shadowRoot: ShadowRoot, onReady: () => void): void {
     if (!shouldRenderRadarBackgroundMap(cardState)) {
         return;
     }
@@ -48,11 +92,19 @@ export function ensureLeafletLoadedIfNeeded(cardState, shadowRoot, onReady) {
     }
 }
 
+interface TileConfig {
+    api_key?: string;
+    attribution?: string;
+    subdomains?: string[];
+}
+
+type TileLayerConfig = [string, TileConfig];
+
 /**
  * Sets up or updates the radar map background and Leaflet map.
  * Expects Leaflet to be loaded (window.L)
  */
-export function setupRadarMapBg(cardState, radarScreen) {
+export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement): HTMLElement | undefined {
     const { config, dimensions } = cardState;
 
     if (!shouldRenderRadarBackgroundMap(cardState)) {
@@ -69,9 +121,9 @@ export function setupRadarMapBg(cardState, radarScreen) {
         return;
     }
 
-    const type = config?.radar?.background_map;
+    const type = config?.radar?.background_map as BackgroundMapType | undefined;
 
-    const TILE_LAYERS = {
+    const TILE_LAYERS: Record<string, TileLayerConfig | null> = {
         bw: [
             'https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png',
             {
@@ -104,9 +156,9 @@ export function setupRadarMapBg(cardState, radarScreen) {
         system: null
     };
 
-    let opacity = typeof config.radar.background_map_opacity === 'number' ? Math.max(0, Math.min(1, config.radar.background_map_opacity)) : 1;
+    const opacity = typeof config?.radar?.background_map_opacity === 'number' ? Math.max(0, Math.min(1, config.radar.background_map_opacity)) : 1;
 
-    let mapBg = radarScreen.querySelector('#radar-map-bg');
+    let mapBg = radarScreen.querySelector('#radar-map-bg') as HTMLDivElement | null;
     if (!mapBg) {
         mapBg = document.createElement('div');
         mapBg.id = 'radar-map-bg';
@@ -117,10 +169,10 @@ export function setupRadarMapBg(cardState, radarScreen) {
         mapBg.style.height = '100%';
         mapBg.style.zIndex = '0';
         mapBg.style.pointerEvents = 'none';
-        mapBg.style.opacity = opacity;
+        mapBg.style.opacity = String(opacity);
         radarScreen.appendChild(mapBg);
     } else {
-        mapBg.style.opacity = opacity;
+        mapBg.style.opacity = String(opacity);
     }
 
     mapBg.style.transform = '';
@@ -131,18 +183,18 @@ export function setupRadarMapBg(cardState, radarScreen) {
     }
 
     const location = getLocation(cardState);
-    const radarRange = Math.max(dimensions.range, 1);
-    const rangeKm = config.units === 'mi' ? radarRange * 1.60934 : radarRange;
+    const radarRange = Math.max(dimensions?.range || 1, 1);
+    const rangeKm = cardState.units?.distance === 'miles' ? radarRange * 1.60934 : radarRange;
 
-    const lat = location.latitude || 0;
-    const lon = location.longitude || 0;
+    const lat = location?.latitude || 0;
+    const lon = location?.longitude || 0;
 
     const rad = Math.PI / 180;
     const km_per_deg_lat = 111.13209 - 0.56605 * Math.cos(2 * lat * rad) + 0.0012 * Math.cos(4 * lat * rad);
     const km_per_deg_lon = 111.32 * Math.cos(lat * rad) - 0.094 * Math.cos(3 * lat * rad);
     const deltaLat = rangeKm / km_per_deg_lat;
     const deltaLon = rangeKm / km_per_deg_lon;
-    const bounds = [
+    const bounds: LatLngBoundsLiteral = [
         [lat - deltaLat, lon - deltaLon],
         [lat + deltaLat, lon + deltaLon]
     ];
@@ -151,16 +203,21 @@ export function setupRadarMapBg(cardState, radarScreen) {
         const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         let haDark = false;
         try {
-            haDark = window.parent && window.parent.document && window.parent.document.body.classList.contains('dark');
-        } catch (e) {}
+            haDark = !!(window.parent && window.parent.document && window.parent.document.body.classList.contains('dark'));
+        } catch (_e) {
+            // Cross-origin access may fail, ignore
+        }
         if (haDark || prefersDark) {
             resolvedType = 'dark';
         } else {
             resolvedType = 'color';
         }
     }
-    let [tileUrl, tileOpts] = TILE_LAYERS[resolvedType] || TILE_LAYERS.bw;
-    if (tileOpts && 'api_key' in tileOpts && config.radar.background_map_api_key) {
+    const tileLayerConfig = TILE_LAYERS[resolvedType || 'bw'] || TILE_LAYERS.bw;
+    if (!tileLayerConfig) return mapBg;
+
+    let [tileUrl, tileOpts] = tileLayerConfig; // eslint-disable-line prefer-const
+    if (tileOpts && 'api_key' in tileOpts && config?.radar?.background_map_api_key) {
         tileUrl = tileUrl + tileOpts.api_key + encodeURIComponent(config.radar.background_map_api_key);
     }
 
@@ -179,10 +236,10 @@ export function setupRadarMapBg(cardState, radarScreen) {
             });
         } else {
             cardState._leafletMap.eachLayer((layer) => {
-                cardState._leafletMap.removeLayer(layer);
+                cardState._leafletMap!.removeLayer(layer);
             });
         }
-        window.L.tileLayer(tileUrl, tileOpts).addTo(cardState._leafletMap);
+        window.L.tileLayer(tileUrl, tileOpts as TileLayerOptions).addTo(cardState._leafletMap);
 
         cardState._leafletMap.fitBounds(bounds, { animate: false, padding: [0, 0] });
 
@@ -196,7 +253,7 @@ export function setupRadarMapBg(cardState, radarScreen) {
         const latLngLeft = cardState._leafletMap.containerPointToLatLng(pixelLeft);
         const latLngRight = cardState._leafletMap.containerPointToLatLng(pixelRight);
 
-        let kmAcross = haversine(latLngLeft.lat, latLngLeft.lng, latLngRight.lat, latLngRight.lng, 'km');
+        const kmAcross = haversine(latLngLeft.lat, latLngLeft.lng, latLngRight.lat, latLngRight.lng, 'km');
         const desiredKmAcross = rangeKm * 2;
 
         const scaleCorrection = kmAcross / desiredKmAcross;

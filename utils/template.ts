@@ -1,7 +1,18 @@
+import type { Flight } from '../types/flight';
+import type { ToggleConfig } from '../types/config';
+import type { CardState, PartialCardState } from '../types/cardState';
+
+type JoinListFn = (separator: string) => (...elements: (string | undefined)[]) => string;
+type RenderDynamicOnRangeChangeSetter = (value: boolean) => void;
+
 /**
  * Recursively compiles a template string with possible sub-template references.
  */
-export function compileTemplate(templates = {}, templateId, trace = []) {
+export function compileTemplate(
+    templates: Record<string, string> = {},
+    templateId: string,
+    trace: string[] = []
+): string {
     if (trace.includes(templateId)) {
         console.error('Circular template dependencies detected. ' + trace.join(' -> ') + ' -> ' + templateId);
         return '';
@@ -16,7 +27,7 @@ export function compileTemplate(templates = {}, templateId, trace = []) {
     }
     const tplRegex = /tpl\.([a-zA-Z_$][a-zA-Z0-9_$]*)/g;
     let tplMatch;
-    const compiledTemplates = {};
+    const compiledTemplates: Record<string, string> = {};
     while ((tplMatch = tplRegex.exec(template)) !== null) {
         const innerTemplateId = tplMatch[1];
         if (!compiledTemplates[innerTemplateId]) {
@@ -31,13 +42,17 @@ export function compileTemplate(templates = {}, templateId, trace = []) {
 /**
  * Safely parses and interpolates a template string with provided context.
  * Accepts an optional joinList helper.
- * Accepts cardState object as first argument.
  */
-export function parseTemplate(cardState = {}, templateId, flight, joinList) {
+export function parseTemplate(
+    cardState: PartialCardState,
+    templateId: string,
+    flight: Flight | null,
+    joinList?: JoinListFn
+): string {
     const templates = cardState.templates || {};
     const flightsContext = cardState.flightsContext || {};
-    const units = cardState.units || {};
-    const radar = cardState.radar || {};
+    const units = cardState.units || { distance: 'km', altitude: 'ft', speed: 'kts' };
+    const radar = cardState.radar || { range: 35 };
     const compiledTemplate = compileTemplate(templates, templateId);
     try {
         const parsedTemplate = new Function(
@@ -58,10 +73,14 @@ export function parseTemplate(cardState = {}, templateId, flight, joinList) {
 
 /**
  * Substitute placeholders in a string with values from context objects.
- * Accepts cardState object as first argument.
  */
-export function resolvePlaceholders(cardState = {}, value, defaultValue, renderDynamicOnRangeChangeSetter) {
-    const { defines = {}, config = {}, radar = {}, selectedFlights = [] } = cardState;
+export function resolvePlaceholders(
+    cardState: PartialCardState,
+    value: unknown,
+    defaultValue?: unknown,
+    renderDynamicOnRangeChangeSetter?: RenderDynamicOnRangeChangeSetter
+): unknown {
+    const { defines = {}, config = {}, radar = { range: 35 }, selectedFlights = [] } = cardState;
     if (typeof value === 'string' && value.startsWith('${') && value.endsWith('}')) {
         const key = value.slice(2, -1);
         if (key === 'selectedFlights') return selectedFlights;
@@ -69,7 +88,7 @@ export function resolvePlaceholders(cardState = {}, value, defaultValue, renderD
             if (renderDynamicOnRangeChangeSetter) renderDynamicOnRangeChangeSetter(true);
             return radar.range;
         } else if (key in defines) return defines[key];
-        else if (config.toggles && key in config.toggles) return config.toggles[key].default;
+        else if (config.toggles && key in config.toggles) return (config.toggles[key] as ToggleConfig).default;
         else if (defaultValue !== undefined) return defaultValue;
         else {
             console.error('Unresolved placeholder: ' + key);

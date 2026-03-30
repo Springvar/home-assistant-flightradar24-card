@@ -1,16 +1,27 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
+import typescript from '@rollup/plugin-typescript';
 import { terser } from 'rollup-plugin-terser';
 
 export default {
-    input: 'flightradar24-card.js',
+    input: 'flightradar24-card.ts',
     output: {
         file: 'dist/home-assistant-flightradar24-card.js',
         format: 'es',
         sourcemap: false
     },
     plugins: [
-        resolve(),
+        resolve({
+            extensions: ['.ts', '.js']
+        }),
+        typescript({
+            tsconfig: './tsconfig.json',
+            compilerOptions: {
+                declaration: false,
+                noEmit: false
+            },
+            exclude: ['vitest.*.ts', 'test/**/*.ts']
+        }),
         commonjs(),
         terser({
             ecma: 2020,
