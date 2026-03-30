@@ -28,10 +28,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js 18 and Yarn cache
+      - name: Setup Node.js 20 and Yarn cache
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'yarn'
 
       - name: Cache yarn cache
