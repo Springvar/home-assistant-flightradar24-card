@@ -1,9 +1,19 @@
-import { renderStyle } from './style.js';
-import { renderToggles } from './toggles.js';
-import { renderRadarScreen } from './radarScreen.js';
-import { setupZoomHandlers } from '../utils/zoom.js';
+import { renderStyle } from './style';
+import { renderToggles } from './toggles';
+import { renderRadarScreen } from './radarScreen';
+import { setupZoomHandlers } from '../utils/zoom';
+import type { CardState, MainCard } from '../types/cardState';
 
-export function renderStatic(cardState, mainCard) {
+interface StaticMainCard extends MainCard {
+    updateRadarRange: (delta: number) => void;
+    renderDynamic: () => void;
+}
+
+interface StaticCardState extends CardState {
+    mainCard?: StaticMainCard;
+}
+
+export function renderStatic(cardState: StaticCardState, mainCard: StaticMainCard): void {
     mainCard.shadowRoot.innerHTML = '';
 
     const card = document.createElement('ha-card');
@@ -45,7 +55,7 @@ export function renderStatic(cardState, mainCard) {
         requestAnimationFrame(() => {
             renderRadarScreen(cardState);
             mainCard.observeRadarResize();
-            setupZoomHandlers(cardState, radarOverlay);
+            setupZoomHandlers(cardState as Parameters<typeof setupZoomHandlers>[0], radarOverlay);
         });
 
         cardState.dom = cardState.dom || {};

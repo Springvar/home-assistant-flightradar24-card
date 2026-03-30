@@ -1,13 +1,16 @@
-import { applyFilter } from '../utils/filter.js';
+import { applyFilter } from '../utils/filter';
+import type { Flight } from '../types/flight';
+import type { Condition } from '../types/config';
+import type { CardState } from '../types/cardState';
 
-export function renderRadar(cardState) {
+export function renderRadar(cardState: CardState): void {
     const { flights, radar, selectedFlights, dimensions, dom } = cardState;
 
-    let flightsToRender;
+    let flightsToRender: Flight[];
     if (radar && radar.filter === true) {
         flightsToRender = cardState.flightsFiltered || flights;
     } else if (radar && radar.filter && typeof radar.filter === 'object') {
-        flightsToRender = applyFilter(cardState, radar.filter);
+        flightsToRender = applyFilter(cardState, radar.filter as Condition[]);
     } else {
         flightsToRender = flights;
     }
@@ -17,6 +20,8 @@ export function renderRadar(cardState) {
     planesContainer.innerHTML = '';
 
     const { range: radarRange, scaleFactor, centerX: radarCenterX, centerY: radarCenterY } = dimensions;
+    if (!radarRange || !scaleFactor || radarCenterX === undefined || radarCenterY === undefined) return;
+
     const clippingRange = radarRange * 1.15;
 
     flightsToRender
@@ -24,12 +29,13 @@ export function renderRadar(cardState) {
         .reverse()
         .forEach((flight) => {
             const distance = flight.distance_to_tracker;
-            if (distance <= clippingRange) {
+            if (distance !== undefined && distance <= clippingRange) {
                 const plane = document.createElement('div');
                 plane.className = 'plane';
 
-                const x = radarCenterX + Math.cos(((flight.heading_from_tracker - 90) * Math.PI) / 180) * distance * scaleFactor;
-                const y = radarCenterY + Math.sin(((flight.heading_from_tracker - 90) * Math.PI) / 180) * distance * scaleFactor;
+                const headingFromTracker = flight.heading_from_tracker ?? 0;
+                const x = radarCenterX + Math.cos(((headingFromTracker - 90) * Math.PI) / 180) * distance * scaleFactor;
+                const y = radarCenterY + Math.sin(((headingFromTracker - 90) * Math.PI) / 180) * distance * scaleFactor;
 
                 plane.style.top = y + 'px';
                 plane.style.left = x + 'px';
@@ -51,7 +57,7 @@ export function renderRadar(cardState) {
                 label.style.top = y - labelHeight + 'px';
                 label.style.left = x - labelWidth + 'px';
 
-                if (flight.altitude <= 0) {
+                if ((flight.altitude ?? 0) <= 0) {
                     plane.classList.add('plane-small');
                 } else {
                     plane.classList.add('plane-medium');

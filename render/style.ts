@@ -1,16 +1,18 @@
-export function renderStyle(cardState, shadowRoot) {
-  const oldStyle = shadowRoot.querySelector("style[data-fr24-style]");
-  if (oldStyle) oldStyle.remove();
+import type { CardState } from '../types/cardState';
 
-  const radar = cardState.radar || {};
-  const radarPrimaryColor = radar["primary-color"] || "var(--dark-primary-color)";
-  const radarAccentColor = radar["accent-color"] || "var(--accent-color)";
-  const callsignLabelColor = radar["callsign-label-color"] || "var(--primary-background-color)";
-  const featureColor = radar["feature-color"] || "var(--secondary-text-color)";
+export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void {
+    const oldStyle = shadowRoot.querySelector('style[data-fr24-style]');
+    if (oldStyle) oldStyle.remove();
 
-  const style = document.createElement("style");
-  style.setAttribute("data-fr24-style", "1");
-  style.textContent = `
+    const radar = cardState.radar;
+    const radarPrimaryColor = radar['primary-color'] || 'var(--dark-primary-color)';
+    const radarAccentColor = radar['accent-color'] || 'var(--accent-color)';
+    const callsignLabelColor = radar['callsign-label-color'] || 'var(--primary-background-color)';
+    const featureColor = radar['feature-color'] || 'var(--secondary-text-color)';
+
+    const style = document.createElement('style');
+    style.setAttribute('data-fr24-style', '1');
+    style.textContent = `
     :host {
       --radar-primary-color: ${radarPrimaryColor};
       --radar-accent-color: ${radarAccentColor};
@@ -242,5 +244,5 @@ export function renderStyle(cardState, shadowRoot) {
       opacity: 0.35;
     }
   `;
-  shadowRoot.appendChild(style);
+    shadowRoot.appendChild(style);
 }

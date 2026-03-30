@@ -1,36 +1,34 @@
-/**
- * Renders the radar screen for the Flightradar24CardState object
- * @param {Object} cardState - Flightradar24Card state/context object
- */
-import { haversine, calculateBearing } from '../utils/geometric.js';
-import { setupRadarMapBg } from './map.js';
-import { parseTemplate } from '../utils/template.js';
-import { getLocation } from '../utils/location.js';
+import { haversine, calculateBearing } from '../utils/geometric';
+import { setupRadarMapBg } from './map';
+import { parseTemplate } from '../utils/template';
+import { getLocation } from '../utils/location';
+import type { RadarFeature } from '../types/config';
+import type { CardState } from '../types/cardState';
 
 /**
  * Renders the radar screen for the Flightradar24CardState object
- * @param {Object} cardState - Flightradar24Card state/context object
  */
-export function renderRadarScreen(cardState) {
+export function renderRadarScreen(cardState: CardState): void {
     const { units, radar, dom, dimensions, hass } = cardState;
 
     // Use cardState.dom references if available
-    const radarInfoDisplay = dom?.radarInfoDisplay || (dom && dom.radarContainer?.querySelector('#radar-info'));
+    const radarInfoDisplay = dom?.radarInfoDisplay || (dom && dom.radarContainer?.querySelector('#radar-info') as HTMLElement | null);
     if (radarInfoDisplay) {
-        const infoElements = [radar?.hide_range !== true ? parseTemplate(cardState, 'radar_range', null, null) : ''].filter((el) => el);
+        const infoElements = [radar?.hide_range !== true ? parseTemplate(cardState, 'radar_range', null, undefined) : ''].filter((el) => el);
         radarInfoDisplay.innerHTML = infoElements.join('<br />');
     }
 
     const radarScreen =
         dom?.radarScreen ||
-        (dom && dom.radarContainer?.querySelector('#radar-screen')) ||
+        (dom && dom.radarContainer?.querySelector('#radar-screen') as HTMLElement | null) ||
         (cardState.mainCard?.shadowRoot && cardState.mainCard.shadowRoot.getElementById('radar-screen'));
     if (!radarScreen) return;
 
     // Only remove overlays, not the background map div
     Array.from(radarScreen.childNodes).forEach((child) => {
+        const childElement = child as HTMLElement;
         // Preserve Leaflet map bg
-        if (!(child.id === 'radar-map-bg') && !(child.id === 'radar-screen-background')) {
+        if (!(childElement.id === 'radar-map-bg') && !(childElement.id === 'radar-screen-background')) {
             radarScreen.removeChild(child);
         }
     });
@@ -72,13 +70,14 @@ export function renderRadarScreen(cardState) {
     }
 
     const location = getLocation(cardState);
-    if (radar?.local_features && hass) {
+    const localFeatures = radar?.local_features as RadarFeature[] | undefined;
+    if (localFeatures && hass) {
         if (location) {
             const refLat = location.latitude;
             const refLon = location.longitude;
-            radar.local_features.forEach((feature) => {
-                if (feature.max_range && feature.max_range <= radar.range) return;
-                if (feature.type === 'outline' && feature.points?.length > 1) {
+            localFeatures.forEach((feature) => {
+                if (feature.max_range && radar.range && feature.max_range <= radar.range) return;
+                if (feature.type === 'outline' && feature.points && feature.points.length > 1) {
                     for (let i = 0; i < feature.points.length - 1; i++) {
                         const start = feature.points[i];
                         const end = feature.points[i + 1];
@@ -102,16 +101,16 @@ export function renderRadarScreen(cardState) {
                             radarScreen.appendChild(outlineLine);
                         }
                     }
-                } else if (feature.position) {
-                    const { lat: featLat, lon: featLon } = feature.position;
+                } else if ('position' in feature && feature.position) {
+                    const { lat: featLat, lon: featLon } = feature.position as { lat: number; lon: number };
                     const distance = haversine(refLat, refLon, featLat, featLon, units.distance);
                     if (distance <= clippingRange) {
                         const bearing = calculateBearing(refLat, refLon, featLat, featLon);
                         const featureX = radarCenterX + Math.cos(((bearing - 90) * Math.PI) / 180) * distance * scaleFactor;
                         const featureY = radarCenterY + Math.sin(((bearing - 90) * Math.PI) / 180) * distance * scaleFactor;
                         if (feature.type === 'runway') {
-                            const heading = feature.heading;
-                            const lengthFeet = feature.length;
+                            const heading = (feature as { heading?: number }).heading ?? 0;
+                            const lengthFeet = (feature as { length?: number }).length ?? 0;
                             const lengthUnit = units.distance === 'km' ? lengthFeet * 0.0003048 : lengthFeet * 0.00018939;
                             const runway = document.createElement('div');
                             runway.className = 'runway';
@@ -126,14 +125,15 @@ export function renderRadarScreen(cardState) {
                         if (feature.type === 'location') {
                             const locationDot = document.createElement('div');
                             locationDot.className = 'location-dot';
-                            locationDot.title = feature.label ?? 'Location';
+                            const featureLabel = (feature as { label?: string }).label;
+                            locationDot.title = featureLabel ?? 'Location';
                             locationDot.style.top = featureY + 'px';
                             locationDot.style.left = featureX + 'px';
                             radarScreen.appendChild(locationDot);
-                            if (feature.label) {
+                            if (featureLabel) {
                                 const label = document.createElement('div');
                                 label.className = 'location-label';
-                                label.textContent = feature.label || 'Location';
+                                label.textContent = featureLabel || 'Location';
                                 radarScreen.appendChild(label);
                                 const labelRect = label.getBoundingClientRect();
                                 const labelWidth = labelRect.width;

@@ -34,10 +34,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js 18 and Yarn cache
+      - name: Setup Node.js 20 and Yarn cache
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'yarn'
 
       - name: Cache yarn cache
@@ -57,7 +57,7 @@ jobs:
         run: |
           VERSION="${GITHUB_REF#refs/tags/}"
           VERSION="${VERSION#v}"
-          sed -i "0,/___CARD_VERSION___/s//${VERSION}/" flightradar24-card.js
+          sed -i "0,/___CARD_VERSION___/s//${VERSION}/" flightradar24-card.ts
 
       - name: Build (Rollup)
         run: yarn build
