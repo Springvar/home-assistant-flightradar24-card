@@ -65,13 +65,11 @@ jobs:
         run: yarn lint
         continue-on-error: true
 
+      - name: Run tests
+        run: yarn test
+
       - name: Build (Rollup)
         run: yarn build
-
-      - name: Run tests (if configured)
-        if: contains(steps.pkg.outputs.pkg, '"test"')
-        run: yarn test
-        continue-on-error: true
 
       - name: Prepare release artifact
         run: |
