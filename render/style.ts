@@ -9,6 +9,8 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
     const radarAccentColor = radar['accent-color'] || 'var(--accent-color)';
     const callsignLabelColor = radar['callsign-label-color'] || 'var(--primary-background-color)';
     const featureColor = radar['feature-color'] || 'var(--secondary-text-color)';
+    const radarSize = radar['radar_size'] !== undefined ? Math.max(30, Math.min(90, radar['radar_size'])) : 70;
+    const radarMargin = (100 - radarSize) / 2;
 
     const style = document.createElement('style');
     style.setAttribute('data-fr24-style', '1');
@@ -70,9 +72,9 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
     }
     #radar-overlay {
       position: absolute;
-      width: 70%;
-      left: 15%;
-      padding: 0 0 70% 0;
+      width: ${radarSize}%;
+      left: ${radarMargin}%;
+      padding: 0 0 ${radarSize}% 0;
       margin-bottom: 5%;
       z-index: 1;
       opacity: 0;
@@ -108,10 +110,10 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
     }
     #radar {
       position: relative;
-      width: 70%;
+      width: ${radarSize}%;
       height: 0;
-      margin: 0 15%;
-      padding-bottom: 70%;
+      margin: 0 ${radarMargin}%;
+      padding-bottom: ${radarSize}%;
       margin-bottom: 5%;
       border-radius: 50%;
       overflow: hidden;

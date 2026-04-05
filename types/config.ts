@@ -66,6 +66,7 @@ export interface RadarConfig {
     'callsign-label-color'?: string;
     hide?: boolean;
     hide_range?: boolean;
+    radar_size?: number;
     local_features?: RadarFeature[];
     background_map?: 'none' | 'system' | 'bw' | 'color' | 'dark' | 'outlines';
     background_map_opacity?: number;
