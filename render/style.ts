@@ -11,6 +11,7 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
     const featureColor = radar['feature-color'] || 'var(--secondary-text-color)';
     const radarSize = radar['radar_size'] !== undefined ? Math.max(30, Math.min(90, radar['radar_size'])) : 70;
     const radarMargin = (100 - radarSize) / 2;
+    const scale = cardState.config.scale !== undefined ? Math.max(0.5, Math.min(3, cardState.config.scale)) : 1;
 
     const style = document.createElement('style');
     style.setAttribute('data-fr24-style', '1');
@@ -23,6 +24,8 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
     }
     #flights-card {
       padding: 16px;
+      transform: scale(${scale});
+      transform-origin: top center;
     }
     #flights {
       padding: 0px;

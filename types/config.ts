@@ -102,6 +102,7 @@ export interface CardConfig {
     projection_interval?: number;
     units?: Partial<UnitsConfig>;
     no_flights_message?: string;
+    scale?: number;
     radar?: RadarConfig;
     list?: ListConfig;
     filter?: Condition[];
