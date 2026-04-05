@@ -103,6 +103,7 @@ export interface CardConfig {
     units?: Partial<UnitsConfig>;
     no_flights_message?: string;
     scale?: number;
+    max_flights?: number;
     radar?: RadarConfig;
     list?: ListConfig;
     filter?: Condition[];

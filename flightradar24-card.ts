@@ -251,7 +251,10 @@ class Flightradar24Card extends HTMLElement implements MainCard {
                     fragment.appendChild(noFlightsMessage);
                 }
             } else {
-                flightsFiltered.forEach((flight, idx) => {
+                const maxFlights = this.cardState.config.max_flights;
+                const flightsToRender = maxFlights && maxFlights > 0 ? flightsFiltered.slice(0, maxFlights) : flightsFiltered;
+
+                flightsToRender.forEach((flight, idx) => {
                     const flightElement = renderFlight(this.cardState, flight);
                     if (idx === 0) {
                         flightElement.className += ' first';
