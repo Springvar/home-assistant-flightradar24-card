@@ -72,6 +72,7 @@ export interface CardState {
     // Internal state
     renderDynamicOnRangeChange: boolean;
     _leafletMap?: LeafletMap | null;
+    _currentMapConfig?: { type: string; apiKey?: string };
     sortFn: (a: Flight, b: Flight) => number;
     renderDynamicFn?: () => void;
 

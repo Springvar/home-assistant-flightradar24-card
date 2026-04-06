@@ -45,7 +45,7 @@ type LatLngBoundsLiteral = [[number, number], [number, number]];
 
 type BackgroundMapType = 'none' | 'system' | 'bw' | 'color' | 'dark' | 'outlines';
 
-const VALID_MAPS = new Set<string>(['bw', 'color', 'dark', 'outlines', 'system']);
+const VALID_MAPS = new Set<string>(['bw', 'light', 'color', 'dark', 'voyager', 'satellite', 'topo', 'outlines', 'system']);
 
 export function shouldRenderRadarBackgroundMap(cardState: CardState): boolean {
     const radar = cardState?.radar;
@@ -132,6 +132,13 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
                 subdomains: []
             }
         ],
+        light: [
+            'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+            {
+                attribution: '&copy; CartoDB, &copy; OpenStreetMap contributors',
+                subdomains: ['a', 'b', 'c', 'd']
+            }
+        ],
         color: [
             'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             {
@@ -142,7 +149,29 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
         dark: [
             'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
             {
-                attribution: '&copy; CartoDB'
+                attribution: '&copy; CartoDB, &copy; OpenStreetMap contributors',
+                subdomains: ['a', 'b', 'c', 'd']
+            }
+        ],
+        voyager: [
+            'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+            {
+                attribution: '&copy; CartoDB, &copy; OpenStreetMap contributors',
+                subdomains: ['a', 'b', 'c', 'd']
+            }
+        ],
+        satellite: [
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            {
+                attribution: '&copy; Esri, Maxar, Earthstar Geographics',
+                subdomains: []
+            }
+        ],
+        topo: [
+            'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+            {
+                attribution: '&copy; OpenTopoMap, &copy; OpenStreetMap contributors',
+                subdomains: ['a', 'b', 'c']
             }
         ],
         outlines: [
@@ -217,11 +246,40 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
     if (!tileLayerConfig) return mapBg;
 
     let [tileUrl, tileOpts] = tileLayerConfig; // eslint-disable-line prefer-const
-    if (tileOpts && 'api_key' in tileOpts && config?.radar?.background_map_api_key) {
+
+    // Check if this tile provider requires an API key
+    const requiresApiKey = tileOpts && 'api_key' in tileOpts;
+    const hasApiKey = config?.radar?.background_map_api_key && config.radar.background_map_api_key.trim().length > 0;
+
+    // If API key is required but not provided, don't load the map
+    if (requiresApiKey && !hasApiKey) {
+        // Remove existing Leaflet map if present
+        if (cardState._leafletMap) {
+            cardState._leafletMap.remove();
+            cardState._leafletMap = null;
+        }
+        // Show helpful message in the map background
+        mapBg.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--secondary-text-color); text-align: center; padding: 20px; font-size: 0.9em;">API key required for this map type. Configure in Background Map settings.</div>';
+        return mapBg;
+    }
+
+    // Clear any error message only if we're about to create a new map
+    // Don't clear if we're reusing an existing map (would remove Leaflet container!)
+    if (!cardState._leafletMap) {
+        mapBg.innerHTML = '';
+    }
+
+    if (requiresApiKey && hasApiKey && config?.radar?.background_map_api_key) {
         tileUrl = tileUrl + tileOpts.api_key + encodeURIComponent(config.radar.background_map_api_key);
     }
 
     if (window.L) {
+        // Check if map configuration has changed
+        const newMapConfig = { type: resolvedType || 'bw', apiKey: config?.radar?.background_map_api_key };
+        const mapConfigChanged = !cardState._currentMapConfig ||
+            cardState._currentMapConfig.type !== newMapConfig.type ||
+            cardState._currentMapConfig.apiKey !== newMapConfig.apiKey;
+
         if (!cardState._leafletMap) {
             cardState._leafletMap = window.L.map(mapBg, {
                 attributionControl: false,
@@ -234,12 +292,18 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
                 touchZoom: false,
                 pointerEvents: false
             });
-        } else {
+            // Always add tile layer for new map
+            window.L.tileLayer(tileUrl, tileOpts as TileLayerOptions).addTo(cardState._leafletMap);
+            cardState._currentMapConfig = newMapConfig;
+        } else if (mapConfigChanged) {
+            // Only remove and recreate layers if configuration changed
             cardState._leafletMap.eachLayer((layer) => {
                 cardState._leafletMap!.removeLayer(layer);
             });
+            window.L.tileLayer(tileUrl, tileOpts as TileLayerOptions).addTo(cardState._leafletMap);
+            cardState._currentMapConfig = newMapConfig;
         }
-        window.L.tileLayer(tileUrl, tileOpts as TileLayerOptions).addTo(cardState._leafletMap);
+        // Always update bounds (for dimension changes) but don't recreate layers
 
         cardState._leafletMap.fitBounds(bounds, { animate: false, padding: [0, 0] });
 
