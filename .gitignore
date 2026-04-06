@@ -3,3 +3,4 @@ dist/
 coverage/
 .claude/
 CLAUDE.md
+data/

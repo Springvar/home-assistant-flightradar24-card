@@ -1,9 +1,13 @@
 name: Build and attach Rollup artifact to release
 
 # Triggers:
+# - When a tag matching v* is pushed (including force updates)
 # - When a release is published (typical "create release" flow)
 # - Manual dispatch (useful to create a release from the UI)
 on:
+  push:
+    tags:
+      - 'v*'
   release:
     types: [published]
   workflow_dispatch:
@@ -32,6 +36,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref }}
           fetch-depth: 0
 
       - name: Setup Node.js 20 and Yarn cache
@@ -53,90 +58,47 @@ jobs:
       - name: Install dependencies (Yarn)
         run: yarn install --frozen-lockfile
 
+      - name: Determine tag name
+        id: get_tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Inject release tag as card version
         run: |
-          VERSION="${GITHUB_REF#refs/tags/}"
-          VERSION="${VERSION#v}"
+          TAG="${{ steps.get_tag.outputs.tag }}"
+          VERSION="${TAG#v}"
           sed -i "0,/___CARD_VERSION___/s//${VERSION}/" flightradar24-card.ts
 
       - name: Build (Rollup)
         run: yarn build
 
-      # === Release event handling (true GitHub Release) ===
-      - name: Upload release asset (release published)
-        if: github.event_name == 'release'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: dist/home-assistant-flightradar24-card.js
-          asset_name: home-assistant-flightradar24-card.js
-          asset_content_type: application/javascript
-
-      - name: Upload README.md (release published)
-        if: github.event_name == 'release'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: README.md
-          asset_name: README.md
-          asset_content_type: text/markdown
-
-      - name: Upload LICENSE (release published)
-        if: github.event_name == 'release'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: LICENSE
-          asset_name: LICENSE
-          asset_content_type: text/plain
-
-      # === Manual workflow_dispatch event handling (UI-triggered Release) ===
-      - name: Create release (when manually triggered)
+      # Use softprops/action-gh-release for all scenarios
+      # This will create a new release or update an existing one
+      # When updating an existing release, it preserves the existing metadata
+      - name: Create or update release with assets (workflow_dispatch)
         if: github.event_name == 'workflow_dispatch'
-        id: create_release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.event.inputs.tag }}
           name: ${{ github.event.inputs.name }}
           body: ${{ github.event.inputs.body }}
           draft: false
-          prerelease: ${{ github.event.inputs.prerelease }}
+          prerelease: ${{ github.event.inputs.prerelease == 'true' }}
+          files: |
+            dist/home-assistant-flightradar24-card.js
+            README.md
+            LICENSE
 
-      - name: Upload release asset (created by this workflow)
-        if: github.event_name == 'workflow_dispatch'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create or update release with assets (tag push or release event)
+        if: github.event_name != 'workflow_dispatch'
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/home-assistant-flightradar24-card.js
-          asset_name: home-assistant-flightradar24-card.js
-          asset_content_type: application/javascript
-
-      - name: Upload README.md (created by this workflow)
-        if: github.event_name == 'workflow_dispatch'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: README.md
-          asset_name: README.md
-          asset_content_type: text/markdown
-
-      - name: Upload LICENSE (created by this workflow)
-        if: github.event_name == 'workflow_dispatch'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: LICENSE
-          asset_name: LICENSE
-          asset_content_type: text/plain
+          tag_name: ${{ steps.get_tag.outputs.tag }}
+          files: |
+            dist/home-assistant-flightradar24-card.js
+            README.md
+            LICENSE
