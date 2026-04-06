@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Debug - Flightradar24 Card</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <script type="module" src="../dist/home-assistant-flightradar24-card.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .debug-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            margin: 0 0 20px 0;
+        }
+        .controls {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .control-group {
+            margin-bottom: 15px;
+        }
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        button {
+            background: #03a9f4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0288d1;
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        .card-wrapper {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .log-container {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 4px 0;
+            border-bottom: 1px solid #2d2d2d;
+        }
+        .log-timestamp {
+            color: #858585;
+            margin-right: 10px;
+        }
+        .log-event {
+            color: #4ec9b0;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .log-data {
+            color: #ce9178;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .stat-box {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 4px;
+            border-left: 3px solid #03a9f4;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>🐛 Map Tile Debug Environment</h1>
+
+        <div class="controls">
+            <h3>Controls</h3>
+            <div class="control-group">
+                <button id="btn-update-flights">Update Flight Data (Simulates HA Update)</button>
+                <button id="btn-change-map-type">Change Map Type</button>
+                <button id="btn-change-range">Change Radar Range</button>
+                <button id="btn-clear-log">Clear Log</button>
+            </div>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-label">Setup Calls</div>
+                    <div class="stat-value" id="stat-setup-calls">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Layer Recreations</div>
+                    <div class="stat-value" id="stat-layer-recreations">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Flight Updates</div>
+                    <div class="stat-value" id="stat-flight-updates">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Current Map Type</div>
+                    <div class="stat-value" id="stat-map-type">color</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-wrapper">
+            <h3>Card Preview</h3>
+            <flightradar24-card id="fr24card"></flightradar24-card>
+        </div>
+
+        <div class="log-container" id="log-container">
+            <div class="log-entry">
+                <span class="log-timestamp">[00:00:00.000]</span>
+                <span class="log-event">INIT</span>
+                <span class="log-data">Debug environment ready</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const startTime = Date.now();
+        let setupCallCount = 0;
+        let layerRecreationCount = 0;
+        let flightUpdateCount = 0;
+        let currentMapType = 'color';
+
+        function getTimestamp() {
+            const elapsed = Date.now() - startTime;
+            const seconds = Math.floor(elapsed / 1000);
+            const ms = elapsed % 1000;
+            return `${String(seconds).padStart(2, '0')}:${String(ms).padStart(3, '0')}`;
+        }
+
+        function logEvent(event, data) {
+            const logContainer = document.getElementById('log-container');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `
+                <span class="log-timestamp">[${getTimestamp()}]</span>
+                <span class="log-event">${event}</span>
+                <span class="log-data">${data}</span>
+            `;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function updateStats() {
+            document.getElementById('stat-setup-calls').textContent = setupCallCount;
+            document.getElementById('stat-layer-recreations').textContent = layerRecreationCount;
+            document.getElementById('stat-flight-updates').textContent = flightUpdateCount;
+            document.getElementById('stat-map-type').textContent = currentMapType;
+        }
+
+        // Intercept console logs to track map operations
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+
+        console.log = function(...args) {
+            const msg = args.join(' ');
+            if (msg.includes('setupRadarMapBg')) {
+                setupCallCount++;
+                logEvent('MAP_SETUP', msg);
+                updateStats();
+            }
+            originalLog.apply(console, args);
+        };
+
+        console.warn = function(...args) {
+            logEvent('WARN', args.join(' '));
+            originalWarn.apply(console, args);
+        };
+
+        console.error = function(...args) {
+            logEvent('ERROR', args.join(' '));
+            originalError.apply(console, args);
+        };
+
+        let dummyFlights = [
+            {
+                id: 'TEST_NO01',
+                flight_number: 'NO123',
+                callsign: 'VAERNES01',
+                aircraft_registration: 'LN001',
+                aircraft_model: 'B737',
+                aircraft_code: 'B737',
+                airline: 'Norwegian',
+                airline_short: 'NO',
+                airline_iata: 'DY',
+                airline_icao: 'NAX',
+                airport_origin_name: 'Oslo Gardermoen',
+                airport_origin_code_iata: 'OSL',
+                airport_origin_country_name: 'Norway',
+                airport_origin_country_code: 'NO',
+                airport_destination_name: 'Trondheim Værnes',
+                airport_destination_code_iata: 'TRD',
+                airport_destination_country_name: 'Norway',
+                airport_destination_country_code: 'NO',
+                latitude: 63.4578,
+                longitude: 10.452,
+                altitude: 700,
+                vertical_speed: -300,
+                ground_speed: 145,
+                heading: 180,
+                distance_to_tracker: 18,
+                heading_from_tracker: 45,
+                cardinal_direction_from_tracker: 'NE',
+                approach_indicator: '↓'
+            },
+            {
+                id: 'TEST_KL05',
+                flight_number: 'KL1143',
+                callsign: 'KLM1143',
+                aircraft_registration: 'PH-BHA',
+                aircraft_model: 'B787',
+                aircraft_code: 'B788',
+                airline: 'KLM',
+                airline_short: 'KL',
+                airline_iata: 'KL',
+                airline_icao: 'KLM',
+                airport_origin_name: 'Trondheim Værnes',
+                airport_origin_code_iata: 'TRD',
+                airport_origin_country_name: 'Norway',
+                airport_origin_country_code: 'NO',
+                airport_destination_name: 'Amsterdam',
+                airport_destination_code_iata: 'AMS',
+                airport_destination_country_name: 'Netherlands',
+                airport_destination_country_code: 'NL',
+                latitude: 63.8,
+                longitude: 10.97,
+                altitude: 19800,
+                vertical_speed: 0,
+                ground_speed: 470,
+                heading: 225,
+                distance_to_tracker: 5,
+                heading_from_tracker: 315,
+                cardinal_direction_from_tracker: 'NW',
+                approach_indicator: ''
+            }
+        ];
+
+        const dummyHass = {
+            states: {
+                'sensor.flightradar24_current_in_area': {
+                    state: dummyFlights.length.toString(),
+                    attributes: {
+                        flights: dummyFlights
+                    }
+                },
+                'device_tracker.phone': {
+                    state: 'home',
+                    attributes: {
+                        friendly_name: 'Phone',
+                        latitude: 63.4041,
+                        longitude: 10.4301
+                    }
+                }
+            },
+            config: {
+                latitude: 63.4041,
+                longitude: 10.4301
+            },
+            connection: {
+                subscribeEvents: (fn, event) => {}
+            }
+        };
+
+        const cardConfig = {
+            type: 'custom:flightradar24-card',
+            flights_entity: 'sensor.flightradar24_current_in_area',
+            location_tracker: 'device_tracker.phone',
+            radar: {
+                range: 50,
+                background_map: 'color',
+                background_map_opacity: 0.3
+            }
+        };
+
+        // Wait for custom element to be defined before initializing
+        let card;
+        customElements.whenDefined('flightradar24-card').then(() => {
+            card = document.getElementById('fr24card');
+            card.setConfig(cardConfig);
+            card.hass = dummyHass;
+            logEvent('INIT', 'Card initialized with ' + dummyFlights.length + ' flights');
+        });
+
+        // Button: Update flight data
+        document.getElementById('btn-update-flights').addEventListener('click', () => {
+            if (!card) return;
+            flightUpdateCount++;
+            // Slightly modify flight positions
+            dummyFlights = dummyFlights.map(f => ({
+                ...f,
+                latitude: f.latitude + (Math.random() - 0.5) * 0.01,
+                longitude: f.longitude + (Math.random() - 0.5) * 0.01,
+                altitude: f.altitude + (Math.random() - 0.5) * 100
+            }));
+
+            dummyHass.states['sensor.flightradar24_current_in_area'].attributes.flights = dummyFlights;
+
+            // Simulate Home Assistant state change by triggering internal update flag
+            // This is a hack to bypass the _updateRequired check since we can't access it directly
+            card._updateRequired = true;
+            card.hass = {...dummyHass};
+
+            logEvent('FLIGHT_UPDATE', `Updated ${dummyFlights.length} flights (positions slightly changed)`);
+            updateStats();
+        });
+
+        // Button: Change map type
+        const mapTypes = ['color', 'dark', 'light', 'voyager', 'satellite', 'topo'];
+        let mapTypeIndex = 0;
+        document.getElementById('btn-change-map-type').addEventListener('click', () => {
+            if (!card) return;
+            mapTypeIndex = (mapTypeIndex + 1) % mapTypes.length;
+            currentMapType = mapTypes[mapTypeIndex];
+            cardConfig.radar.background_map = currentMapType;
+            card.setConfig({...cardConfig});
+            card.hass = dummyHass;
+
+            logEvent('CONFIG_CHANGE', `Map type changed to: ${currentMapType}`);
+            layerRecreationCount++;
+            updateStats();
+        });
+
+        // Button: Change range
+        let rangeValue = 50;
+        document.getElementById('btn-change-range').addEventListener('click', () => {
+            if (!card) return;
+            rangeValue = rangeValue === 50 ? 100 : 50;
+            cardConfig.radar.range = rangeValue;
+            card.setConfig({...cardConfig});
+            card.hass = dummyHass;
+
+            logEvent('CONFIG_CHANGE', `Radar range changed to: ${rangeValue}km`);
+            updateStats();
+        });
+
+        // Button: Clear log
+        document.getElementById('btn-clear-log').addEventListener('click', () => {
+            document.getElementById('log-container').innerHTML = '';
+            logEvent('CLEAR', 'Log cleared');
+        });
+
+        // Simulate periodic flight updates (like Home Assistant would do)
+        let autoUpdate = false;
+        const autoUpdateBtn = document.createElement('button');
+        autoUpdateBtn.textContent = 'Start Auto-Update (5s interval)';
+        autoUpdateBtn.addEventListener('click', () => {
+            autoUpdate = !autoUpdate;
+            autoUpdateBtn.textContent = autoUpdate ? 'Stop Auto-Update' : 'Start Auto-Update (5s interval)';
+            if (autoUpdate) {
+                logEvent('AUTO_UPDATE', 'Auto-update started (every 5 seconds)');
+            } else {
+                logEvent('AUTO_UPDATE', 'Auto-update stopped');
+            }
+        });
+        document.querySelector('.control-group').appendChild(autoUpdateBtn);
+
+        setInterval(() => {
+            if (autoUpdate && card) {
+                document.getElementById('btn-update-flights').click();
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

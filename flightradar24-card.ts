@@ -16,6 +16,8 @@ import { setupZoomHandlers } from './utils/zoom';
 import { getLocation } from './utils/location';
 import { ensureLeafletLoadedIfNeeded } from './render/map';
 import { Flightradar24CardState } from './flightradar24-card-state';
+import './flightradar24-card-editor';
+import type { Flightradar24CardEditor } from './flightradar24-card-editor';
 import type { Flight, ExtendedFlight } from './types/flight';
 import type { Hass, HassConnection } from './types/hass';
 import type { CardConfig, Condition } from './types/config';
@@ -50,12 +52,40 @@ class Flightradar24Card extends HTMLElement implements MainCard {
     setConfig(config: CardConfig): void {
         try {
             if (!config) throw new Error('Configuration is missing.');
+            // Clean up Leaflet map before clearing shadow DOM
+            if (this.cardState._leafletMap) {
+                this.cardState._leafletMap.remove();
+                this.cardState._leafletMap = null;
+                this.cardState._currentMapConfig = undefined;
+            }
             this.cardState.setConfig(config);
             renderStatic(this.cardState, this);
             this.observeRadarResize();
         } catch (e) {
             console.error('[FR24Card] setConfig error:', e);
         }
+    }
+
+    static async getConfigElement(config: CardConfig) {
+        await import('./flightradar24-card-editor');
+        const el = document.createElement('flightradar24-card-editor') as Flightradar24CardEditor;
+        el.setConfig(config);
+        return el;
+    }
+
+    static getStubConfig(hass: Hass) {
+        const flightEntities = Object.keys(hass.states)
+            .filter(eid => eid.includes('flightradar'))
+            .sort();
+
+        return {
+            flights_entity: flightEntities[0] || 'sensor.flightradar24_current_in_area',
+            radar: {
+                range: 50,
+                min_range: 5,
+                max_range: 100
+            }
+        };
     }
 
     set hass(hass: Hass) {
