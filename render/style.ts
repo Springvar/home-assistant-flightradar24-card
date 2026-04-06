@@ -5,10 +5,14 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
     if (oldStyle) oldStyle.remove();
 
     const radar = cardState.radar;
-    const radarPrimaryColor = radar['primary-color'] || 'var(--dark-primary-color)';
-    const radarAccentColor = radar['accent-color'] || 'var(--accent-color)';
+    // Backwards compatibility: use new properties, fall back to old ones
+    const backgroundColor = radar['background-color'] || radar['primary-color'] || 'var(--dark-primary-color)';
+    const aircraftColor = radar['aircraft-color'] || radar['accent-color'] || 'var(--accent-color)';
+    const aircraftSelectedColor = radar['aircraft-selected-color'] || radar['aircraft-color'] || radar['accent-color'] || 'var(--accent-color)';
+    const radarGridColor = radar['radar-grid-color'] || radar['feature-color'] || 'var(--secondary-text-color)';
+    const localFeaturesColor = radar['local-features-color'] || radar['feature-color'] || radar['radar-grid-color'] || 'var(--secondary-text-color)';
     const callsignLabelColor = radar['callsign-label-color'] || 'var(--primary-background-color)';
-    const featureColor = radar['feature-color'] || 'var(--secondary-text-color)';
+    const backgroundOpacity = radar['background-opacity'] !== undefined ? Math.max(0, Math.min(1, radar['background-opacity'])) : 0.05;
     const radarSize = radar['radar_size'] !== undefined ? Math.max(30, Math.min(90, radar['radar_size'])) : 70;
     const radarMargin = (100 - radarSize) / 2;
     const scale = cardState.config.scale !== undefined ? Math.max(0.5, Math.min(3, cardState.config.scale)) : 1;
@@ -17,10 +21,12 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
     style.setAttribute('data-fr24-style', '1');
     style.textContent = `
     :host {
-      --radar-primary-color: ${radarPrimaryColor};
-      --radar-accent-color: ${radarAccentColor};
+      --radar-background-color: ${backgroundColor};
+      --radar-aircraft-color: ${aircraftColor};
+      --radar-aircraft-selected-color: ${aircraftSelectedColor};
+      --radar-grid-color: ${radarGridColor};
+      --radar-local-features-color: ${localFeaturesColor};
       --radar-callsign-label-color: ${callsignLabelColor};
-      --radar-feature-color: ${featureColor};
     }
     #flights-card {
       padding: 16px;
@@ -134,8 +140,8 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
       height: 100%;
       margin: 0;
       padding: 0%;
-      background-color: var(--radar-primary-color);
-      opacity: 0.05;
+      background-color: var(--radar-background-color);
+      opacity: ${backgroundOpacity};
     }
     #tracker {
       position: absolute;
@@ -151,7 +157,14 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
       position: absolute;
       translate: -50% -50%;
       z-index: 2;
+      --marker-base-scale: 1.0;
+      --selected-scale: 1.0;
+      scale: calc(var(--marker-base-scale) * var(--selected-scale));
     }
+    .plane.marker-size-small { --marker-base-scale: 0.7; }
+    .plane.marker-size-large { --marker-base-scale: 1.4; }
+    .plane.marker-size-x-large { --marker-base-scale: 2.0; }
+    .plane.marker-size-xx-large { --marker-base-scale: 2.8; }
     .plane.plane-small {
       width: 4px;
       height: 6px;
@@ -173,24 +186,24 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
     .plane.plane-small .arrow {
       border-left: 2px solid transparent;
       border-right: 2px solid transparent;
-      border-bottom: 6px solid var(--radar-accent-color);
+      border-bottom: 6px solid var(--radar-aircraft-color);
     }
     .plane.plane-medium .arrow {
       border-left: 3px solid transparent;
       border-right: 3px solid transparent;
-      border-bottom: 8px solid var(--radar-accent-color);
+      border-bottom: 8px solid var(--radar-aircraft-color);
     }
     .plane.plane-large .arrow {
       border-left: 4px solid transparent;
       border-right: 4px solid transparent;
-      border-bottom: 16px solid var(--radar-accent-color);
+      border-bottom: 16px solid var(--radar-aircraft-color);
     }
     .plane.selected {
       z-index: 3;
-      transform: scale(1.2);
+      --selected-scale: 1.2;
     }
     .plane.selected .arrow {
-      filter: brightness(1.4);
+      border-bottom-color: var(--radar-aircraft-selected-color);
     }
     .callsign-label {
       position: absolute;
@@ -207,7 +220,7 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
     }
     .ring {
       position: absolute;
-      border: 1px dashed var(--radar-primary-color);
+      border: 1px dashed var(--radar-grid-color);
       border-radius: 50%;
       pointer-events: none;
     }
@@ -215,7 +228,7 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
       position: absolute;
       top: 50%;
       left: 50%;
-      border-bottom: 1px dotted var(--radar-primary-color);
+      border-bottom: 1px dotted var(--radar-grid-color);
       width: 50%;
       height: 0px;
       transform-origin: 0 0;
@@ -223,14 +236,14 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
     }
     .runway {
       position: absolute;
-      background-color: var(--radar-feature-color);
+      background-color: var(--radar-local-features-color);
       height: 2px;
     }
     .location-dot {
       position: absolute;
       width: 4px;
       height: 4px;
-      background-color: var(--radar-feature-color);
+      background-color: var(--radar-local-features-color);
       border-radius: 50%;
     }
     .location-label {
@@ -240,12 +253,12 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
       border: none;
       padding: 0px;
       font-size: 10px;
-      color: var(--radar-feature-color);
+      color: var(--radar-local-features-color);
       opacity: 0.5;
     }
     .outline-line {
       position: absolute;
-      background-color: var(--radar-feature-color);
+      background-color: var(--radar-local-features-color);
       opacity: 0.35;
     }
   `;

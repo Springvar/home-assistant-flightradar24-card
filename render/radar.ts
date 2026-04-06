@@ -62,6 +62,13 @@ export function renderRadar(cardState: CardState): void {
                 } else {
                     plane.classList.add('plane-medium');
                 }
+
+                // Apply configured marker size
+                const markerSize = radar['aircraft-marker-size'];
+                if (markerSize && markerSize !== 'normal') {
+                    plane.classList.add(`marker-size-${markerSize}`);
+                }
+
                 if (selectedFlights && selectedFlights.includes(flight.id)) {
                     plane.classList.add('selected');
                 }

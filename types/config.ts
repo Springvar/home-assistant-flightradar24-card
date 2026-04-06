@@ -60,15 +60,24 @@ export interface RadarConfig {
     max_range?: number;
     ring_distance?: number;
     filter?: boolean | Condition[];
+    // Old color properties (kept for backwards compatibility)
     'primary-color'?: string;
     'accent-color'?: string;
     'feature-color'?: string;
+    // New color properties
+    'background-color'?: string;
+    'background-opacity'?: number;
+    'aircraft-color'?: string;
+    'aircraft-selected-color'?: string;
+    'radar-grid-color'?: string;
+    'local-features-color'?: string;
     'callsign-label-color'?: string;
+    'aircraft-marker-size'?: 'small' | 'normal' | 'large' | 'x-large' | 'xx-large';
     hide?: boolean;
     hide_range?: boolean;
     radar_size?: number;
     local_features?: RadarFeature[];
-    background_map?: 'none' | 'system' | 'bw' | 'color' | 'dark' | 'outlines';
+    background_map?: 'none' | 'system' | 'bw' | 'light' | 'color' | 'dark' | 'voyager' | 'satellite' | 'topo' | 'outlines';
     background_map_opacity?: number;
     background_map_api_key?: string;
 }
