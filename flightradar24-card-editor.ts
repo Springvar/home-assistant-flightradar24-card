@@ -83,6 +83,187 @@ export class Flightradar24CardEditor extends HTMLElement {
         return mapType === 'bw' || mapType === 'outlines';
     }
 
+    // Validation methods
+    private get validFlightFields(): Set<string> {
+        return new Set(this.availableFlightFields.map(f => f.value));
+    }
+
+    private get allDefineAndToggleKeys(): Set<string> {
+        const keys = new Set<string>();
+        // Add toggle keys
+        Object.keys(this._config.toggles || {}).forEach(k => keys.add(k));
+        // Add define keys
+        Object.keys(this._config.defines || {}).forEach(k => keys.add(k));
+        return keys;
+    }
+
+    private getUsedDefinesAndToggles(): Set<string> {
+        const used = new Set<string>();
+        const templates = this._config.templates || {};
+        const filters = this._config.filter as Condition[] | undefined;
+        const sort = this._config.sort || [];
+
+        // Check templates for ${define} usage
+        Object.values(templates).forEach(template => {
+            const matches = template.matchAll(/\$\{(\w+)\}/g);
+            for (const match of matches) {
+                const key = match[1];
+                if (this.allDefineAndToggleKeys.has(key)) {
+                    used.add(key);
+                }
+            }
+        });
+
+        // Check filters for define/toggle usage
+        const checkConditions = (conditions: Condition[]): void => {
+            conditions.forEach(cond => {
+                if ('type' in cond && (cond.type === 'AND' || cond.type === 'OR')) {
+                    checkConditions((cond as GroupCondition).conditions || []);
+                } else if ('type' in cond && cond.type === 'NOT') {
+                    checkConditions([(cond as NotCondition).condition]);
+                } else {
+                    const fc = cond as FieldCondition;
+                    if (fc.field && this.allDefineAndToggleKeys.has(fc.field)) {
+                        used.add(fc.field);
+                    }
+                    // Check if value references a define/toggle
+                    const val = fc.value;
+                    if (typeof val === 'string' && val.startsWith('${') && val.endsWith('}')) {
+                        const key = val.slice(2, -1);
+                        if (this.allDefineAndToggleKeys.has(key)) {
+                            used.add(key);
+                        }
+                    }
+                }
+            });
+        };
+        if (filters && Array.isArray(filters)) {
+            checkConditions(filters);
+        }
+
+        // Check sort criteria
+        sort.forEach(criterion => {
+            if (criterion.field && this.allDefineAndToggleKeys.has(criterion.field)) {
+                used.add(criterion.field);
+            }
+        });
+
+        return used;
+    }
+
+    private getUnusedDefinesAndToggles(): { toggles: string[]; defines: string[] } {
+        const used = this.getUsedDefinesAndToggles();
+        const unusedToggles: string[] = [];
+        const unusedDefines: string[] = [];
+
+        Object.keys(this._config.toggles || {}).forEach(k => {
+            if (!used.has(k)) unusedToggles.push(k);
+        });
+
+        Object.keys(this._config.defines || {}).forEach(k => {
+            if (!used.has(k)) unusedDefines.push(k);
+        });
+
+        return { toggles: unusedToggles, defines: unusedDefines };
+    }
+
+    private getUsedTemplateKeys(): Set<string> {
+        const used = new Set<string>();
+        const templates = this._config.templates || {};
+
+        // Main templates that are always used
+        const mainTemplates = ['flight_element', 'radar_range', 'list_status'];
+        mainTemplates.forEach(k => {
+            if (templates[k] !== undefined) used.add(k);
+        });
+
+        // Check for template references in other templates
+        Object.values(templates).forEach(template => {
+            const matches = template.matchAll(/\$\{(\w+)\([\s\S]*?\)\}/g);
+            for (const match of matches) {
+                const key = match[1];
+                if (templates[key] !== undefined) {
+                    used.add(key);
+                }
+            }
+        });
+
+        return used;
+    }
+
+    private getUnusedTemplates(): string[] {
+        const used = this.getUsedTemplateKeys();
+        const templates = this._config.templates || {};
+        const unused: string[] = [];
+
+        Object.keys(templates).forEach(k => {
+            if (!used.has(k)) unused.push(k);
+        });
+
+        return unused;
+    }
+
+    private validateConditionField(field: string): { valid: boolean; error?: string } {
+        if (this.validFlightFields.has(field)) {
+            return { valid: true };
+        }
+        if (this.allDefineAndToggleKeys.has(field)) {
+            return { valid: true };
+        }
+        return {
+            valid: false,
+            error: `Unknown field: "${field}". Not a flight property or define/toggle.`
+        };
+    }
+
+    private hasValidationErrors(): boolean {
+        // Check for unused items
+        const unused = this.getUnusedDefinesAndToggles();
+        if (unused.toggles.length > 0 || unused.defines.length > 0) return true;
+
+        const unusedTemplates = this.getUnusedTemplates();
+        if (unusedTemplates.length > 0) return true;
+
+        // Check for invalid condition fields
+        const filters = this._config.filter as Condition[] | undefined;
+        if (filters && Array.isArray(filters)) {
+            const hasInvalidFields = this._checkConditionsForInvalidFields(filters);
+            if (hasInvalidFields) return true;
+        }
+
+        // Check sort fields
+        const sort = this._config.sort || [];
+        for (const criterion of sort) {
+            if (criterion.field) {
+                const validation = this.validateConditionField(criterion.field);
+                if (!validation.valid) return true;
+            }
+        }
+
+        return false;
+    }
+
+    private _checkConditionsForInvalidFields(conditions: Condition[]): boolean {
+        for (const cond of conditions) {
+            if ('type' in cond && (cond.type === 'AND' || cond.type === 'OR')) {
+                if (this._checkConditionsForInvalidFields((cond as GroupCondition).conditions || [])) {
+                    return true;
+                }
+            } else if ('type' in cond && cond.type === 'NOT') {
+                if (this._checkConditionsForInvalidFields([(cond as NotCondition).condition])) {
+                    return true;
+                }
+            } else {
+                const fc = cond as FieldCondition;
+                if (fc.field) {
+                    const validation = this.validateConditionField(fc.field);
+                    if (!validation.valid) return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private _render() {
         if (!this.hass) return;
 
@@ -764,7 +945,10 @@ export class Flightradar24CardEditor extends HTMLElement {
                     </div>
 
                     <details data-section-id="advanced-filter">
-                        <summary><h4>Filter</h4></summary>
+                        <summary>
+                            <h4>Filter</h4>
+                            ${filters.length > 0 && this._checkConditionsForInvalidFields(filters) ? `<span style="color: #ff9800; font-size: 1.2em; margin-left: 0.5em;" title="Contains invalid filter fields">⚠️</span>` : ''}
+                        </summary>
                         <div class="section-content">
                             <p class="help-text">Filter which flights are displayed. All top-level conditions must match (implicit AND).</p>
                             <div id="filter-conditions">
@@ -779,20 +963,38 @@ export class Flightradar24CardEditor extends HTMLElement {
                     </details>
 
                     <details data-section-id="advanced-sort">
-                        <summary><h4>Sort</h4></summary>
+                        <summary>
+                            <h4>Sort</h4>
+                            ${(() => {
+                                const sort = this._config.sort || [];
+                                const hasInvalidSort = sort.some(criterion => {
+                                    if (criterion.field) {
+                                        const validation = this.validateConditionField(criterion.field);
+                                        return !validation.valid;
+                                    }
+                                    return false;
+                                });
+                                return hasInvalidSort ? `<span style="color: #ff9800; font-size: 1.2em; margin-left: 0.5em;" title="Contains invalid sort fields">⚠️</span>` : '';
+                            })()}
+                        </summary>
                         <div class="section-content">
                             <p class="help-text">Define how flights are sorted in the list</p>
                             <div id="sort-list">
-                                ${(this._config.sort || []).map((criterion, idx) => `
-                                    <div class="item-box">
+                                ${(this._config.sort || []).map((criterion, idx) => {
+                                    const fieldValidation = criterion.field ? this.validateConditionField(criterion.field) : { valid: true };
+                                    const hasInvalidField = !fieldValidation.valid;
+                                    return `
+                                    <div class="item-box" ${hasInvalidField ? 'style="border-color: #ff9800;"' : ''}>
                                         <div class="item-header">
                                             <span>Sort ${idx + 1}</span>
+                                            ${hasInvalidField ? `<span style="color: #ff9800; font-size: 1.2em; margin-left: 0.5em;" title="${fieldValidation.error || 'Invalid field'}">⚠️</span>` : ''}
                                             <button class="remove-button" data-action="remove-sort" data-index="${idx}">Remove</button>
                                         </div>
                                         <div class="form-row">
                                             <label>Field:</label>
-                                            <input type="text" value="${criterion.field}" data-sort-prop="${idx}:field" placeholder="distance, altitude, speed, etc." />
+                                            <input type="text" value="${criterion.field}" data-sort-prop="${idx}:field" placeholder="distance, altitude, speed, etc." ${hasInvalidField ? 'style="border-color: #ff9800;"' : ''} />
                                         </div>
+                                        ${hasInvalidField ? `<div class="form-row"><p style="color: #ff9800; margin: 0; font-size: 0.9em;">${fieldValidation.error || 'Invalid field'}</p></div>` : ''}
                                         <div class="form-row">
                                             <label>Order:</label>
                                             <select data-sort-prop="${idx}:order">
@@ -801,7 +1003,7 @@ export class Flightradar24CardEditor extends HTMLElement {
                                             </select>
                                         </div>
                                     </div>
-                                `).join('')}
+                                `}).join('')}
                             </div>
                             <button class="add-button" data-action="add-sort">Add Sort Criterion</button>
                         </div>
@@ -1011,21 +1213,32 @@ export class Flightradar24CardEditor extends HTMLElement {
     private _renderTogglesAndDefinesConfig(): string {
         const defines = this._config.defines || {};
         const toggles = this._config.toggles || {};
+        const unused = this.getUnusedDefinesAndToggles();
+        const hasAnyUnused = unused.toggles.length > 0 || unused.defines.length > 0;
 
         return `
             <details data-section-id="toggles-defines-config">
-                <summary><h3>Toggles & Defines</h3></summary>
+                <summary>
+                    <h3>Toggles & Defines</h3>
+                    ${hasAnyUnused ? `<span style="color: #ff9800; font-size: 1.2em; margin-left: 0.5em;" title="Contains unused items">⚠️</span>` : ''}
+                </summary>
                 <div class="section-content">
                     <details data-section-id="toggles-section">
-                        <summary><h4>Toggles</h4></summary>
+                        <summary>
+                            <h4>Toggles</h4>
+                            ${unused.toggles.length > 0 ? `<span style="color: #ff9800; font-size: 1.2em; margin-left: 0.5em;" title="Unused toggles: ${unused.toggles.join(', ')}">⚠️</span>` : ''}
+                        </summary>
                         <div class="section-content">
                             <p class="help-text">UI buttons that set define values dynamically</p>
                             <div id="toggles-list">
-                                ${Object.entries(toggles).map(([key, toggle]) => `
-                                    <div class="item-box">
+                                ${Object.entries(toggles).map(([key, toggle]) => {
+                                    const isUnused = unused.toggles.includes(key);
+                                    return `
+                                    <div class="item-box" ${isUnused ? 'style="border-color: #ff9800;"' : ''}>
                                         <div class="form-row">
                                             <label>Name:</label>
                                             <input type="text" value="${key}" readonly />
+                                            ${isUnused ? `<span style="color: #ff9800; font-size: 1.2em; margin-left: 0.5em;" title="This toggle is not used in templates, filters, or sort">⚠️</span>` : ''}
                                         </div>
                                         <div class="form-row">
                                             <label>Label:</label>
@@ -1039,22 +1252,28 @@ export class Flightradar24CardEditor extends HTMLElement {
                                         </div>
                                         <button class="remove-button" data-action="remove-toggle" data-key="${key}">Remove</button>
                                     </div>
-                                `).join('')}
+                                `}).join('')}
                             </div>
                             <button class="add-button" data-action="add-toggle">Add Toggle</button>
                         </div>
                     </details>
 
                     <details data-section-id="defines-section">
-                        <summary><h4>Defines</h4></summary>
+                        <summary>
+                            <h4>Defines</h4>
+                            ${unused.defines.length > 0 ? `<span style="color: #ff9800; font-size: 1.2em; margin-left: 0.5em;" title="Unused defines: ${unused.defines.join(', ')}">⚠️</span>` : ''}
+                        </summary>
                         <div class="section-content">
                             <p class="help-text">Reusable values referenced as \${defineName} in filters and sort</p>
                             <div id="defines-list">
-                                ${Object.entries(defines).map(([key, value]) => `
-                                    <div class="item-box">
+                                ${Object.entries(defines).map(([key, value]) => {
+                                    const isUnused = unused.defines.includes(key);
+                                    return `
+                                    <div class="item-box" ${isUnused ? 'style="border-color: #ff9800;"' : ''}>
                                         <div class="form-row">
                                             <label>Name:</label>
                                             <input type="text" value="${key}" data-define-oldkey="${key}" readonly />
+                                            ${isUnused ? `<span style="color: #ff9800; font-size: 1.2em; margin-left: 0.5em;" title="This define is not used in templates, filters, or sort">⚠️</span>` : ''}
                                         </div>
                                         <div class="form-row">
                                             <label>Value:</label>
@@ -1062,7 +1281,7 @@ export class Flightradar24CardEditor extends HTMLElement {
                                         </div>
                                         <button class="remove-button" data-action="remove-define" data-key="${key}">Remove</button>
                                     </div>
-                                `).join('')}
+                                `}).join('')}
                             </div>
                             <button class="add-button" data-action="add-define">Add Define</button>
                         </div>
@@ -1085,22 +1304,30 @@ export class Flightradar24CardEditor extends HTMLElement {
         const availableMainTemplates = availableDefaults.filter(key => mainTemplates.includes(key));
         const availableHelperTemplates = availableDefaults.filter(key => !mainTemplates.includes(key));
 
+        // Get unused templates
+        const unusedTemplates = this.getUnusedTemplates();
+
         return `
             <details data-section-id="templates-config">
-                <summary><h3>Templates</h3></summary>
+                <summary>
+                    <h3>Templates</h3>
+                    ${unusedTemplates.length > 0 ? `<span style="color: #ff9800; font-size: 1.2em; margin-left: 0.5em;" title="Unused templates: ${unusedTemplates.join(', ')}">⚠️</span>` : ''}
+                </summary>
                 <div class="section-content">
                     <p class="help-text">Customize HTML templates for flight list items using \${flight.field} placeholders. Main templates are used directly by renderers; helper templates are used by other templates.</p>
                     <div id="templates-list">
                         ${Object.entries(templates).map(([key, template]) => {
                             const isMain = mainTemplates.includes(key);
+                            const isUnused = unusedTemplates.includes(key);
                             const badge = isMain ? '<span style="background: var(--primary-color, #03a9f4); color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 8px; font-weight: bold;">MAIN</span>' : '';
                             return `
-                            <div class="item-box">
+                            <div class="item-box" ${isUnused ? 'style="border-color: #ff9800;"' : ''}>
                                 <div class="form-row">
                                     <label>Template Name:</label>
                                     <div style="display: flex; align-items: center;">
                                         <input type="text" value="${key}" readonly style="flex: 1;" />
                                         ${badge}
+                                        ${isUnused ? `<span style="color: #ff9800; font-size: 1.2em; margin-left: 0.5em;" title="This template is not used by renderers or other templates">⚠️</span>` : ''}
                                     </div>
                                 </div>
                                 <div class="form-row">
@@ -1315,16 +1542,22 @@ export class Flightradar24CardEditor extends HTMLElement {
         const toggleKeys = Object.keys(this._config.toggles || {});
         const availableDefines = [...defineKeys, ...toggleKeys];
 
+        // Validate the field
+        const fieldToValidate = usesDefinedField ? condition.defined : condition.field;
+        const fieldValidation = fieldToValidate ? this.validateConditionField(fieldToValidate) : { valid: true };
+        const hasInvalidField = !fieldValidation.valid;
+
         // Determine if value uses a define reference (starts with ${)
         const valueStr = this._formatValue(condition.value);
         const usesDefinedValue = typeof condition.value === 'string' && condition.value.startsWith('${') && condition.value.endsWith('}');
         const definedValueName = usesDefinedValue ? (condition.value as string).slice(2, -1) : '';
 
         return `
-            <details class="condition-box" data-condition-path="${path}">
+            <details class="condition-box" data-condition-path="${path}" ${hasInvalidField ? 'style="border-color: #ff9800;"' : ''}>
                 <summary class="condition-summary">
                     <span class="condition-type-badge">Value</span>
                     <span class="condition-description">${description}</span>
+                    ${hasInvalidField ? `<span style="color: #ff9800; font-size: 1.2em; margin-left: 0.5em;" title="${fieldValidation.error || 'Invalid field'}">⚠️</span>` : ''}
                     <button class="remove-button" data-action="remove-condition" data-path="${path}"
                         onclick="event.preventDefault(); event.stopPropagation();">Remove</button>
                 </summary>
@@ -1336,7 +1569,7 @@ export class Flightradar24CardEditor extends HTMLElement {
                     </select>
                     ${usesDefinedField ? (
                         availableDefines.length > 0 ? `
-                            <select class="full-width condition-field" data-path="${path}" data-prop="defined">
+                            <select class="full-width condition-field" data-path="${path}" data-prop="defined" ${hasInvalidField ? 'style="border-color: #ff9800;"' : ''}>
                                 <option value="">Select a define...</option>
                                 ${availableDefines.map(def => {
                                     const isToggle = this._config.toggles && def in this._config.toggles;
@@ -1348,10 +1581,10 @@ export class Flightradar24CardEditor extends HTMLElement {
                             </select>
                         ` : `
                             <input type="text" class="full-width condition-field" data-path="${path}" data-prop="defined"
-                                value="${condition.defined || ''}" placeholder="e.g., max_altitude" />
+                                value="${condition.defined || ''}" placeholder="e.g., max_altitude" ${hasInvalidField ? 'style="border-color: #ff9800;"' : ''} />
                         `
                     ) : `
-                        <select class="full-width condition-field" data-path="${path}" data-prop="field">
+                        <select class="full-width condition-field" data-path="${path}" data-prop="field" ${hasInvalidField ? 'style="border-color: #ff9800;"' : ''}>
                             <option value="">Select a field...</option>
                             ${this.availableFlightFields.map((field, idx, arr) => {
                                 const prevGroup = idx > 0 ? arr[idx - 1].group : null;
@@ -1362,6 +1595,8 @@ export class Flightradar24CardEditor extends HTMLElement {
                         </select>
                     `}
                 </div>
+                ${hasInvalidField ? `<div class="form-row"><p style="color: #ff9800; margin: 0; font-size: 0.9em;">${fieldValidation.error || 'Invalid field'}</p></div>` : ''}
+                <div class="form-row">
                 <div class="form-row">
                     <label>Comparator:</label>
                     <select class="condition-field" data-path="${path}" data-prop="comparator">
