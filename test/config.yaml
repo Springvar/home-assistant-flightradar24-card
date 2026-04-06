@@ -1,14 +1,83 @@
 flights_entity: sensor.flightradar24_current_in_area
+location_tracker: device_tracker.phone
+projection_interval: 1000
+scale: 1
+max_flights: 10
+units:
+  altitude: ft
+  speed: kts
+  distance: km
 radar:
   range: 50
   min_range: 5
   max_range: 100
   ring_distance: 10
-  background_map: none
-units:
-  altitude: ft
-  speed: kts
-  distance: km
+  background_map: system
+  background_map_opacity: 0.4
+  primary-color: 'rgb(0,200,100)'
+  accent-color: '#ff0000'
+  feature-color: 'rgb(0,125,20)'
+  local_features:
+    - type: location
+      label: Trondheim Airport
+      position:
+        lat: 63.4578
+        lon: 10.9244
+      max_range: 60
+    - type: runway
+      position:
+        lat: 63.4578
+        lon: 10.9244
+      heading: 90
+      length: 9839
+      max_range: 60
+    - type: outline
+      points:
+        - lat: 63.42
+          lon: 10.38
+        - lat: 63.42
+          lon: 10.48
+        - lat: 63.48
+          lon: 10.48
+        - lat: 63.48
+          lon: 10.38
+        - lat: 63.42
+          lon: 10.38
+      max_range: 60
+list:
+  hide: false
+  showListStatus: true
+filter:
+  - field: altitude
+    comparator: lte
+    value: 10000
+  - type: OR
+    conditions:
+      - field: airline_iata
+        comparator: oneOf
+        value: ['DY', 'SK', 'WF']
+      - field: airport_destination_code_iata
+        comparator: eq
+        value: TRD
+  - type: NOT
+    condition:
+      field: aircraft_code
+      comparator: eq
+      value: B737
 sort:
   - field: distance
     order: asc
+  - field: altitude
+    order: desc
+defines:
+  max_altitude: 10000
+  min_distance: 5
+toggles:
+  arrivals:
+    label: Arrivals
+    default: true
+  departures:
+    label: Departures
+    default: true
+templates:
+  default: '<div>${flight.callsign}</div>'

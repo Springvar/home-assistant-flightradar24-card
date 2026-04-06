@@ -11,7 +11,13 @@ export default defineConfig({
                 'config/**/*.{js,ts}',
                 'flightradar24-card-state.{js,ts}'
             ],
-            exclude: ['render/**/*', 'node_modules/**', 'dist/**']
+            exclude: ['render/**/*', 'node_modules/**', 'dist/**'],
+            thresholds: {
+                lines: 80,
+                functions: 80,
+                branches: 80,
+                statements: 80
+            }
         }
     }
 });

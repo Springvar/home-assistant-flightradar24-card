@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Flightradar24 Card Editor Demo</title>
+        <script type="module" src="../dist/home-assistant-flightradar24-card.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+        <style>
+            :root {
+                --primary-color: #03a9f4;
+                --accent-color: #ff9800;
+                --primary-background-color: #fafafa;
+                --secondary-background-color: #e0e0e0;
+                --ha-card-background: #fff;
+                --card-background-color: #fff;
+                --ha-card-box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.12);
+                --primary-text-color: #212121;
+                --secondary-text-color: #757575;
+                --divider-color: #e0e0e0;
+                --info-color: #2196f3;
+                --success-color: #43a047;
+                --warning-color: #fb8c00;
+                --error-color: #c0392b;
+                --dark-primary-color: #0288d1;
+            }
+            body {
+                background: #fafafa;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                margin: 0;
+                padding: 2em;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 2em;
+            }
+            .editor-panel {
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                padding: 16px;
+                max-width: 460px;
+            }
+            .preview-panel {
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                padding: 16px;
+            }
+            h1 {
+                text-align: center;
+                grid-column: 1 / -1;
+                margin: 0 0 1em 0;
+            }
+            h2 {
+                margin-top: 0;
+            }
+            .config-display {
+                background: #f5f5f5;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                padding: 12px;
+                font-family: 'Courier New', monospace;
+                font-size: 12px;
+                max-height: 400px;
+                overflow: auto;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }
+            flightradar24-card-editor {
+                display: block;
+            }
+            @media (max-width: 1024px) {
+                .container {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Flightradar24 Card Editor</h1>
+
+            <div class="editor-panel">
+                <h2>Editor</h2>
+                <flightradar24-card-editor id="fr24editor"></flightradar24-card-editor>
+            </div>
+
+            <div class="preview-panel">
+                <h2>Live Configuration</h2>
+                <div class="config-display" id="configDisplay">Loading...</div>
+            </div>
+        </div>
+
+        <script>
+            const dummyHass = {
+                states: {
+                    'sensor.flightradar24_current_in_area': {
+                        state: '3',
+                        attributes: {
+                            flights: []
+                        }
+                    },
+                    'sensor.flightradar24_all_flights': {
+                        state: '5',
+                        attributes: {
+                            flights: []
+                        }
+                    },
+                    'device_tracker.phone': {
+                        state: 'home',
+                        attributes: {
+                            friendly_name: 'Phone',
+                            latitude: 63.4041,
+                            longitude: 10.4301
+                        }
+                    },
+                    'person.john': {
+                        state: 'home',
+                        attributes: {
+                            friendly_name: 'John',
+                            latitude: 63.4041,
+                            longitude: 10.4301
+                        }
+                    },
+                    'zone.home': {
+                        state: 'zoning',
+                        attributes: {
+                            friendly_name: 'Home',
+                            latitude: 63.4041,
+                            longitude: 10.4301
+                        }
+                    }
+                },
+                config: {
+                    latitude: 63.4041,
+                    longitude: 10.4301
+                }
+            };
+
+            function getConfigFile() {
+                const params = new URLSearchParams(window.location.search);
+                const cfgName = params.get('config');
+                return cfgName ? `${cfgName}.yaml` : 'config.yaml';
+            }
+
+            function updateConfigDisplay(config) {
+                const display = document.getElementById('configDisplay');
+                if (display) {
+                    display.textContent = window.jsyaml.dump(config, {
+                        indent: 2,
+                        lineWidth: -1,
+                        noRefs: true,
+                        sortKeys: false
+                    });
+                }
+            }
+
+            fetch(getConfigFile())
+                .then(resp => {
+                    if (!resp.ok) throw new Error("Config file not found");
+                    return resp.text();
+                })
+                .then(yamlSource => {
+                    const cardConfig = window.jsyaml.load(yamlSource);
+                    window.customElements.whenDefined('flightradar24-card-editor').then(() => {
+                        const editor = document.getElementById('fr24editor');
+                        editor.hass = dummyHass;
+                        if (editor.setConfig) {
+                            editor.setConfig(cardConfig);
+                        }
+
+                        // Display initial config
+                        updateConfigDisplay(cardConfig);
+
+                        // Listen for config changes
+                        editor.addEventListener('config-changed', (e) => {
+                            updateConfigDisplay(e.detail.config);
+                        });
+                    });
+                })
+                .catch(e => {
+                    console.error("Error loading config:", e);
+                    const display = document.getElementById('configDisplay');
+                    if (display) {
+                        display.textContent = `Error loading config: ${e.message}\n\nUsing default configuration...`;
+                    }
+
+                    // Use default config
+                    window.customElements.whenDefined('flightradar24-card-editor').then(() => {
+                        const editor = document.getElementById('fr24editor');
+                        editor.hass = dummyHass;
+                        const defaultConfig = {
+                            flights_entity: 'sensor.flightradar24_current_in_area'
+                        };
+                        if (editor.setConfig) {
+                            editor.setConfig(defaultConfig);
+                        }
+                        updateConfigDisplay(defaultConfig);
+
+                        editor.addEventListener('config-changed', (e) => {
+                            updateConfigDisplay(e.detail.config);
+                        });
+                    });
+                });
+        </script>
+    </body>
+</html>

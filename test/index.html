@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <title>Flightradar24 Card Demo</title>
+        <title>Flightradar24 Card - Editor & Preview</title>
         <script type="module" src="../dist/home-assistant-flightradar24-card.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
         <style>
@@ -12,30 +12,165 @@
                 --primary-background-color: #fafafa;
                 --secondary-background-color: #e0e0e0;
                 --ha-card-background: #fff;
+                --card-background-color: #fff;
                 --ha-card-box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.12);
                 --primary-text-color: #212121;
                 --secondary-text-color: #757575;
+                --divider-color: #e0e0e0;
                 --info-color: #2196f3;
                 --success-color: #43a047;
                 --warning-color: #fb8c00;
                 --error-color: #c0392b;
-                --dark-primary-color: #7cdb00;
+                --dark-primary-color: #0288d1;
             }
             body {
                 background: #fafafa;
-                font-family: sans-serif;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                 margin: 0;
-                padding: 2em;
+                padding: 0;
+            }
+            .app-container {
+                display: grid;
+                grid-template-rows: auto 1fr;
+                height: 100vh;
+            }
+            .header {
+                background: white;
+                border-bottom: 1px solid #e0e0e0;
+                padding: 16px 24px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .header h1 {
+                margin: 0;
+                font-size: 24px;
+                color: #236597;
+                font-weight: 600;
+            }
+            .content {
+                display: grid;
+                grid-template-columns: 460px 1fr;
+                gap: 0;
+                overflow: hidden;
+            }
+            .panel {
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            .panel-header {
+                background: white;
+                border-bottom: 1px solid #e0e0e0;
+                padding: 12px 16px;
+                font-weight: 600;
+                font-size: 16px;
+            }
+            .panel-content {
+                flex: 1;
+                overflow: auto;
+                padding: 16px;
+                background: #fafafa;
+            }
+            .editor-panel {
+                border-right: 1px solid #e0e0e0;
+                position: relative;
+                z-index: 10;
+            }
+            .preview-panel {
+                display: flex;
+                flex-direction: column;
+            }
+            .card-preview {
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                margin-bottom: 16px;
+            }
+            .card-wrapper {
+                position: relative;
+                overflow: hidden;
+                isolation: isolate;
+                /* Ensure the card can't capture events outside this container */
+                contain: layout style;
             }
             flightradar24-card {
-                max-width: 800px;
                 display: block;
-                margin: 2em auto;
+                position: relative;
+            }
+            flightradar24-card-editor {
+                display: block;
+                position: relative;
+            }
+            .panel-content {
+                position: relative;
+            }
+            .config-display {
+                background: #2d2d2d;
+                color: #d4d4d4;
+                border-radius: 4px;
+                padding: 16px;
+                font-family: 'Courier New', Consolas, monospace;
+                font-size: 13px;
+                overflow: auto;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                line-height: 1.5;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .reload-notice {
+                background: #fff3cd;
+                border: 1px solid #ffc107;
+                border-radius: 4px;
+                padding: 12px;
+                margin-bottom: 16px;
+                font-size: 14px;
+                color: #856404;
+            }
+            @media (max-width: 1200px) {
+                .content {
+                    grid-template-columns: 1fr;
+                    grid-template-rows: auto 1fr;
+                }
+                .editor-panel {
+                    border-right: none;
+                    border-bottom: 1px solid #e0e0e0;
+                }
             }
         </style>
     </head>
     <body>
-        <flightradar24-card id="fr24card"></flightradar24-card>
+        <div class="app-container">
+            <div class="header">
+                <h1>✈️ Flightradar24 Card - Editor & Live Preview</h1>
+            </div>
+
+            <div class="content">
+                <div class="panel editor-panel">
+                    <div class="panel-header">⚙️ Configuration Editor</div>
+                    <div class="panel-content">
+                        <flightradar24-card-editor id="fr24editor"></flightradar24-card-editor>
+                    </div>
+                </div>
+
+                <div class="panel preview-panel">
+                    <div class="panel-header">👁️ Live Preview</div>
+                    <div class="panel-content">
+                        <div class="reload-notice">
+                            💡 <strong>Tip:</strong> Changes to the card require a rebuild. Run <code>yarn dev</code> for auto-reload on file changes.
+                        </div>
+
+                        <div class="card-preview">
+                            <div class="card-wrapper">
+                                <flightradar24-card id="fr24card"></flightradar24-card>
+                            </div>
+                        </div>
+
+                        <div class="panel-header" style="margin-top: 0; border-radius: 4px 4px 0 0;">📄 YAML Configuration</div>
+                        <div class="config-display" id="configDisplay">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <script>
             const dummyFlights = [
                 {
@@ -137,6 +272,36 @@
                         attributes: {
                             flights: dummyFlights
                         }
+                    },
+                    'sensor.flightradar24_all_flights': {
+                        state: '5',
+                        attributes: {
+                            flights: []
+                        }
+                    },
+                    'device_tracker.phone': {
+                        state: 'home',
+                        attributes: {
+                            friendly_name: 'Phone',
+                            latitude: 63.4041,
+                            longitude: 10.4301
+                        }
+                    },
+                    'person.john': {
+                        state: 'home',
+                        attributes: {
+                            friendly_name: 'John',
+                            latitude: 63.4041,
+                            longitude: 10.4301
+                        }
+                    },
+                    'zone.home': {
+                        state: 'zoning',
+                        attributes: {
+                            friendly_name: 'Home',
+                            latitude: 63.4041,
+                            longitude: 10.4301
+                        }
                     }
                 },
                 config: {
@@ -147,6 +312,26 @@
                     subscribeEvents: (fn, event) => {}
                 }
             };
+
+            function updateConfigDisplay(config) {
+                const display = document.getElementById('configDisplay');
+                if (display) {
+                    display.textContent = window.jsyaml.dump(config, {
+                        indent: 2,
+                        lineWidth: -1,
+                        noRefs: true,
+                        sortKeys: false
+                    });
+                }
+            }
+
+            function updateCardPreview(config) {
+                const card = document.getElementById('fr24card');
+                if (card) {
+                    card.setConfig(config);
+                    card.hass = dummyHass;
+                }
+            }
 
             function getConfigFile() {
                 const params = new URLSearchParams(window.location.search);
@@ -161,14 +346,60 @@
                 })
                 .then(yamlSource => {
                     const cardConfig = window.jsyaml.load(yamlSource);
-            window.customElements.whenDefined('flightradar24-card').then(() => {
-                const card = document.getElementById('fr24card');
-                card.setConfig(cardConfig);
-                card.hass = dummyHass;
-            });
+
+                    // Wait for both custom elements to be defined
+                    Promise.all([
+                        window.customElements.whenDefined('flightradar24-card-editor'),
+                        window.customElements.whenDefined('flightradar24-card')
+                    ]).then(() => {
+                        // Initialize editor
+                        const editor = document.getElementById('fr24editor');
+                        editor.hass = dummyHass;
+                        if (editor.setConfig) {
+                            editor.setConfig(cardConfig);
+                        }
+
+                        // Initialize card preview
+                        updateCardPreview(cardConfig);
+                        updateConfigDisplay(cardConfig);
+
+                        // Listen for config changes from editor
+                        editor.addEventListener('config-changed', (e) => {
+                            const newConfig = e.detail.config;
+                            updateConfigDisplay(newConfig);
+                            updateCardPreview(newConfig);
+                        });
+                    });
                 })
                 .catch(e => {
                     console.error("Error loading config:", e);
+                    const display = document.getElementById('configDisplay');
+                    if (display) {
+                        display.textContent = `Error loading config: ${e.message}\n\nUsing default configuration...`;
+                    }
+
+                    // Use default config
+                    Promise.all([
+                        window.customElements.whenDefined('flightradar24-card-editor'),
+                        window.customElements.whenDefined('flightradar24-card')
+                    ]).then(() => {
+                        const editor = document.getElementById('fr24editor');
+                        editor.hass = dummyHass;
+                        const defaultConfig = {
+                            flights_entity: 'sensor.flightradar24_current_in_area'
+                        };
+                        if (editor.setConfig) {
+                            editor.setConfig(defaultConfig);
+                        }
+                        updateCardPreview(defaultConfig);
+                        updateConfigDisplay(defaultConfig);
+
+                        editor.addEventListener('config-changed', (e) => {
+                            const newConfig = e.detail.config;
+                            updateConfigDisplay(newConfig);
+                            updateCardPreview(newConfig);
+                        });
+                    });
                 });
         </script>
     </body>
