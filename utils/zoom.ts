@@ -22,12 +22,12 @@ export function setupZoomHandlers(cardState: ZoomCardState, radarOverlay: HTMLEl
     function handleWheel(event: WheelEvent): void {
         event.preventDefault();
         const delta = Math.sign(event.deltaY);
-        cardState.radar.range += delta * 5;
+        cardState.radar.range += delta * 2;
         const minRange = cardState.radar.min_range || 1;
         const maxRange = cardState.radar.max_range || Math.max(100, cardState.radar.initialRange || 35);
         if (cardState.radar.range < minRange) cardState.radar.range = minRange;
         if (cardState.radar.range > maxRange) cardState.radar.range = maxRange;
-        cardState.mainCard.updateRadarRange(delta * 5);
+        cardState.mainCard.updateRadarRange(delta * 2);
     }
 
     function handleTouchStart(event: TouchEvent): void {
