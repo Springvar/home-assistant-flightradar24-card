@@ -1,4 +1,4 @@
-name: CI — Build (Rollup)
+name: CI — Build (pnpm)
 
 # Run on pushes to main, PRs, tag pushes (so tag-based releases build), and manual dispatch
 on:
@@ -28,24 +28,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js 20 and Yarn cache
+      - name: Setup Node.js 20 and pnpm cache
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'yarn'
+          cache: 'pnpm'
 
-      - name: Cache yarn cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/yarn
-            ~/.config/yarn
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-
-      - name: Install dependencies (Yarn)
-        run: yarn install --frozen-lockfile
+      - name: Install dependencies (pnpm)
+        run: pnpm install --frozen-lockfile
 
       - name: Read package.json into output (for conditional steps)
         id: pkg
@@ -62,14 +52,14 @@ jobs:
 
       - name: Run lint (if configured)
         if: contains(steps.pkg.outputs.pkg, '"lint"')
-        run: yarn lint
+        run: pnpm lint
         continue-on-error: true
 
       - name: Run tests
-        run: yarn test
+        run: pnpm test
 
-      - name: Build (Rollup)
-        run: yarn build
+      - name: Build
+        run: pnpm build
 
       - name: Prepare release artifact
         run: |

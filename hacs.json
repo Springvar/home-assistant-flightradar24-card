@@ -1,6 +1,16 @@
 {
     "name": "Flightradar24 Card",
+    "description": "Home Assistant custom card for Flightradar24 integration",
     "filename": "home-assistant-flightradar24-card.js",
     "homeassistant": "2024.3.0",
-    "render_readme": true
+    "rendered": {
+        "card": true,
+        "editor": true
+    },
+    "registry": [
+        {
+            "type": "grid",
+            "url": "/cards/flightradar24"
+        }
+    ]
 }

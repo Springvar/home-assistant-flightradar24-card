@@ -1,20 +1,25 @@
 import { defineConfig } from 'vite';
 
-// This config is only used for the dev server (yarn dev)
-// Production builds use Rollup directly (yarn build)
 export default defineConfig({
     root: '.',
     server: {
         port: 5173,
-        open: '/test/index.html',
-        watch: {
-            // Watch src files and trigger rebuild via rollup watch
-            ignored: ['**/node_modules/**', '**/test/**']
-        }
+        open: '/test/index.html'
     },
     build: {
-        // This config is not used - we use rollup.config.js for builds
-        // This section is just here to prevent accidental vite builds
-        outDir: 'dist-vite-unused'
+        lib: {
+            entry: 'flightradar24-card.ts',
+            formats: ['es'],
+            fileName: 'home-assistant-flightradar24-card'
+        },
+        outDir: 'dist',
+        codeSplitting: false,
+        rollupOptions: {
+            external: [],
+            output: {
+                entryFileNames: 'home-assistant-flightradar24-card.js'
+            }
+        },
+        minify: 'esbuild'
     }
 });
