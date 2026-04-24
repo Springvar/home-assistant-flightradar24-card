@@ -1,4 +1,4 @@
-name: CI — Build (pnpm)
+name: CI — Build
 
 # Run on pushes to main, PRs, tag pushes (so tag-based releases build), and manual dispatch
 on:
@@ -28,30 +28,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js 20 and pnpm cache
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
 
-      - name: Install dependencies (pnpm)
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Read package.json into output (for conditional steps)
-        id: pkg
-        run: |
-          if [ -f package.json ]; then
-            echo "pkg<<EOF" >> $GITHUB_OUTPUT
-            cat package.json >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-          else
-            echo "pkg<<EOF" >> $GITHUB_OUTPUT
-            echo "{}" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-          fi
-
       - name: Run lint (if configured)
-        if: contains(steps.pkg.outputs.pkg, '"lint"')
         run: pnpm lint
         continue-on-error: true
 

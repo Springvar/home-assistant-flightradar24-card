@@ -23,7 +23,7 @@
     },
     "scripts": {
         "fetch-runway-data": "node scripts/fetch-runway-data.js",
-        "prebuild": "pnpm run fetch-runway-data",
+        "prebuild": "node scripts/fetch-runway-data.js",
         "build": "vite build",
         "build:watch": "vite build --watch",
         "dev": "vite",

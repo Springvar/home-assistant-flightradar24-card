@@ -1,15 +1,5 @@
 {
     "name": "Flightradar24 Card",
     "filename": "home-assistant-flightradar24-card.js",
-    "homeassistant": "2024.3.0",
-    "rendered": {
-        "card": true,
-        "editor": true
-    },
-    "registry": [
-        {
-            "type": "grid",
-            "url": "/cards/flightradar24"
-        }
-    ]
+    "homeassistant": "2024.3.0"
 }
