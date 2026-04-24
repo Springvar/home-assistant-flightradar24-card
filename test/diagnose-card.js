@@ -63,7 +63,9 @@ async function diagnoseCard() {
         const card = document.getElementById('fr24card');
         if (card) {
             card._updateRequired = true;
+            /* eslint-disable no-self-assign */
             card.hass = card.hass; // Trigger hass setter
+            /* eslint-enable no-self-assign */
         }
     });
 

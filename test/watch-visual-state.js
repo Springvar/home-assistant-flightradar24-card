@@ -79,7 +79,7 @@ async function watchVisualState() {
         return state;
     }
 
-    const initial = await captureVisualState('INITIAL STATE');
+    await captureVisualState('INITIAL STATE');
 
     console.log('\n\n🎬 Starting continuous monitoring...');
     console.log('Will capture state: before update -> immediately after -> 1s after -> 2s after');

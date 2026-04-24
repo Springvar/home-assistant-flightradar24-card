@@ -97,7 +97,7 @@ async function inspectMapTypeChange() {
     await page.click('#btn-change-map-type');
 
     await new Promise(resolve => setTimeout(resolve, 500));
-    const immediate = await inspectAllMaps('IMMEDIATELY AFTER MAP TYPE CHANGE (500ms)');
+    await inspectAllMaps('IMMEDIATELY AFTER MAP TYPE CHANGE (500ms)');
 
     await new Promise(resolve => setTimeout(resolve, 2000));
     const after2s = await inspectAllMaps('2 SECONDS AFTER MAP TYPE CHANGE');
