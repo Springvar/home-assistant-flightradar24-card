@@ -71,6 +71,11 @@ jobs:
       - name: Build (Rollup)
         run: pnpm build
 
+      - name: Prepare release assets
+        run: |
+          cp dist/home-assistant-flightradar24-card.js home-assistant-flightradar24-card.js
+          cp dist/flightradar24-card-editor-*.js flightradar24-card-editor.js || true
+
       # Use softprops/action-gh-release for all scenarios
       # This will create a new release or update an existing one
       # When updating an existing release, it preserves the existing metadata
@@ -84,7 +89,8 @@ jobs:
           draft: false
           prerelease: ${{ github.event.inputs.prerelease == 'true' }}
           files: |
-            dist/home-assistant-flightradar24-card.js
+            home-assistant-flightradar24-card.js
+            flightradar24-card-editor.js
             README.md
             LICENSE
 
@@ -94,6 +100,7 @@ jobs:
         with:
           tag_name: ${{ steps.get_tag.outputs.tag }}
           files: |
-            dist/home-assistant-flightradar24-card.js
+            home-assistant-flightradar24-card.js
+            flightradar24-card-editor.js
             README.md
             LICENSE
