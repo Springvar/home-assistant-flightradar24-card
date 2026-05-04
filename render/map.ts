@@ -307,21 +307,33 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
 
         cardState._leafletMap.fitBounds(bounds, { animate: false, padding: [0, 0] });
 
-        const mapContainer = cardState._leafletMap.getContainer();
-        const heightPx = mapContainer.offsetHeight;
-        const widthPx = mapContainer.offsetWidth;
+        // Defer scale calculation to after browser layout
+        requestAnimationFrame(() => {
+            if (!cardState._leafletMap) return;
 
-        const pixelLeft = window.L.point(0, heightPx / 2);
-        const pixelRight = window.L.point(widthPx, heightPx / 2);
+            const mapContainer = cardState._leafletMap.getContainer();
+            const heightPx = mapContainer.offsetHeight;
+            const widthPx = mapContainer.offsetWidth;
 
-        const latLngLeft = cardState._leafletMap.containerPointToLatLng(pixelLeft);
-        const latLngRight = cardState._leafletMap.containerPointToLatLng(pixelRight);
+            if (heightPx === 0 || widthPx === 0) return;
 
-        const kmAcross = haversine(latLngLeft.lat, latLngLeft.lng, latLngRight.lat, latLngRight.lng, 'km');
-        const desiredKmAcross = rangeKm * 2;
+            const pixelLeft = window.L.point(0, heightPx / 2);
+            const pixelRight = window.L.point(widthPx, heightPx / 2);
 
-        const scaleCorrection = kmAcross / desiredKmAcross;
-        mapBg.style.transform = `scale(${scaleCorrection})`;
+            const latLngLeft = cardState._leafletMap.containerPointToLatLng(pixelLeft);
+            const latLngRight = cardState._leafletMap.containerPointToLatLng(pixelRight);
+
+            const kmAcross = haversine(latLngLeft.lat, latLngLeft.lng, latLngRight.lat, latLngRight.lng, 'km');
+            const desiredKmAcross = rangeKm * 2;
+
+            const scaleCorrection = kmAcross / desiredKmAcross;
+
+            if (Math.abs(scaleCorrection - 1) > 0.01) {
+                mapBg.style.transform = `scale(${scaleCorrection})`;
+            } else {
+                mapBg.style.transform = '';
+            }
+        });
     }
     return mapBg;
 }
