@@ -9,7 +9,8 @@ export default defineConfig({
     build: {
         lib: {
             entry: 'flightradar24-card.ts',
-            formats: ['es'],
+            formats: ['iife'],
+            name: 'Flightradar24Card',
             fileName: 'home-assistant-flightradar24-card'
         },
         outDir: 'dist',
@@ -17,7 +18,8 @@ export default defineConfig({
         rollupOptions: {
             external: [],
             output: {
-                entryFileNames: 'home-assistant-flightradar24-card.js'
+                entryFileNames: 'home-assistant-flightradar24-card.js',
+                inlineDynamicImports: true
             }
         },
         minify: 'esbuild'
