@@ -1870,7 +1870,9 @@ export class Flightradar24CardEditor extends HTMLElement {
 
         // Radar colors (new properties)
         ['background-color', 'aircraft-color', 'aircraft-selected-color', 'radar-grid-color', 'local-features-color'].forEach(prop => {
-            const input = root.getElementById(`radar-${prop}`) as HTMLInputElement;
+            // Properties already prefixed with 'radar-' don't need the extra prefix
+            const id = prop.startsWith('radar-') ? prop : `radar-${prop}`;
+            const input = root.getElementById(id) as HTMLInputElement;
             if (input) {
                 input.addEventListener('input', (e) => {
                     const radar = this._config.radar || {};
