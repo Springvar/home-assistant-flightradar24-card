@@ -34,6 +34,8 @@ class Flightradar24Card extends HTMLElement implements MainCard {
     _updateRequired = true;
     _timer: ReturnType<typeof setInterval> | null = null;
     _unsubStateChangesPromise: Promise<() => void> | null = null;
+    _intersectionObserver: IntersectionObserver | null = null;
+    _visibilityChangeHandler: (() => void) | null = null;
     cardState: Flightradar24CardState;
     shadowRoot!: ShadowRoot;
 
@@ -128,6 +130,7 @@ class Flightradar24Card extends HTMLElement implements MainCard {
     connectedCallback(): void {
         try {
             this.observeRadarResize();
+            this.observeVisibility();
         } catch (e) {
             console.error('[FR24Card] connectedCallback error:', e);
         }
@@ -138,6 +141,14 @@ class Flightradar24Card extends HTMLElement implements MainCard {
             if (this._radarResizeObserver) {
                 this._radarResizeObserver.disconnect();
                 this._radarResizeObserver = null;
+            }
+            if (this._intersectionObserver) {
+                this._intersectionObserver.disconnect();
+                this._intersectionObserver = null;
+            }
+            if (this._visibilityChangeHandler) {
+                document.removeEventListener('visibilitychange', this._visibilityChangeHandler);
+                this._visibilityChangeHandler = null;
             }
             if (this.cardState._leafletMap) {
                 this.cardState._leafletMap.remove();
@@ -205,6 +216,56 @@ class Flightradar24Card extends HTMLElement implements MainCard {
             this._zoomCleanup = setupZoomHandlers(this.cardState as Parameters<typeof setupZoomHandlers>[0], radarOverlay);
         } catch (e) {
             console.error('[FR24Card] observeRadarResize error:', e);
+        }
+    }
+
+    observeVisibility(): void {
+        try {
+            if (this._intersectionObserver) this._intersectionObserver.disconnect();
+            this._intersectionObserver = new IntersectionObserver((entries) => {
+                try {
+                    const isVisible = entries.some((e) => e.isIntersecting);
+                    if (isVisible) {
+                        this.invalidateMapOnVisible();
+                    }
+                } catch (e) {
+                    console.error('[FR24Card] IntersectionObserver error:', e);
+                }
+            });
+            this._intersectionObserver.observe(this);
+
+            if (this._visibilityChangeHandler) {
+                document.removeEventListener('visibilitychange', this._visibilityChangeHandler);
+            }
+            this._visibilityChangeHandler = () => {
+                try {
+                    if (!document.hidden) {
+                        this.invalidateMapOnVisible();
+                    }
+                } catch (e) {
+                    console.error('[FR24Card] visibilitychange error:', e);
+                }
+            };
+            document.addEventListener('visibilitychange', this._visibilityChangeHandler);
+        } catch (e) {
+            console.error('[FR24Card] observeVisibility error:', e);
+        }
+    }
+
+    invalidateMapOnVisible(): void {
+        try {
+            if (this.cardState._leafletMap) {
+                requestAnimationFrame(() => {
+                    try {
+                        this.cardState._leafletMap?.invalidateSize();
+                        this.updateCardDimensions();
+                    } catch (e) {
+                        console.error('[FR24Card] invalidateMapOnVisible error:', e);
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('[FR24Card] invalidateMapOnVisible error:', e);
         }
     }
 
