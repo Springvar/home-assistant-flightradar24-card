@@ -206,6 +206,16 @@ class Flightradar24Card extends HTMLElement implements MainCard {
             this._radarResizeObserver = new ResizeObserver(() => {
                 try {
                     this.updateCardDimensions();
+                    // Invalidate map size when radar container resizes (fixes tiles after navigation)
+                    if (this.cardState._leafletMap) {
+                        requestAnimationFrame(() => {
+                            try {
+                                this.cardState._leafletMap?.invalidateSize({ pan: false });
+                            } catch (e) {
+                                console.error('[FR24Card] ResizeObserver invalidateSize error:', e);
+                            }
+                        });
+                    }
                 } catch (e) {
                     console.error('[FR24Card] ResizeObserver error:', e);
                 }
@@ -254,16 +264,32 @@ class Flightradar24Card extends HTMLElement implements MainCard {
 
     invalidateMapOnVisible(): void {
         try {
-            if (this.cardState._leafletMap) {
+            if (!this.cardState._leafletMap) return;
+
+            const attemptInvalidate = (attemptsLeft: number) => {
                 requestAnimationFrame(() => {
+                    const container = this.cardState._leafletMap?.getContainer();
+                    if (!container || container.offsetWidth === 0 || container.offsetHeight === 0) {
+                        if (attemptsLeft > 0) {
+                            setTimeout(() => attemptInvalidate(attemptsLeft - 1), 50);
+                        }
+                        return;
+                    }
                     try {
-                        this.cardState._leafletMap?.invalidateSize();
+                        this.cardState._leafletMap?.invalidateSize({ pan: false });
                         this.updateCardDimensions();
                     } catch (e) {
                         console.error('[FR24Card] invalidateMapOnVisible error:', e);
                     }
                 });
-            }
+            };
+
+            // Use double rAF to ensure browser has completed layout, then retry if needed
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    attemptInvalidate(20); // retry for up to ~1 second
+                });
+            });
         } catch (e) {
             console.error('[FR24Card] invalidateMapOnVisible error:', e);
         }
