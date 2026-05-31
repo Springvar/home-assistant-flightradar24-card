@@ -77,6 +77,8 @@ export interface CardState {
     _currentMapConfig?: { type: string; apiKey?: string };
     sortFn: (a: Flight, b: Flight) => number;
     renderDynamicFn?: () => void;
+    mapCenter?: { lat: number; lon: number };
+    mapZoom?: number;
 
     // Methods
     toggleSelectedFlight: (flight: Flight) => void;

@@ -1177,6 +1177,8 @@ export class Flightradar24CardEditor extends HTMLElement {
                             </div>
                         </div>
                     </details>
+
+                    ${this._renderTapActionsConfig()}
                 </div>
             </details>
         `;
@@ -1286,6 +1288,38 @@ export class Flightradar24CardEditor extends HTMLElement {
                             <button class="add-button" data-action="add-define">Add Define</button>
                         </div>
                     </details>
+                </div>
+            </details>
+        `;
+    }
+
+    private _renderTapActionsConfig(): string {
+        const tapAction = this._config.tap_action || '';
+        const flightTapAction = this._config.flight_tap_action || '';
+
+        const variableHelp = 'Available variables: ${map_lat}, ${map_lon}, ${zoom}, ${radar_range}, ${click_lat}, ${click_lon}, ${entity.state}, ${flight.*}';
+        const flightVariableHelp = 'Available variables: ${map_lat}, ${map_lon}, ${zoom}, ${radar_range}, ${flight.callsign}, ${flight.latitude}, ${flight.longitude}, ${entity.state}';
+
+        return `
+            <details data-section-id="radar-tap-actions">
+                <summary><h4>Tap Actions</h4></summary>
+                <div class="section-content">
+                    <p class="help-text">Configure what happens when tapping on the radar or flights (only applies when Show Radar is enabled)</p>
+                    <div class="item-box">
+                        <div class="form-row">
+                            <label>Radar tap URL:</label>
+                            <input type="text" class="full-width" id="tap-action" placeholder="https://www.flightradar24.com/\${map_lat},\${map_lon}/\${zoom}" value="${tapAction}" />
+                        </div>
+                        <p class="help-text" style="margin-top: 4px; font-size: 0.85em;">${variableHelp}</p>
+                    </div>
+                    <div class="item-box">
+                        <div class="form-row">
+                            <label>Flight tap:</label>
+                            <input type="text" class="full-width" id="flight-tap-action" placeholder="toggle, URL, or toggle|URL" value="${flightTapAction}" />
+                        </div>
+                        <p class="help-text" style="margin-top: 4px; font-size: 0.85em;">Enter "toggle", a URL, or "toggle|URL". Leave empty for default toggle behavior.</p>
+                        <p class="help-text" style="margin-top: 4px; font-size: 0.85em;">${flightVariableHelp}</p>
+                    </div>
                 </div>
             </details>
         `;
@@ -2504,6 +2538,25 @@ export class Flightradar24CardEditor extends HTMLElement {
                 });
             }
         });
+
+        // Tap actions
+        const tapActionInput = root.getElementById('tap-action') as HTMLInputElement;
+        if (tapActionInput) {
+            tapActionInput.addEventListener('input', (e) => {
+                const value = (e.target as HTMLInputElement).value;
+                this._config = { ...this._config, tap_action: value || undefined };
+                this._emitConfigChanged();
+            });
+        }
+
+        const flightTapActionInput = root.getElementById('flight-tap-action') as HTMLInputElement;
+        if (flightTapActionInput) {
+            flightTapActionInput.addEventListener('input', (e) => {
+                const value = (e.target as HTMLInputElement).value;
+                this._config = { ...this._config, flight_tap_action: value || undefined };
+                this._emitConfigChanged();
+            });
+        }
     }
 
     private _emitConfigChanged() {

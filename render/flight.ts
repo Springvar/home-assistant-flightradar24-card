@@ -1,6 +1,7 @@
 import { renderFlag } from './flag';
 import { parseTemplate } from '../utils/template';
 import { applyConditions } from '../utils/filter';
+import { handleFlightTap } from '../utils/action';
 import type { Flight, ExtendedFlight } from '../types/flight';
 import type { AnnotationConfig } from '../types/config';
 import type { CardState } from '../types/cardState';
@@ -108,7 +109,7 @@ export function renderFlight(cardState: CardState, _flight: Flight): HTMLDivElem
                 (...elements: (string | undefined)[]) =>
                     elements?.filter((e) => e).join(joinWith || ' ')
         );
-        flightElement.addEventListener('click', () => cardState.toggleSelectedFlight(flight));
+        flightElement.addEventListener('click', (e) => { e.stopPropagation(); handleFlightTap(cardState, flight); });
 
         return flightElement;
     } catch (e) {

@@ -301,6 +301,10 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
         }
 
         fitMapBoundsWithRetry(cardState._leafletMap, mapBg, bounds, rangeKm);
+
+        // Store map center and zoom for template variable resolution
+        cardState.mapCenter = { lat, lon };
+        cardState.mapZoom = cardState._leafletMap.getZoom();
     }
     return mapBg;
 }
