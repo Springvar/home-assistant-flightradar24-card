@@ -40,6 +40,14 @@ export function renderRadarScreen(cardState: CardState): void {
         radarScreen.appendChild(radarScreenBackground);
     }
 
+    // Always store map center (rounded to 2 decimals) for tap_action URL resolution,
+    // even when no Leaflet background map is rendered.
+    const loc = getLocation(cardState);
+    cardState.mapCenter = { lat: Math.round(loc.latitude * 100) / 100, lon: Math.round(loc.longitude * 100) / 100 };
+    if (!cardState._leafletMap) {
+        cardState.mapZoom = 8;
+    }
+
     setupRadarMapBg(cardState, radarScreen);
 
     // All geometry from cardState.dimensions

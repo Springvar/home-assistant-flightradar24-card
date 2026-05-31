@@ -27,15 +27,15 @@ export function handleRadarTap(cardState: CardState, clientX: number, clientY: n
     const maxDistPx = Math.min(centerX, centerY);
     const fraction = distancePx / maxDistPx;
     const clickRangeKm = fraction * rangeKm;
-    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-    const bearing = (90 - angle + 360) % 360;
+    const bearing = (Math.atan2(dx, -dy) * (180 / Math.PI) + 360) % 360;
 
     const refLat = cardState.mapCenter?.lat || 0;
     const refLon = cardState.mapCenter?.lon || 0;
     const bearingRad = (bearing * Math.PI) / 180;
-    const kmPerDeg = 111.32;
-    const clickLat = refLat + (clickRangeKm / kmPerDeg) * Math.cos(bearingRad);
-    const clickLon = refLon + (clickRangeKm / kmPerDeg) * Math.sin(bearingRad);
+    const kmPerDegLat = 111.32;
+    const kmPerDegLon = 111.32 * Math.cos(refLat * Math.PI / 180);
+    const clickLat = Math.round((refLat + (clickRangeKm / kmPerDegLat) * Math.cos(bearingRad)) * 100) / 100;
+    const clickLon = Math.round((refLon + (clickRangeKm / kmPerDegLon) * Math.sin(bearingRad)) * 100) / 100;
 
     openUrl(renderUrlPath(urlPath, {
         map_lat: cardState.mapCenter?.lat,
