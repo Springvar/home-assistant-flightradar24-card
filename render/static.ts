@@ -33,7 +33,6 @@ export function renderStatic(cardState: StaticCardState, mainCard: StaticMainCar
 
         const toggleContainer = document.createElement('div');
         toggleContainer.id = 'toggle-container';
-        radarContainer.appendChild(toggleContainer);
 
         const radar = document.createElement('div');
         radar.id = 'radar';
@@ -50,6 +49,7 @@ export function renderStatic(cardState: StaticCardState, mainCard: StaticMainCar
         radar.appendChild(planesContainer);
 
         radarContainer.appendChild(radar);
+        radarContainer.appendChild(toggleContainer);
         card.appendChild(radarContainer);
 
         requestAnimationFrame(() => {

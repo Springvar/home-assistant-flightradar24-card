@@ -78,6 +78,7 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
     #radar-container {
       display: flex;
       justify-content: space-between;
+      position: relative;
     }
     #radar-overlay {
       position: absolute;
@@ -107,6 +108,7 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
       font-size: 0.9em;
       padding: 0;
       margin: 0 15px;
+      z-index: 10;
     }
     .toggle {
       display: flex;
