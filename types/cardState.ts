@@ -41,6 +41,8 @@ export interface LeafletMap {
     removeLayer(layer: unknown): void;
     fitBounds(bounds: [[number, number], [number, number]], options: { animate: boolean; padding: [number, number] }): void;
     containerPointToLatLng(point: { x: number; y: number }): { lat: number; lng: number };
+    getZoom(): number;
+    setZoom(zoom: number): void;
 }
 
 /**

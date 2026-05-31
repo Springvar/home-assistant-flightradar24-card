@@ -14,6 +14,11 @@ interface LeafletStatic {
     point(x: number, y: number): LeafletPoint;
 }
 
+interface LeafletPoint {
+    x: number;
+    y: number;
+}
+
 interface LeafletMapOptions {
     attributionControl: boolean;
     zoomControl: boolean;
@@ -23,6 +28,7 @@ interface LeafletMapOptions {
     doubleClickZoom: boolean;
     keyboard: boolean;
     touchZoom: boolean;
+    zoomSnap: number;
     pointerEvents: boolean;
 }
 
@@ -34,11 +40,6 @@ interface TileLayerOptions {
     api_key?: string;
     attribution?: string;
     subdomains?: string[];
-}
-
-interface LeafletPoint {
-    x: number;
-    y: number;
 }
 
 type LatLngBoundsLiteral = [[number, number], [number, number]];
@@ -204,8 +205,6 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
         mapBg.style.opacity = String(opacity);
     }
 
-    mapBg.style.transform = '';
-
     if (cardState._leafletMap && cardState._leafletMap.getContainer() !== mapBg) {
         cardState._leafletMap.remove();
         cardState._leafletMap = null;
@@ -242,7 +241,7 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
             resolvedType = 'color';
         }
     }
-    const tileLayerConfig = TILE_LAYERS[resolvedType || 'bw'] || TILE_LAYERS.bw;
+    const tileLayerConfig = TILE_LAYERS[resolvedType || 'color'] || TILE_LAYERS.color;
     if (!tileLayerConfig) return mapBg;
 
     let [tileUrl, tileOpts] = tileLayerConfig; // eslint-disable-line prefer-const
@@ -275,7 +274,7 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
 
     if (window.L) {
         // Check if map configuration has changed
-        const newMapConfig = { type: resolvedType || 'bw', apiKey: config?.radar?.background_map_api_key };
+        const newMapConfig = { type: resolvedType || 'color', apiKey: config?.radar?.background_map_api_key };
         const mapConfigChanged = !cardState._currentMapConfig ||
             cardState._currentMapConfig.type !== newMapConfig.type ||
             cardState._currentMapConfig.apiKey !== newMapConfig.apiKey;
@@ -290,6 +289,7 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
                 doubleClickZoom: false,
                 keyboard: false,
                 touchZoom: false,
+                zoomSnap: 0,
                 pointerEvents: false
             });
             // Always add tile layer for new map
@@ -307,16 +307,13 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
 
         cardState._leafletMap.fitBounds(bounds, { animate: false, padding: [0, 0] });
 
-        // Defer scale calculation to after browser layout
-        requestAnimationFrame(() => {
-            if (!cardState._leafletMap) return;
+        // Fine-tune zoom to exactly match the desired geographic extent,
+        // avoiding CSS scale transforms which break Leaflet tile loading
+        const mapContainer = cardState._leafletMap.getContainer();
+        const widthPx = mapContainer.offsetWidth;
+        const heightPx = mapContainer.offsetHeight;
 
-            const mapContainer = cardState._leafletMap.getContainer();
-            const heightPx = mapContainer.offsetHeight;
-            const widthPx = mapContainer.offsetWidth;
-
-            if (heightPx === 0 || widthPx === 0) return;
-
+        if (widthPx > 0 && heightPx > 0) {
             const pixelLeft = window.L.point(0, heightPx / 2);
             const pixelRight = window.L.point(widthPx, heightPx / 2);
 
@@ -326,14 +323,11 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
             const kmAcross = haversine(latLngLeft.lat, latLngLeft.lng, latLngRight.lat, latLngRight.lng, 'km');
             const desiredKmAcross = rangeKm * 2;
 
-            const scaleCorrection = kmAcross / desiredKmAcross;
-
-            if (Math.abs(scaleCorrection - 1) > 0.01) {
-                mapBg.style.transform = `scale(${scaleCorrection})`;
-            } else {
-                mapBg.style.transform = '';
+            const zoomAdjustment = Math.log2(kmAcross / desiredKmAcross);
+            if (Math.abs(zoomAdjustment) > 0.001) {
+                cardState._leafletMap.setZoom(cardState._leafletMap.getZoom() + zoomAdjustment);
             }
-        });
+        }
     }
     return mapBg;
 }
