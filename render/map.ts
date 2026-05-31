@@ -109,12 +109,10 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
     const { config, dimensions } = cardState;
 
     if (!shouldRenderRadarBackgroundMap(cardState)) {
-        // Remove Leaflet map if it exists
         if (cardState._leafletMap) {
             cardState._leafletMap.remove();
             cardState._leafletMap = null;
         }
-        // Remove map background DOM node if it exists
         const oldMapBg = radarScreen.querySelector('#radar-map-bg');
         if (oldMapBg) {
             oldMapBg.remove();
@@ -205,6 +203,9 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
         mapBg.style.opacity = String(opacity);
     }
 
+    // Clear any previous CSS transform on the map container
+    mapBg.style.transform = '';
+
     if (cardState._leafletMap && cardState._leafletMap.getContainer() !== mapBg) {
         cardState._leafletMap.remove();
         cardState._leafletMap = null;
@@ -250,20 +251,15 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
     const requiresApiKey = tileOpts && 'api_key' in tileOpts;
     const hasApiKey = config?.radar?.background_map_api_key && config.radar.background_map_api_key.trim().length > 0;
 
-    // If API key is required but not provided, don't load the map
     if (requiresApiKey && !hasApiKey) {
-        // Remove existing Leaflet map if present
         if (cardState._leafletMap) {
             cardState._leafletMap.remove();
             cardState._leafletMap = null;
         }
-        // Show helpful message in the map background
         mapBg.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--secondary-text-color); text-align: center; padding: 20px; font-size: 0.9em;">API key required for this map type. Configure in Background Map settings.</div>';
         return mapBg;
     }
 
-    // Clear any error message only if we're about to create a new map
-    // Don't clear if we're reusing an existing map (would remove Leaflet container!)
     if (!cardState._leafletMap) {
         mapBg.innerHTML = '';
     }
@@ -273,7 +269,6 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
     }
 
     if (window.L) {
-        // Check if map configuration has changed
         const newMapConfig = { type: resolvedType || 'color', apiKey: config?.radar?.background_map_api_key };
         const mapConfigChanged = !cardState._currentMapConfig ||
             cardState._currentMapConfig.type !== newMapConfig.type ||
@@ -289,29 +284,27 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
                 doubleClickZoom: false,
                 keyboard: false,
                 touchZoom: false,
-                zoomSnap: 0,
                 pointerEvents: false
             });
-            // Always add tile layer for new map
             window.L.tileLayer(tileUrl, tileOpts as TileLayerOptions).addTo(cardState._leafletMap);
             cardState._currentMapConfig = newMapConfig;
         } else if (mapConfigChanged) {
-            // Only remove and recreate layers if configuration changed
             cardState._leafletMap.eachLayer((layer) => {
                 cardState._leafletMap!.removeLayer(layer);
             });
             window.L.tileLayer(tileUrl, tileOpts as TileLayerOptions).addTo(cardState._leafletMap);
             cardState._currentMapConfig = newMapConfig;
         }
-        // Always update bounds (for dimension changes) but don't recreate layers
 
         cardState._leafletMap.fitBounds(bounds, { animate: false, padding: [0, 0] });
 
-        // Fine-tune zoom to exactly match the desired geographic extent,
-        // avoiding CSS scale transforms which break Leaflet tile loading
+        // Apply CSS scale correction to account for integer zoom snapping
+        // and any CSS transform: scale() on parent elements.
+        // Without this, Leaflet reads offsetWidth/offsetHeight (unscaled layout size)
+        // but the visual size differs due to CSS transforms.
         const mapContainer = cardState._leafletMap.getContainer();
-        const widthPx = mapContainer.offsetWidth;
         const heightPx = mapContainer.offsetHeight;
+        const widthPx = mapContainer.offsetWidth;
 
         if (widthPx > 0 && heightPx > 0) {
             const pixelLeft = window.L.point(0, heightPx / 2);
@@ -323,10 +316,8 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
             const kmAcross = haversine(latLngLeft.lat, latLngLeft.lng, latLngRight.lat, latLngRight.lng, 'km');
             const desiredKmAcross = rangeKm * 2;
 
-            const zoomAdjustment = Math.log2(kmAcross / desiredKmAcross);
-            if (Math.abs(zoomAdjustment) > 0.001) {
-                cardState._leafletMap.setZoom(cardState._leafletMap.getZoom() + zoomAdjustment);
-            }
+            const scaleCorrection = kmAcross / desiredKmAcross;
+            mapBg.style.transform = `scale(${scaleCorrection})`;
         }
     }
     return mapBg;
