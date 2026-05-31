@@ -63,10 +63,8 @@ export function ensureLeafletLoadedIfNeeded(cardState: CardState, shadowRoot: Sh
     if (!shouldRenderRadarBackgroundMap(cardState)) {
         return;
     }
-    if (window.L) {
-        onReady();
-        return;
-    }
+    // Always ensure Leaflet CSS is present. renderStatic clears shadow DOM,
+    // so the <link> must be re-created after every setConfig call.
     if (!shadowRoot.querySelector('#leaflet-css-loader')) {
         const link = document.createElement('link');
         link.id = 'leaflet-css-loader';
@@ -74,14 +72,20 @@ export function ensureLeafletLoadedIfNeeded(cardState: CardState, shadowRoot: Sh
         link.href = 'https://unpkg.com/leaflet/dist/leaflet.css';
         shadowRoot.appendChild(link);
     }
+    if (window.L) {
+        onReady();
+        return;
+    }
     if (!shadowRoot.querySelector('#leaflet-js-loader')) {
         const script = document.createElement('script');
         script.id = 'leaflet-js-loader';
         script.src = 'https://unpkg.com/leaflet/dist/leaflet.js';
         script.async = true;
-        script.defer = true;
         script.onload = onReady;
-        script.onerror = () => script.remove();
+        script.onerror = () => {
+            script.remove();
+            console.error('[FR24] Leaflet script load failed');
+        };
         shadowRoot.appendChild(script);
     } else {
         const poll = setInterval(() => {
@@ -296,29 +300,83 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
             cardState._currentMapConfig = newMapConfig;
         }
 
-        cardState._leafletMap.fitBounds(bounds, { animate: false, padding: [0, 0] });
-
-        // Apply CSS scale correction to account for integer zoom snapping
-        // and any CSS transform: scale() on parent elements.
-        // Without this, Leaflet reads offsetWidth/offsetHeight (unscaled layout size)
-        // but the visual size differs due to CSS transforms.
-        const mapContainer = cardState._leafletMap.getContainer();
-        const heightPx = mapContainer.offsetHeight;
-        const widthPx = mapContainer.offsetWidth;
-
-        if (widthPx > 0 && heightPx > 0) {
-            const pixelLeft = window.L.point(0, heightPx / 2);
-            const pixelRight = window.L.point(widthPx, heightPx / 2);
-
-            const latLngLeft = cardState._leafletMap.containerPointToLatLng(pixelLeft);
-            const latLngRight = cardState._leafletMap.containerPointToLatLng(pixelRight);
-
-            const kmAcross = haversine(latLngLeft.lat, latLngLeft.lng, latLngRight.lat, latLngRight.lng, 'km');
-            const desiredKmAcross = rangeKm * 2;
-
-            const scaleCorrection = kmAcross / desiredKmAcross;
-            mapBg.style.transform = `scale(${scaleCorrection})`;
-        }
+        fitMapBoundsWithRetry(cardState._leafletMap, mapBg, bounds, rangeKm);
     }
     return mapBg;
+}
+
+/**
+ * Fit bounds on the map, forcing reflow first and retrying if container has 0 dimensions.
+ */
+function fitMapBoundsWithRetry(map: LeafletMap, mapBg: HTMLElement, bounds: LatLngBoundsLiteral, rangeKm: number, retriesLeft = 15): void {
+    // Force reflow so offsetWidth/offsetHeight are up to date
+    void mapBg.offsetHeight;
+
+    const container = map.getContainer();
+    const widthPx = container.offsetWidth;
+    const heightPx = container.offsetHeight;
+
+    if (widthPx > 0 && heightPx > 0) {
+        map.fitBounds(bounds, { animate: false, padding: [0, 0] });
+
+        // CSS scale correction for integer zoom snapping
+        const pixelLeft = window.L.point(0, heightPx / 2);
+        const pixelRight = window.L.point(widthPx, heightPx / 2);
+        const latLngLeft = map.containerPointToLatLng(pixelLeft);
+        const latLngRight = map.containerPointToLatLng(pixelRight);
+        const kmAcross = haversine(latLngLeft.lat, latLngLeft.lng, latLngRight.lat, latLngRight.lng, 'km');
+        const desiredKmAcross = rangeKm * 2;
+        const scaleCorrection = kmAcross / desiredKmAcross;
+        mapBg.style.transform = `scale(${scaleCorrection})`;
+    } else if (retriesLeft > 0) {
+        setTimeout(() => {
+            fitMapBoundsWithRetry(map, mapBg, bounds, rangeKm, retriesLeft - 1);
+        }, 50);
+    }
+}
+
+/**
+ * Re-fit the Leaflet map to the current radar bounds.
+ * Used when the container resizes (ResizeObserver path) to ensure
+ * the map zoom / tile rendering stays correct.
+ */
+export function refitMapBounds(cardState: CardState): void {
+    const map = cardState._leafletMap;
+    if (!map) return;
+
+    const location = getLocation(cardState);
+    const radarRange = Math.max(cardState.dimensions?.range || 1, 1);
+    const rangeKm = cardState.units?.distance === 'miles' ? radarRange * 1.60934 : radarRange;
+
+    const lat = location?.latitude || 0;
+    const lon = location?.longitude || 0;
+
+    const rad = Math.PI / 180;
+    const km_per_deg_lat = 111.13209 - 0.56605 * Math.cos(2 * lat * rad) + 0.0012 * Math.cos(4 * lat * rad);
+    const km_per_deg_lon = 111.32 * Math.cos(lat * rad) - 0.094 * Math.cos(3 * lat * rad);
+    const deltaLat = rangeKm / km_per_deg_lat;
+    const deltaLon = rangeKm / km_per_deg_lon;
+    const bounds: LatLngBoundsLiteral = [
+        [lat - deltaLat, lon - deltaLon],
+        [lat + deltaLat, lon + deltaLon]
+    ];
+
+    const mapContainer = map.getContainer();
+    void mapContainer.offsetHeight; // force reflow
+    const widthPx = mapContainer.offsetWidth;
+    const heightPx = mapContainer.offsetHeight;
+
+    if (widthPx > 0 && heightPx > 0) {
+        map.fitBounds(bounds, { animate: false, padding: [0, 0] });
+
+        // CSS scale correction for integer zoom snapping
+        const pixelLeft = window.L.point(0, heightPx / 2);
+        const pixelRight = window.L.point(widthPx, heightPx / 2);
+        const latLngLeft = map.containerPointToLatLng(pixelLeft);
+        const latLngRight = map.containerPointToLatLng(pixelRight);
+        const kmAcross = haversine(latLngLeft.lat, latLngLeft.lng, latLngRight.lat, latLngRight.lng, 'km');
+        const desiredKmAcross = rangeKm * 2;
+        const scaleCorrection = kmAcross / desiredKmAcross;
+        mapContainer.style.transform = `scale(${scaleCorrection})`;
+    }
 }

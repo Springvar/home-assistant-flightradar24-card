@@ -14,7 +14,7 @@ import { applyFilter } from './utils/filter';
 import { parseTemplate } from './utils/template';
 import { setupZoomHandlers } from './utils/zoom';
 import { getLocation } from './utils/location';
-import { ensureLeafletLoadedIfNeeded } from './render/map';
+import { ensureLeafletLoadedIfNeeded, refitMapBounds } from './render/map';
 import { Flightradar24CardState } from './flightradar24-card-state';
 import './flightradar24-card-editor';
 import type { Flightradar24CardEditor } from './flightradar24-card-editor';
@@ -206,13 +206,14 @@ class Flightradar24Card extends HTMLElement implements MainCard {
             this._radarResizeObserver = new ResizeObserver(() => {
                 try {
                     this.updateCardDimensions();
-                    // Invalidate map size when radar container resizes (fixes tiles after navigation)
+                    // Invalidate map size and re-fit bounds when radar container resizes
                     if (this.cardState._leafletMap) {
                         requestAnimationFrame(() => {
                             try {
                                 this.cardState._leafletMap?.invalidateSize({ pan: false });
+                                refitMapBounds(this.cardState);
                             } catch (e) {
-                                console.error('[FR24Card] ResizeObserver invalidateSize error:', e);
+                                console.error('[FR24Card] ResizeObserver map refresh error:', e);
                             }
                         });
                     }

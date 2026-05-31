@@ -263,6 +263,15 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
       background-color: var(--radar-local-features-color);
       opacity: 0.35;
     }
+    /* Inline critical Leaflet pane CSS — survives Shadow DOM clears and CSP */
+    .leaflet-pane {
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+    .leaflet-tile {
+      pointer-events: none;
+    }
   `;
     shadowRoot.appendChild(style);
 }
