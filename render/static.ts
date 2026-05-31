@@ -2,6 +2,7 @@ import { renderStyle } from './style';
 import { renderToggles } from './toggles';
 import { renderRadarScreen } from './radarScreen';
 import { setupZoomHandlers } from '../utils/zoom';
+import { handleRadarTap } from '../utils/action';
 import type { CardState, MainCard } from '../types/cardState';
 
 interface StaticMainCard extends MainCard {
@@ -56,6 +57,9 @@ export function renderStatic(cardState: StaticCardState, mainCard: StaticMainCar
             renderRadarScreen(cardState);
             mainCard.observeRadarResize();
             setupZoomHandlers(cardState as Parameters<typeof setupZoomHandlers>[0], radarOverlay);
+            radarOverlay.addEventListener('click', (e: MouseEvent) => {
+                handleRadarTap(cardState as CardState, e.clientX, e.clientY);
+            });
         });
 
         cardState.dom = cardState.dom || {};

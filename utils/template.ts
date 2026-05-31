@@ -97,3 +97,33 @@ export function resolvePlaceholders(
     }
     return value;
 }
+
+interface UrlContext {
+    map_lat?: number;
+    map_lon?: number;
+    zoom?: number;
+    radar_range?: number;
+    click_lat?: number;
+    click_lon?: number;
+    flight?: Flight | null;
+    entity?: { state?: string };
+}
+
+export function renderUrlPath(urlPath: string, ctx: UrlContext): string {
+    if (!urlPath) return '';
+    try {
+        const fn = new Function(
+            'map_lat', 'map_lon', 'zoom', 'radar_range',
+            'click_lat', 'click_lon', 'flight', 'entity',
+            'return `' + urlPath.replace(/\${(.*?)}/g, '${$1}') + '`'
+        );
+        const result = fn(
+            ctx.map_lat, ctx.map_lon, ctx.zoom, ctx.radar_range,
+            ctx.click_lat, ctx.click_lon, ctx.flight ?? null, ctx.entity ?? null
+        );
+        return result !== 'undefined' ? result : '';
+    } catch (e) {
+        console.error('Error rendering URL path:', urlPath, e);
+        return urlPath;
+    }
+}

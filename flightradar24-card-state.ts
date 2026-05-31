@@ -63,6 +63,8 @@ export class Flightradar24CardState implements CardState {
     renderDynamicFn?: () => void;
     dom?: DomRefs;
     mainCard?: MainCard;
+    mapCenter?: { lat: number; lon: number };
+    mapZoom?: number;
 
     constructor() {
         this.hass = null;

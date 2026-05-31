@@ -122,6 +122,8 @@ export interface CardConfig {
     annotate?: AnnotationConfig[];
     templates?: Record<string, string>;
     updateRangeFilterOnTouchEnd?: boolean;
+    tap_action?: string;
+    flight_tap_action?: string;
     test?: boolean;
     update?: boolean;
 }

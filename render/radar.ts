@@ -1,4 +1,5 @@
 import { applyFilter } from '../utils/filter';
+import { handleFlightTap } from '../utils/action';
 import type { Flight } from '../types/flight';
 import type { Condition } from '../types/config';
 import type { CardState } from '../types/cardState';
@@ -73,8 +74,8 @@ export function renderRadar(cardState: CardState): void {
                     plane.classList.add('selected');
                 }
 
-                plane.addEventListener('click', () => cardState.toggleSelectedFlight(flight));
-                label.addEventListener('click', () => cardState.toggleSelectedFlight(flight));
+                plane.addEventListener('click', (e) => { e.stopPropagation(); handleFlightTap(cardState, flight); });
+                label.addEventListener('click', (e) => { e.stopPropagation(); handleFlightTap(cardState, flight); });
                 planesContainer.appendChild(plane);
             }
         });
