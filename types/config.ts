@@ -29,6 +29,8 @@ export interface NotCondition {
 
 export type Condition = FieldCondition | GroupCondition | NotCondition;
 
+export type AircraftMarkerConfig = Record<string, AircraftMarkerEntry>;
+
 export interface RadarFeatureBase {
     max_range?: number;
 }
@@ -53,6 +55,14 @@ export interface OutlineFeature extends RadarFeatureBase {
 
 export type RadarFeature = LocationFeature | RunwayFeature | OutlineFeature;
 
+export interface AircraftMarkerEntry {
+    'aircraft-marker-url': string;
+    'aircraft-marker-rotation'?: number;
+    'aircraft-marker-center'?: string;
+    'aircraft-marker-scale'?: number;
+    'aircraft-marker-color-overlay'?: string;
+}
+
 export interface RadarConfig {
     range?: number;
     initialRange?: number;
@@ -73,6 +83,7 @@ export interface RadarConfig {
     'local-features-color'?: string;
     'callsign-label-color'?: string;
     'aircraft-marker-size'?: 'small' | 'normal' | 'large' | 'x-large' | 'xx-large';
+    'aircraft-marker'?: Record<string, AircraftMarkerEntry>;
     hide?: boolean;
     hide_range?: boolean;
     radar_size?: number;

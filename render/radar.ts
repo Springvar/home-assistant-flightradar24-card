@@ -1,8 +1,40 @@
 import { applyFilter } from '../utils/filter';
 import { handleFlightTap } from '../utils/action';
 import type { Flight } from '../types/flight';
-import type { Condition } from '../types/config';
+import type { Condition, AircraftMarkerEntry } from '../types/config';
 import type { CardState } from '../types/cardState';
+
+function parseMarkerCenter(center: string | undefined): [number, number] {
+    if (!center) return [0, 0];
+    const parts = center.split(',').map(Number);
+    return [parts[0] || 0, parts[1] || 0];
+}
+
+function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDivElement {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'custom-marker';
+
+    const img = document.createElement('img');
+    img.src = entry['aircraft-marker-url'];
+    img.draggable = false;
+    wrapper.appendChild(img);
+
+    const rotation = entry['aircraft-marker-rotation'] ?? 0;
+    const scale = entry['aircraft-marker-scale'] ?? 1;
+    const [centerX, centerY] = parseMarkerCenter(entry['aircraft-marker-center']);
+
+    wrapper.style.transform = `rotate(${heading + rotation}deg) scale(${scale})`;
+    wrapper.style.transformOrigin = `calc(50% + ${centerX}px) calc(50% + ${centerY}px)`;
+
+    if (entry['aircraft-marker-color-overlay']) {
+        const overlay = document.createElement('div');
+        overlay.className = 'custom-marker-overlay';
+        overlay.style.background = entry['aircraft-marker-color-overlay'];
+        wrapper.appendChild(overlay);
+    }
+
+    return wrapper;
+}
 
 export function renderRadar(cardState: CardState): void {
     const { flights, radar, selectedFlights, dimensions, dom } = cardState;
@@ -24,6 +56,8 @@ export function renderRadar(cardState: CardState): void {
     if (!radarRange || !scaleFactor || radarCenterX === undefined || radarCenterY === undefined) return;
 
     const clippingRange = radarRange * 1.15;
+    const aircraftMarkerConfig = radar?.['aircraft-marker'];
+    const defaultMarkerEntry = aircraftMarkerConfig?.default;
 
     flightsToRender
         .slice()
@@ -41,10 +75,21 @@ export function renderRadar(cardState: CardState): void {
                 plane.style.top = y + 'px';
                 plane.style.left = x + 'px';
 
-                const arrow = document.createElement('div');
-                arrow.className = 'arrow';
-                arrow.style.transform = `rotate(${flight.heading}deg)`;
-                plane.appendChild(arrow);
+                if (defaultMarkerEntry?.['aircraft-marker-url']) {
+                    const marker = createCustomMarker(defaultMarkerEntry, flight.heading ?? 0);
+                    plane.appendChild(marker);
+                } else {
+                    const arrow = document.createElement('div');
+                    arrow.className = 'arrow';
+                    arrow.style.transform = `rotate(${flight.heading}deg)`;
+                    plane.appendChild(arrow);
+
+                    if ((flight.altitude ?? 0) <= 0) {
+                        plane.classList.add('plane-small');
+                    } else {
+                        plane.classList.add('plane-medium');
+                    }
+                }
 
                 const label = document.createElement('div');
                 label.className = 'callsign-label';
@@ -58,13 +103,6 @@ export function renderRadar(cardState: CardState): void {
                 label.style.top = y - labelHeight + 'px';
                 label.style.left = x - labelWidth + 'px';
 
-                if ((flight.altitude ?? 0) <= 0) {
-                    plane.classList.add('plane-small');
-                } else {
-                    plane.classList.add('plane-medium');
-                }
-
-                // Apply configured marker size
                 const markerSize = radar['aircraft-marker-size'];
                 if (markerSize && markerSize !== 'normal') {
                     plane.classList.add(`marker-size-${markerSize}`);

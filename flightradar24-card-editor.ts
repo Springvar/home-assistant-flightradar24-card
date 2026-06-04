@@ -1205,6 +1205,37 @@ export class Flightradar24CardEditor extends HTMLElement {
                                     }).join('')}
                                 </div>
                             </div>
+                            <fieldset class="subsection">
+                                <legend>Custom Image Marker</legend>
+                                <p class="help-text">Use a PNG image as aircraft marker instead of the default triangle. Image should have a transparent background.</p>
+                                ${(() => {
+                                    const marker = radar['aircraft-marker']?.default || {};
+                                    return `
+                                    <div class="form-row">
+                                        <label>Image URL:</label>
+                                        <input type="text" class="full-width" id="radar-custom-marker-url" value="${marker['aircraft-marker-url'] || ''}" placeholder="https://..." />
+                                    </div>
+                                    <div class="form-row">
+                                        <label>Rotation Offset (degrees):</label>
+                                        <input type="number" min="0" max="360" step="1" id="radar-custom-marker-rotation" value="${marker['aircraft-marker-rotation'] ?? 0}" />
+                                        <span class="help-text">Extra rotation if the image does not point due north</span>
+                                    </div>
+                                    <div class="form-row">
+                                        <label>Rotation Center (x,y):</label>
+                                        <input type="text" id="radar-custom-marker-center" value="${marker['aircraft-marker-center'] || ''}" placeholder="0,0" />
+                                        <span class="help-text">Offset from image center for rotation pivot (px)</span>
+                                    </div>
+                                    <div class="form-row">
+                                        <label>Scale:</label>
+                                        <input type="number" min="0.1" step="0.1" id="radar-custom-marker-scale" value="${marker['aircraft-marker-scale'] ?? 1}" />
+                                    </div>
+                                    <div class="form-row">
+                                        <label>Color Overlay:</label>
+                                        <input type="color" id="radar-custom-marker-overlay" value="${marker['aircraft-marker-color-overlay'] || '#000000'}" />
+                                        <span class="help-text">Tint overlay color (mix-blend-mode: multiply)</span>
+                                    </div>`;
+                                })()}
+                            </fieldset>
                         </div>
                     </details>
 
@@ -2029,6 +2060,61 @@ export class Flightradar24CardEditor extends HTMLElement {
                 this._render();
             });
         });
+
+        // Custom aircraft marker fields
+        const updateAircraftMarker = (field: string, value: unknown) => {
+            const radar = this._config.radar || {};
+            const marker = { ...(radar['aircraft-marker']?.default || {}) };
+            if (value === '' || value === undefined || value === 0) {
+                delete (marker as any)[field];
+            } else {
+                (marker as any)[field] = value;
+            }
+            const hasContent = Object.keys(marker).length > 0 && marker['aircraft-marker-url'];
+            this._config = {
+                ...this._config,
+                radar: { ...radar, 'aircraft-marker': hasContent ? { default: marker } as any : undefined }
+            };
+            this._emitConfigChanged();
+        };
+
+        const markerUrlInput = root.getElementById('radar-custom-marker-url') as HTMLInputElement;
+        if (markerUrlInput) {
+            markerUrlInput.addEventListener('input', (e) => {
+                updateAircraftMarker('aircraft-marker-url', (e.target as HTMLInputElement).value);
+            });
+        }
+
+        const markerRotationInput = root.getElementById('radar-custom-marker-rotation') as HTMLInputElement;
+        if (markerRotationInput) {
+            markerRotationInput.addEventListener('input', (e) => {
+                const val = parseInt((e.target as HTMLInputElement).value);
+                updateAircraftMarker('aircraft-marker-rotation', isNaN(val) ? 0 : val);
+            });
+        }
+
+        const markerCenterInput = root.getElementById('radar-custom-marker-center') as HTMLInputElement;
+        if (markerCenterInput) {
+            markerCenterInput.addEventListener('input', (e) => {
+                updateAircraftMarker('aircraft-marker-center', (e.target as HTMLInputElement).value || undefined);
+            });
+        }
+
+        const markerScaleInput = root.getElementById('radar-custom-marker-scale') as HTMLInputElement;
+        if (markerScaleInput) {
+            markerScaleInput.addEventListener('input', (e) => {
+                const val = parseFloat((e.target as HTMLInputElement).value);
+                updateAircraftMarker('aircraft-marker-scale', isNaN(val) ? 1 : val);
+            });
+        }
+
+        const markerOverlayInput = root.getElementById('radar-custom-marker-overlay') as HTMLInputElement;
+        if (markerOverlayInput) {
+            markerOverlayInput.addEventListener('input', (e) => {
+                const val = (e.target as HTMLInputElement).value;
+                updateAircraftMarker('aircraft-marker-color-overlay', val || undefined);
+            });
+        }
 
         // Radar background map
         const radarBackgroundMap = root.getElementById('radar-background-map') as HTMLSelectElement;

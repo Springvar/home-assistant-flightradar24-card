@@ -207,6 +207,25 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
     .plane.selected .arrow {
       border-bottom-color: var(--radar-aircraft-selected-color);
     }
+    .custom-marker {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      translate: -50% -50%;
+      pointer-events: none;
+    }
+    .custom-marker img {
+      display: block;
+      max-width: none;
+      height: auto;
+      pointer-events: none;
+    }
+    .custom-marker .custom-marker-overlay {
+      position: absolute;
+      inset: 0;
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
     .callsign-label {
       position: absolute;
       background-color: var(--radar-callsign-label-color);
