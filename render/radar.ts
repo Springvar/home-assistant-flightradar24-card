@@ -4,33 +4,14 @@ import type { Flight } from '../types/flight';
 import type { Condition, AircraftMarkerEntry } from '../types/config';
 import type { CardState } from '../types/cardState';
 
+function escapeXml(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function parseMarkerCenter(center: string | undefined): [number, number] {
     if (!center) return [0, 0];
     const parts = center.split(',').map(Number);
     return [parts[0] || 0, parts[1] || 0];
-}
-
-function tintImageViaCanvas(url: string, color: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-            try {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d')!;
-                ctx.drawImage(img, 0, 0);
-                ctx.globalCompositeOperation = 'source-atop';
-                ctx.fillStyle = color;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                resolve(canvas.toDataURL());
-            } catch (e) {
-                reject(e);
-            }
-        };
-        img.onerror = reject;
-        img.src = url;
-    });
 }
 
 function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDivElement {
@@ -38,14 +19,21 @@ function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDi
     wrapper.className = 'custom-marker';
 
     const img = document.createElement('img');
-    img.src = entry['aircraft-marker-url'];
     img.draggable = false;
     wrapper.appendChild(img);
 
-    if (entry['aircraft-marker-color-overlay']) {
-        tintImageViaCanvas(entry['aircraft-marker-url'], entry['aircraft-marker-color-overlay'])
-            .then((dataUrl) => { img.src = dataUrl; })
-            .catch(() => { /* fallback: keep original untinted image */ });
+    const url = entry['aircraft-marker-url'];
+    const overlayColor = entry['aircraft-marker-color-overlay'];
+
+    if (overlayColor) {
+        const color = overlayColor.startsWith('var(')
+            ? (getComputedStyle(wrapper).getPropertyValue(overlayColor.slice(4, -1).trim()).trim() || overlayColor)
+            : overlayColor;
+        const escapedUrl = escapeXml(url);
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><defs><mask id="m"><image href="${escapedUrl}" width="1" height="1"/></mask></defs><rect width="1" height="1" fill="${color}" mask="url(#m)"/></svg>`;
+        img.src = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+    } else {
+        img.src = url;
     }
 
     const rotation = entry['aircraft-marker-rotation'] ?? 0;
