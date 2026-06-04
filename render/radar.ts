@@ -19,11 +19,14 @@ function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDi
     const outlineWidth = entry['aircraft-marker-outline-width'] ?? 0;
     const outlineColor = entry['aircraft-marker-outline-color'] || '#000000';
     const shadow = entry['aircraft-marker-shadow'] || '';
+    const needsCanvas = !!overlayColor || outlineWidth > 0 || !!shadow;
 
-    if (overlayColor) {
-        const color = overlayColor.startsWith('var(')
-            ? (getComputedStyle(wrapper).getPropertyValue(overlayColor.slice(4, -1).trim()).trim() || overlayColor)
-            : overlayColor;
+    if (needsCanvas) {
+        const color = overlayColor
+            ? (overlayColor.startsWith('var(')
+                ? (getComputedStyle(wrapper).getPropertyValue(overlayColor.slice(4, -1).trim()).trim() || overlayColor)
+                : overlayColor)
+            : '';
         const canvas = document.createElement('canvas');
         canvas.className = 'custom-marker-canvas';
         if (shadow) {
@@ -52,9 +55,11 @@ function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDi
             }
 
             ctx.drawImage(img, w, w, iw, ih);
-            ctx.globalCompositeOperation = 'source-atop';
-            ctx.fillStyle = color;
-            ctx.fillRect(w, w, iw, ih);
+            if (color) {
+                ctx.globalCompositeOperation = 'source-atop';
+                ctx.fillStyle = color;
+                ctx.fillRect(w, w, iw, ih);
+            }
         };
         img.src = url;
     } else {
