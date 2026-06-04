@@ -126,6 +126,9 @@ export class Flightradar24CardEditor extends HTMLElement {
                     if (fc.field && this.allDefineAndToggleKeys.has(fc.field)) {
                         used.add(fc.field);
                     }
+                    if (fc.defined && this.allDefineAndToggleKeys.has(fc.defined)) {
+                        used.add(fc.defined);
+                    }
                     // Check if value references a define/toggle
                     const val = fc.value;
                     if (typeof val === 'string' && val.startsWith('${') && val.endsWith('}')) {
@@ -169,20 +172,30 @@ export class Flightradar24CardEditor extends HTMLElement {
 
     private getUsedTemplateKeys(): Set<string> {
         const used = new Set<string>();
-        const templates = this._config.templates || {};
+        const userTemplates = this._config.templates || {};
+        const allTemplates = { ...templateConfig, ...userTemplates };
 
         // Main templates that are always used
         const mainTemplates = ['flight_element', 'radar_range', 'list_status'];
         mainTemplates.forEach(k => {
-            if (templates[k] !== undefined) used.add(k);
+            if (userTemplates[k] !== undefined) used.add(k);
         });
 
-        // Check for template references in other templates
-        Object.values(templates).forEach(template => {
-            const matches = template.matchAll(/\$\{(\w+)\([\s\S]*?\)\}/g);
-            for (const match of matches) {
+        // Check for template references in all templates (defaults + user overrides)
+        Object.values(allTemplates).forEach(template => {
+            // Match ${templateName(...)} function-style references
+            const funcMatches = template.matchAll(/\$\{(\w+)\([\s\S]*?\)\}/g);
+            for (const match of funcMatches) {
                 const key = match[1];
-                if (templates[key] !== undefined) {
+                if (userTemplates[key] !== undefined) {
+                    used.add(key);
+                }
+            }
+            // Match tpl.templateName references (including inside function args)
+            const tplMatches = template.matchAll(/tpl\.(\w+)/g);
+            for (const match of tplMatches) {
+                const key = match[1];
+                if (userTemplates[key] !== undefined) {
                     used.add(key);
                 }
             }
@@ -204,16 +217,20 @@ export class Flightradar24CardEditor extends HTMLElement {
     }
 
     private validateConditionField(field: string): { valid: boolean; error?: string } {
-        if (this.validFlightFields.has(field)) {
-            return { valid: true };
+        const fields = field.split(' ?? ');
+        for (const f of fields) {
+            if (this.validFlightFields.has(f)) {
+                continue;
+            }
+            if (this.allDefineAndToggleKeys.has(f)) {
+                continue;
+            }
+            return {
+                valid: false,
+                error: `Unknown field: "${f}". Not a flight property or define/toggle.`
+            };
         }
-        if (this.allDefineAndToggleKeys.has(field)) {
-            return { valid: true };
-        }
-        return {
-            valid: false,
-            error: `Unknown field: "${field}". Not a flight property or define/toggle.`
-        };
+        return { valid: true };
     }
 
     private hasValidationErrors(): boolean {
@@ -258,6 +275,9 @@ export class Flightradar24CardEditor extends HTMLElement {
                 if (fc.field) {
                     const validation = this.validateConditionField(fc.field);
                     if (!validation.valid) return true;
+                }
+                if (fc.defined && !this.allDefineAndToggleKeys.has(fc.defined)) {
+                    return true;
                 }
             }
         }
