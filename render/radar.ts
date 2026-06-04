@@ -13,6 +13,7 @@ function parseMarkerCenter(center: string | undefined): [number, number] {
 function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDivElement {
     const wrapper = document.createElement('div');
     wrapper.className = 'custom-marker';
+    wrapper.style.setProperty('--marker-url', `url('${entry['aircraft-marker-url']}')`);
 
     const img = document.createElement('img');
     img.src = entry['aircraft-marker-url'];
