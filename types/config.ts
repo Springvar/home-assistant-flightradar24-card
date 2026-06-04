@@ -61,6 +61,9 @@ export interface AircraftMarkerEntry {
     'aircraft-marker-center'?: string;
     'aircraft-marker-scale'?: number;
     'aircraft-marker-color-overlay'?: string;
+    'aircraft-marker-outline-width'?: number;
+    'aircraft-marker-outline-color'?: string;
+    'aircraft-marker-shadow'?: string;
 }
 
 export interface RadarConfig {

@@ -1232,7 +1232,21 @@ export class Flightradar24CardEditor extends HTMLElement {
                                     <div class="form-row">
                                         <label>Color Overlay:</label>
                                         <input type="color" id="radar-custom-marker-overlay" value="${marker['aircraft-marker-color-overlay'] || '#000000'}" />
-                                        <span class="help-text">Tint overlay color (mix-blend-mode: multiply)</span>
+                                        <span class="help-text">Fills the image shape with this color</span>
+                                    </div>
+                                    <div class="form-row">
+                                        <label>Outline Width:</label>
+                                        <input type="number" min="0" max="10" step="1" id="radar-custom-marker-outline-width" value="${marker['aircraft-marker-outline-width'] ?? 0}" />
+                                        <span class="help-text">Black outline thickness in pixels (0 = none)</span>
+                                    </div>
+                                    <div class="form-row">
+                                        <label>Outline Color:</label>
+                                        <input type="color" id="radar-custom-marker-outline-color" value="${marker['aircraft-marker-outline-color'] || '#000000'}" />
+                                    </div>
+                                    <div class="form-row">
+                                        <label>Drop Shadow:</label>
+                                        <input type="text" id="radar-custom-marker-shadow" value="${marker['aircraft-marker-shadow'] || ''}" placeholder="e.g. 1px 1px 2px rgba(0,0,0,0.5)" />
+                                        <span class="help-text">CSS drop-shadow filter value (leave empty for none)</span>
                                     </div>`;
                                 })()}
                             </fieldset>
@@ -2113,6 +2127,30 @@ export class Flightradar24CardEditor extends HTMLElement {
             markerOverlayInput.addEventListener('input', (e) => {
                 const val = (e.target as HTMLInputElement).value;
                 updateAircraftMarker('aircraft-marker-color-overlay', val || undefined);
+            });
+        }
+
+        const markerOutlineWidthInput = root.getElementById('radar-custom-marker-outline-width') as HTMLInputElement;
+        if (markerOutlineWidthInput) {
+            markerOutlineWidthInput.addEventListener('input', (e) => {
+                const val = parseInt((e.target as HTMLInputElement).value);
+                updateAircraftMarker('aircraft-marker-outline-width', isNaN(val) ? 0 : val);
+            });
+        }
+
+        const markerOutlineColorInput = root.getElementById('radar-custom-marker-outline-color') as HTMLInputElement;
+        if (markerOutlineColorInput) {
+            markerOutlineColorInput.addEventListener('input', (e) => {
+                const val = (e.target as HTMLInputElement).value;
+                updateAircraftMarker('aircraft-marker-outline-color', val || undefined);
+            });
+        }
+
+        const markerShadowInput = root.getElementById('radar-custom-marker-shadow') as HTMLInputElement;
+        if (markerShadowInput) {
+            markerShadowInput.addEventListener('input', (e) => {
+                const val = (e.target as HTMLInputElement).value;
+                updateAircraftMarker('aircraft-marker-shadow', val || undefined);
             });
         }
 
