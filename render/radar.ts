@@ -19,47 +19,39 @@ function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDi
     const outlineWidth = entry['aircraft-marker-outline-width'] ?? 0;
     const outlineColor = entry['aircraft-marker-outline-color'] || '#000000';
     const shadow = entry['aircraft-marker-shadow'] || '';
-    const needsCanvas = !!overlayColor || outlineWidth > 0 || !!shadow;
 
-    if (needsCanvas) {
-        const color = overlayColor
-            ? (overlayColor.startsWith('var(')
-                ? (getComputedStyle(wrapper).getPropertyValue(overlayColor.slice(4, -1).trim()).trim() || overlayColor)
-                : overlayColor)
-            : '';
-        const canvas = document.createElement('canvas');
-        canvas.className = 'custom-marker-canvas';
-        if (shadow) {
-            canvas.style.filter = `drop-shadow(${shadow})`;
+    const filters: string[] = [];
+    if (outlineWidth > 0) {
+        const ow = Math.max(1, Math.min(10, outlineWidth));
+        for (let dy = -ow; dy <= ow; dy++) {
+            for (let dx = -ow; dx <= ow; dx++) {
+                if (dx === 0 && dy === 0) continue;
+                filters.push(`drop-shadow(${dx}px ${dy}px 0px ${outlineColor})`);
+            }
         }
+    }
+    if (shadow) {
+        filters.push(`drop-shadow(${shadow})`);
+    }
+    if (filters.length > 0) {
+        wrapper.style.filter = filters.join(' ');
+    }
+
+    if (overlayColor) {
+        const color = overlayColor.startsWith('var(')
+            ? (getComputedStyle(wrapper).getPropertyValue(overlayColor.slice(4, -1).trim()).trim() || overlayColor)
+            : overlayColor;
+        const canvas = document.createElement('canvas');
         wrapper.appendChild(canvas);
         const img = new Image();
         img.onload = () => {
-            const w = outlineWidth;
-            const iw = img.width;
-            const ih = img.height;
-            canvas.width = iw + 2 * w;
-            canvas.height = ih + 2 * w;
+            canvas.width = img.width;
+            canvas.height = img.height;
             const ctx = canvas.getContext('2d')!;
-
-            if (w > 0) {
-                for (let dy = -w; dy <= w; dy++) {
-                    for (let dx = -w; dx <= w; dx++) {
-                        ctx.drawImage(img, w + dx, w + dy, iw, ih);
-                    }
-                }
-                ctx.globalCompositeOperation = 'source-in';
-                ctx.fillStyle = outlineColor;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.globalCompositeOperation = 'source-over';
-            }
-
-            ctx.drawImage(img, w, w, iw, ih);
-            if (color) {
-                ctx.globalCompositeOperation = 'source-atop';
-                ctx.fillStyle = color;
-                ctx.fillRect(w, w, iw, ih);
-            }
+            ctx.drawImage(img, 0, 0);
+            ctx.globalCompositeOperation = 'source-atop';
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
         };
         img.src = url;
     } else {
