@@ -10,15 +10,43 @@ function parseMarkerCenter(center: string | undefined): [number, number] {
     return [parts[0] || 0, parts[1] || 0];
 }
 
+function tintImageViaCanvas(url: string, color: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d')!;
+                ctx.drawImage(img, 0, 0);
+                ctx.globalCompositeOperation = 'source-atop';
+                ctx.fillStyle = color;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL());
+            } catch (e) {
+                reject(e);
+            }
+        };
+        img.onerror = reject;
+        img.src = url;
+    });
+}
+
 function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDivElement {
     const wrapper = document.createElement('div');
     wrapper.className = 'custom-marker';
-    wrapper.style.setProperty('--marker-url', `url('${entry['aircraft-marker-url']}')`);
 
     const img = document.createElement('img');
     img.src = entry['aircraft-marker-url'];
     img.draggable = false;
     wrapper.appendChild(img);
+
+    if (entry['aircraft-marker-color-overlay']) {
+        tintImageViaCanvas(entry['aircraft-marker-url'], entry['aircraft-marker-color-overlay'])
+            .then((dataUrl) => { img.src = dataUrl; })
+            .catch(() => { /* fallback: keep original untinted image */ });
+    }
 
     const rotation = entry['aircraft-marker-rotation'] ?? 0;
     const scale = entry['aircraft-marker-scale'] ?? 1;
@@ -26,13 +54,6 @@ function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDi
 
     wrapper.style.transform = `rotate(${heading + rotation}deg) scale(${scale})`;
     wrapper.style.transformOrigin = `calc(50% + ${centerX}px) calc(50% + ${centerY}px)`;
-
-    if (entry['aircraft-marker-color-overlay']) {
-        const overlay = document.createElement('div');
-        overlay.className = 'custom-marker-overlay';
-        overlay.style.background = entry['aircraft-marker-color-overlay'];
-        wrapper.appendChild(overlay);
-    }
 
     return wrapper;
 }

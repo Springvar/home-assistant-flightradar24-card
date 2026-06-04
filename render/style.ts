@@ -216,22 +216,11 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
     }
     .custom-marker img {
       display: block;
-      width: 24px;
+      width: 12px;
       height: auto;
       pointer-events: none;
     }
-    .custom-marker .custom-marker-overlay {
-      position: absolute;
-      inset: 0;
-      -webkit-mask-image: var(--marker-url);
-      mask-image: var(--marker-url);
-      -webkit-mask-size: contain;
-      mask-size: contain;
-      -webkit-mask-repeat: no-repeat;
-      mask-repeat: no-repeat;
-      mix-blend-mode: multiply;
-      pointer-events: none;
-    }
+
     .callsign-label {
       position: absolute;
       background-color: var(--radar-callsign-label-color);
