@@ -233,6 +233,67 @@ export class Flightradar24CardEditor extends HTMLElement {
         return { valid: true };
     }
 
+    private _renameConfigKey(type: 'template' | 'toggle' | 'define', oldKey: string, newKey: string): void {
+        if (oldKey === newKey || !newKey.trim()) return;
+
+        // Update templates that reference the old key as ${oldKey}
+        const templates = { ...this._config.templates };
+        const oldRefRegex = new RegExp(`\\$\\{${oldKey}\\}`, 'g');
+        for (const [tplKey, tplValue] of Object.entries(templates)) {
+            if (tplValue.includes(`\${${oldKey}}`)) {
+                templates[tplKey] = tplValue.replace(oldRefRegex, `\${${newKey}}`);
+            }
+            if (type === 'template' && (tplValue.includes(`\${tpl.${oldKey}}`) || tplValue.includes(`tpl.${oldKey}`))) {
+                templates[tplKey] = tplValue.replace(new RegExp(`tpl\\.${oldKey}`, 'g'), `tpl.${newKey}`);
+            }
+        }
+        if (type === 'template') {
+            // Rename the template key itself
+            if (oldKey in templates) {
+                templates[newKey] = templates[oldKey];
+                delete templates[oldKey];
+            }
+        }
+
+        // Update filter conditions that reference the old key
+        const filters = this._config.filter ? JSON.parse(JSON.stringify(this._config.filter)) : undefined;
+        if (filters) {
+            const updateConditions = (conditions: any[]): void => {
+                conditions.forEach((cond: any) => {
+                    if (cond.type === 'AND' || cond.type === 'OR') {
+                        updateConditions(cond.conditions || []);
+                    } else if (cond.type === 'NOT') {
+                        updateConditions([cond.condition]);
+                    } else {
+                        if (cond.field === oldKey) cond.field = newKey;
+                        if (cond.defined === oldKey) cond.defined = newKey;
+                        if (typeof cond.value === 'string') {
+                            cond.value = cond.value.replace(oldRefRegex, `\${${newKey}}`);
+                        }
+                    }
+                });
+            };
+            updateConditions(filters);
+        }
+
+        // Update sort criteria that reference the old key
+        const sort = (this._config.sort || []).map(c => {
+            if (c.field === oldKey) return { ...c, field: newKey };
+            if (c.field?.includes(` ?? `)) {
+                const parts = c.field.split(' ?? ').map(p => p === oldKey ? newKey : p);
+                return { ...c, field: parts.join(' ?? ') };
+            }
+            return c;
+        });
+
+        this._config = {
+            ...this._config,
+            templates: Object.keys(templates).length > 0 ? templates : undefined,
+            filter: filters && filters.length > 0 ? filters : undefined,
+            sort: sort.length > 0 ? sort : undefined,
+        };
+    }
+
     private hasValidationErrors(): boolean {
         // Check for unused items
         const unused = this.getUnusedDefinesAndToggles();
@@ -1259,7 +1320,7 @@ export class Flightradar24CardEditor extends HTMLElement {
                                     <div class="item-box" ${isUnused ? 'style="border-color: #ff9800;"' : ''}>
                                         <div class="form-row">
                                             <label>Name:</label>
-                                            <input type="text" value="${key}" readonly />
+                                            <input type="text" value="${key}" data-toggle-key="${key}" />
                                             ${isUnused ? `<span style="color: #ff9800; font-size: 1.2em; margin-left: 0.5em;" title="This toggle is not used in templates, filters, or sort">⚠️</span>` : ''}
                                         </div>
                                         <div class="form-row">
@@ -1294,7 +1355,7 @@ export class Flightradar24CardEditor extends HTMLElement {
                                     <div class="item-box" ${isUnused ? 'style="border-color: #ff9800;"' : ''}>
                                         <div class="form-row">
                                             <label>Name:</label>
-                                            <input type="text" value="${key}" data-define-oldkey="${key}" readonly />
+                                            <input type="text" value="${key}" data-define-key="${key}" />
                                             ${isUnused ? `<span style="color: #ff9800; font-size: 1.2em; margin-left: 0.5em;" title="This define is not used in templates, filters, or sort">⚠️</span>` : ''}
                                         </div>
                                         <div class="form-row">
@@ -1379,7 +1440,7 @@ export class Flightradar24CardEditor extends HTMLElement {
                                 <div class="form-row">
                                     <label>Template Name:</label>
                                     <div style="display: flex; align-items: center;">
-                                        <input type="text" value="${key}" readonly style="flex: 1;" />
+                                        <input type="text" value="${key}" data-template-name="${key}" style="flex: 1;" />
                                         ${badge}
                                         ${isUnused ? `<span style="color: #ff9800; font-size: 1.2em; margin-left: 0.5em;" title="This template is not used by renderers or other templates">⚠️</span>` : ''}
                                     </div>
@@ -2426,6 +2487,53 @@ export class Flightradar24CardEditor extends HTMLElement {
                     this._render();
                 });
             }
+        });
+
+        // Key rename handlers
+        root.querySelectorAll('[data-define-key]').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const el = e.target as HTMLInputElement;
+                const oldKey = el.getAttribute('data-define-key') as string;
+                const newKey = el.value;
+                if (oldKey !== newKey && newKey.trim()) {
+                    this._renameConfigKey('define', oldKey, newKey);
+                    el.setAttribute('data-define-key', newKey);
+                    const box = el.closest('.item-box');
+                    box?.querySelector('[data-define-value]')?.setAttribute('data-define-value', newKey);
+                    this._emitConfigChanged();
+                }
+            });
+        });
+
+        root.querySelectorAll('[data-toggle-key]').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const el = e.target as HTMLInputElement;
+                const oldKey = el.getAttribute('data-toggle-key') as string;
+                const newKey = el.value;
+                if (oldKey !== newKey && newKey.trim()) {
+                    this._renameConfigKey('toggle', oldKey, newKey);
+                    el.setAttribute('data-toggle-key', newKey);
+                    const box = el.closest('.item-box');
+                    box?.querySelector('[data-toggle-label]')?.setAttribute('data-toggle-label', newKey);
+                    box?.querySelector('[data-toggle-default]')?.setAttribute('data-toggle-default', newKey);
+                    this._emitConfigChanged();
+                }
+            });
+        });
+
+        root.querySelectorAll('[data-template-name]').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const el = e.target as HTMLInputElement;
+                const oldKey = el.getAttribute('data-template-name') as string;
+                const newKey = el.value;
+                if (oldKey !== newKey && newKey.trim()) {
+                    this._renameConfigKey('template', oldKey, newKey);
+                    el.setAttribute('data-template-name', newKey);
+                    const box = el.closest('.item-box');
+                    box?.querySelector('[data-template-value]')?.setAttribute('data-template-value', newKey);
+                    this._emitConfigChanged();
+                }
+            });
         });
 
         // Dynamic properties
