@@ -10,7 +10,18 @@ function parseMarkerCenter(center: string | undefined): [number, number] {
     return [parts[0] || 0, parts[1] || 0];
 }
 
-const DISPLAY_SIZE = 12;
+function buildOutlineFilter(width: number, color: string): string[] {
+    if (width <= 0) return [];
+    const filters: string[] = [];
+    for (let y = -width; y <= width; y++) {
+        for (let x = -width; x <= width; x++) {
+            if (x === 0 && y === 0) continue;
+            if (Math.abs(x) + Math.abs(y) > width) continue;
+            filters.push(`drop-shadow(${x}px ${y}px 0 ${color})`);
+        }
+    }
+    return filters;
+}
 
 function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDivElement {
     const wrapper = document.createElement('div');
@@ -22,44 +33,30 @@ function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDi
     const outlineColor = entry['aircraft-marker-outline-color'] || '#000000';
     const shadow = entry['aircraft-marker-shadow'] || '';
 
+    const filters: string[] = [];
+    filters.push(...buildOutlineFilter(outlineWidth, outlineColor));
     if (shadow) {
-        wrapper.style.filter = `drop-shadow(${shadow})`;
+        filters.push(`drop-shadow(${shadow})`);
+    }
+    if (filters.length > 0) {
+        wrapper.style.filter = filters.join(' ');
     }
 
-    if (overlayColor || outlineWidth > 0) {
-        const color = overlayColor
-            ? (overlayColor.startsWith('var(')
-                ? (getComputedStyle(wrapper).getPropertyValue(overlayColor.slice(4, -1).trim()).trim() || overlayColor)
-                : overlayColor)
-            : '';
+    if (overlayColor) {
+        const color = overlayColor.startsWith('var(')
+            ? (getComputedStyle(wrapper).getPropertyValue(overlayColor.slice(4, -1).trim()).trim() || overlayColor)
+            : overlayColor;
         const canvas = document.createElement('canvas');
         wrapper.appendChild(canvas);
         const img = new Image();
         img.onload = () => {
-            const iw = img.width;
-            const ih = img.height;
-            const canvasOW = Math.ceil(outlineWidth * iw / DISPLAY_SIZE);
-            const tw = iw + 2 * canvasOW;
-            const th = ih + 2 * canvasOW;
-            canvas.width = tw;
-            canvas.height = th;
+            canvas.width = img.width;
+            canvas.height = img.height;
             const ctx = canvas.getContext('2d')!;
-
-            ctx.save();
-            ctx.filter = `blur(${Math.max(1, canvasOW * 0.4)}px)`;
-            ctx.drawImage(img, canvasOW, canvasOW);
-            ctx.filter = 'none';
-            ctx.globalCompositeOperation = 'source-in';
-            ctx.fillStyle = outlineColor;
-            ctx.fillRect(0, 0, tw, th);
-            ctx.restore();
-
-            ctx.drawImage(img, canvasOW, canvasOW);
-            if (color) {
-                ctx.globalCompositeOperation = 'source-atop';
-                ctx.fillStyle = color;
-                ctx.fillRect(canvasOW, canvasOW, iw, ih);
-            }
+            ctx.drawImage(img, 0, 0);
+            ctx.globalCompositeOperation = 'source-atop';
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, img.width, img.height);
         };
         img.src = url;
     } else {
