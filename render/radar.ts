@@ -53,7 +53,7 @@ function loadImage(url: string): Promise<HTMLImageElement> {
     return promise;
 }
 
-function renderMarker(img: HTMLImageElement, entry: AircraftMarkerEntry): HTMLCanvasElement {
+function renderMarker(img: HTMLImageElement, entry: AircraftMarkerEntry, effectsEnabled: boolean): HTMLCanvasElement {
     const iw = img.width;
     const ih = img.height;
     const pxRatio = iw / DISPLAY_SIZE;
@@ -88,7 +88,7 @@ function renderMarker(img: HTMLImageElement, entry: AircraftMarkerEntry): HTMLCa
     const by = pad;
 
     // Layer 1: Shadow
-    if (shadow && (csOffX !== 0 || csOffY !== 0 || csBlur > 0)) {
+    if (effectsEnabled && shadow && (csOffX !== 0 || csOffY !== 0 || csBlur > 0)) {
         const sc = document.createElement('canvas');
         sc.width = iw;
         sc.height = ih;
@@ -105,7 +105,7 @@ function renderMarker(img: HTMLImageElement, entry: AircraftMarkerEntry): HTMLCa
     }
 
     // Layer 2: Outline
-    if (csOutline > 0) {
+    if (effectsEnabled && csOutline > 0) {
         const oc = document.createElement('canvas');
         oc.width = cw;
         oc.height = ch;
@@ -135,20 +135,20 @@ function renderMarker(img: HTMLImageElement, entry: AircraftMarkerEntry): HTMLCa
     return canvas;
 }
 
-function markerCacheKey(entry: AircraftMarkerEntry): string {
-    return `${entry['aircraft-marker-url']}|${entry['aircraft-marker-color-overlay']}|${entry['aircraft-marker-outline-width']}|${entry['aircraft-marker-outline-color']}|${entry['aircraft-marker-shadow']}`;
+function markerCacheKey(entry: AircraftMarkerEntry, effectsEnabled: boolean): string {
+    return `${entry['aircraft-marker-url']}|${entry['aircraft-marker-color-overlay']}|${effectsEnabled}|${entry['aircraft-marker-outline-width']}|${entry['aircraft-marker-outline-color']}|${entry['aircraft-marker-shadow']}`;
 }
 
-function getOrCreateRenderPromise(entry: AircraftMarkerEntry): Promise<HTMLCanvasElement> {
-    const key = markerCacheKey(entry);
+function getOrCreateRenderPromise(entry: AircraftMarkerEntry, effectsEnabled: boolean): Promise<HTMLCanvasElement> {
+    const key = markerCacheKey(entry, effectsEnabled);
     const cached = renderCache.get(key);
     if (cached) return cached;
-    const promise = loadImage(entry['aircraft-marker-url']).then(img => renderMarker(img, entry));
+    const promise = loadImage(entry['aircraft-marker-url']).then(img => renderMarker(img, entry, effectsEnabled));
     renderCache.set(key, promise);
     return promise;
 }
 
-function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDivElement {
+function createCustomMarker(entry: AircraftMarkerEntry, heading: number, effectsEnabled: boolean): HTMLDivElement {
     const wrapper = document.createElement('div');
     wrapper.className = 'custom-marker';
 
@@ -162,13 +162,13 @@ function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDi
     const outlineColor = entry['aircraft-marker-outline-color'] || '#000000';
     const shadow = entry['aircraft-marker-shadow'] || '';
 
-    const hasEffects = overlayColor || outlineWidth > 0 || shadow.length > 0;
+    const hasEffects = !!overlayColor || (effectsEnabled && (outlineWidth > 0 || shadow.length > 0));
 
     if (hasEffects) {
         const canvas = document.createElement('canvas');
         transformEl.appendChild(canvas);
 
-        getOrCreateRenderPromise(entry)
+        getOrCreateRenderPromise(entry, effectsEnabled)
             .then(src => {
                 canvas.width = src.width;
                 canvas.height = src.height;
@@ -232,7 +232,8 @@ export function renderRadar(cardState: CardState): void {
                 plane.style.left = x + 'px';
 
                 if (defaultMarkerEntry?.['aircraft-marker-url']) {
-                    const marker = createCustomMarker(defaultMarkerEntry, flight.heading ?? 0);
+                    const effectsEnabled = !!radar?.['aircraft-marker-effects'];
+                    const marker = createCustomMarker(defaultMarkerEntry, flight.heading ?? 0, effectsEnabled);
                     plane.appendChild(marker);
                 } else {
                     const arrow = document.createElement('div');

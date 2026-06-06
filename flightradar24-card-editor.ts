@@ -1210,6 +1210,7 @@ export class Flightradar24CardEditor extends HTMLElement {
                                 <p class="help-text">Use a PNG image as aircraft marker instead of the default triangle. Image should have a transparent background.</p>
                                 ${(() => {
                                     const marker = radar['aircraft-marker']?.default || {};
+                                    const markerEffects = radar['aircraft-marker-effects'] ?? false;
                                     return `
                                     <div class="form-row">
                                         <label>Image URL:</label>
@@ -1235,18 +1236,27 @@ export class Flightradar24CardEditor extends HTMLElement {
                                         <span class="help-text">Fills the image shape with this color</span>
                                     </div>
                                     <div class="form-row">
-                                        <label>Outline Width:</label>
-                                        <input type="number" min="0" max="10" step="1" id="radar-custom-marker-outline-width" value="${marker['aircraft-marker-outline-width'] ?? 0}" />
-                                        <span class="help-text">Black outline thickness in pixels (0 = none)</span>
+                                        <label>
+                                            <input type="checkbox" id="radar-custom-marker-effects" ${markerEffects ? 'checked' : ''} />
+                                            Enable outline and shadow
+                                        </label>
+                                        <span class="help-text">Toggle outline and drop shadow effects on/off</span>
                                     </div>
-                                    <div class="form-row">
-                                        <label>Outline Color:</label>
-                                        <input type="color" id="radar-custom-marker-outline-color" value="${marker['aircraft-marker-outline-color'] || '#000000'}" />
-                                    </div>
-                                    <div class="form-row">
-                                        <label>Drop Shadow:</label>
-                                        <input type="text" id="radar-custom-marker-shadow" value="${marker['aircraft-marker-shadow'] || ''}" placeholder="e.g. 1px 1px 2px rgba(0,0,0,0.5)" />
-                                        <span class="help-text">CSS drop-shadow filter value (leave empty for none)</span>
+                                    <div id="effects-only-fields" style="display: ${markerEffects ? 'block' : 'none'};">
+                                        <div class="form-row">
+                                            <label>Outline Width:</label>
+                                            <input type="number" min="0" max="10" step="1" id="radar-custom-marker-outline-width" value="${marker['aircraft-marker-outline-width'] ?? 0}" />
+                                            <span class="help-text">Black outline thickness in pixels (0 = none)</span>
+                                        </div>
+                                        <div class="form-row">
+                                            <label>Outline Color:</label>
+                                            <input type="color" id="radar-custom-marker-outline-color" value="${marker['aircraft-marker-outline-color'] || '#000000'}" />
+                                        </div>
+                                        <div class="form-row">
+                                            <label>Drop Shadow:</label>
+                                            <input type="text" id="radar-custom-marker-shadow" value="${marker['aircraft-marker-shadow'] || ''}" placeholder="e.g. 1px 1px 2px rgba(0,0,0,0.5)" />
+                                            <span class="help-text">CSS drop-shadow filter value (leave empty for none)</span>
+                                        </div>
                                     </div>`;
                                 })()}
                             </fieldset>
@@ -2127,6 +2137,17 @@ export class Flightradar24CardEditor extends HTMLElement {
             markerOverlayInput.addEventListener('input', (e) => {
                 const val = (e.target as HTMLInputElement).value;
                 updateAircraftMarker('aircraft-marker-color-overlay', val || undefined);
+            });
+        }
+
+        const markerEffectsCheckbox = root.getElementById('radar-custom-marker-effects') as HTMLInputElement;
+        if (markerEffectsCheckbox) {
+            markerEffectsCheckbox.addEventListener('change', (e) => {
+                const checked = (e.target as HTMLInputElement).checked;
+                const radar = this._config.radar || {};
+                this._config = { ...this._config, radar: { ...radar, 'aircraft-marker-effects': checked || undefined } };
+                this._emitConfigChanged();
+                this._render();
             });
         }
 

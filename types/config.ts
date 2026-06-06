@@ -86,6 +86,7 @@ export interface RadarConfig {
     'local-features-color'?: string;
     'callsign-label-color'?: string;
     'aircraft-marker-size'?: 'small' | 'normal' | 'large' | 'x-large' | 'xx-large';
+    'aircraft-marker-effects'?: boolean;
     'aircraft-marker'?: Record<string, AircraftMarkerEntry>;
     hide?: boolean;
     hide_range?: boolean;
