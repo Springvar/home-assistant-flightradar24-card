@@ -4,23 +4,30 @@ import type { Flight } from '../types/flight';
 import type { Condition, AircraftMarkerEntry } from '../types/config';
 import type { CardState } from '../types/cardState';
 
+const DRAW_SIZE = 12;
+
 function parseMarkerCenter(center: string | undefined): [number, number] {
     if (!center) return [0, 0];
     const parts = center.split(',').map(Number);
     return [parts[0] || 0, parts[1] || 0];
 }
 
-function buildOutlineFilter(width: number, color: string): string[] {
-    if (width <= 0) return [];
-    const filters: string[] = [];
-    for (let y = -width; y <= width; y++) {
-        for (let x = -width; x <= width; x++) {
-            if (x === 0 && y === 0) continue;
-            if (Math.abs(x) + Math.abs(y) > width) continue;
-            filters.push(`drop-shadow(${x}px ${y}px 0 ${color})`);
-        }
+function parseShadow(shadow: string): { offsetX: number; offsetY: number; blur: number; color: string } {
+    const result = { offsetX: 0, offsetY: 0, blur: 0, color: 'rgba(0,0,0,0.5)' };
+    if (!shadow) return result;
+    const parts = shadow.trim().split(/\s+/);
+    if (parts.length < 2) return result;
+    result.offsetX = parseFloat(parts[0]) || 0;
+    result.offsetY = parseFloat(parts[1]) || 0;
+    let ci = 2;
+    if (parts.length > 2 && /^[\d.]+(?:px|em|rem|pt|cm|mm|in|pc|ex|ch|vw|vh|vmin|vmax)$/i.test(parts[2])) {
+        result.blur = Math.max(0, parseFloat(parts[2]) || 0);
+        ci = 3;
     }
-    return filters;
+    if (parts.length > ci) {
+        result.color = parts.slice(ci).join(' ');
+    }
+    return result;
 }
 
 function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDivElement {
@@ -33,33 +40,74 @@ function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDi
     const outlineColor = entry['aircraft-marker-outline-color'] || '#000000';
     const shadow = entry['aircraft-marker-shadow'] || '';
 
-    const filters: string[] = [];
-    filters.push(...buildOutlineFilter(outlineWidth, outlineColor));
-    if (shadow) {
-        filters.push(`drop-shadow(${shadow})`);
-    }
-    const filterStr = filters.length > 0 ? filters.join(' ') : '';
+    const hasEffects = overlayColor || outlineWidth > 0 || shadow.length > 0;
 
-    if (overlayColor) {
-        const div = document.createElement('div');
-        div.style.cssText = `
-            background-color: ${overlayColor};
-            background-image: url(${url});
-            background-blend-mode: multiply;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            width: 12px;
-            height: 12px;
-            pointer-events: none;
-        `;
-        if (filterStr) div.style.filter = filterStr;
-        wrapper.appendChild(div);
+    if (hasEffects) {
+        const canvas = document.createElement('canvas');
+        wrapper.appendChild(canvas);
+        const img = new Image();
+        img.onload = () => {
+            const iw = img.width;
+            const ih = img.height;
+            const scale = iw / DRAW_SIZE;
+
+            const csOutline = Math.ceil(outlineWidth * scale);
+            const sp = parseShadow(shadow);
+            const csOffX = sp.offsetX * scale;
+            const csOffY = sp.offsetY * scale;
+            const csBlur = sp.blur * scale;
+
+            const pad = Math.ceil(Math.max(csOutline, Math.abs(csOffX) + csBlur, Math.abs(csOffY) + csBlur));
+            const cw = iw + 2 * pad;
+            const ch = ih + 2 * pad;
+            canvas.width = cw;
+            canvas.height = ch;
+            const ctx = canvas.getContext('2d')!;
+
+            const drawScaledFill = (
+                fill: string | CanvasGradient | CanvasPattern,
+                dx: number, dy: number, dw: number, dh: number,
+                blur?: number,
+            ) => {
+                ctx.save();
+                if (blur && blur > 0) ctx.filter = `blur(${blur}px)`;
+                ctx.drawImage(img, dx, dy, dw, dh);
+                ctx.filter = 'none';
+                ctx.globalCompositeOperation = 'source-atop';
+                ctx.fillStyle = fill;
+                ctx.fillRect(dx, dy, dw, dh);
+                ctx.restore();
+            };
+
+            const bx = pad;
+            const by = pad;
+
+            const sw = iw + 2 * csOutline;
+            const sh = ih + 2 * csOutline;
+
+            // 1. Drop shadow
+            if (shadow && (csOffX !== 0 || csOffY !== 0 || csBlur > 0)) {
+                drawScaledFill(sp.color, bx - csOutline + csOffX, by - csOutline + csOffY, sw, sh, csBlur || undefined);
+            }
+
+            // 2. Outline (scaled up image filled with outline color)
+            if (csOutline > 0) {
+                drawScaledFill(outlineColor, bx - csOutline, by - csOutline, sw, sh);
+            }
+
+            // 3. Main image with color overlay
+            ctx.drawImage(img, bx, by, iw, ih);
+            if (overlayColor) {
+                ctx.globalCompositeOperation = 'source-atop';
+                ctx.fillStyle = overlayColor;
+                ctx.fillRect(bx, by, iw, ih);
+            }
+        };
+        img.src = url;
     } else {
         const img = document.createElement('img');
         img.src = url;
         img.draggable = false;
-        if (filterStr) img.style.filter = filterStr;
         wrapper.appendChild(img);
     }
 
