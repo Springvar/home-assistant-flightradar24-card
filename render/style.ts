@@ -214,8 +214,7 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
       translate: -50% -50%;
       pointer-events: none;
     }
-    .custom-marker img,
-    .custom-marker canvas {
+    .custom-marker img {
       display: block;
       width: 12px;
       height: auto;

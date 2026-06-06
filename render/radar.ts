@@ -38,31 +38,28 @@ function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDi
     if (shadow) {
         filters.push(`drop-shadow(${shadow})`);
     }
-    if (filters.length > 0) {
-        wrapper.style.filter = filters.join(' ');
-    }
+    const filterStr = filters.length > 0 ? filters.join(' ') : '';
 
     if (overlayColor) {
-        const color = overlayColor.startsWith('var(')
-            ? (getComputedStyle(wrapper).getPropertyValue(overlayColor.slice(4, -1).trim()).trim() || overlayColor)
-            : overlayColor;
-        const canvas = document.createElement('canvas');
-        wrapper.appendChild(canvas);
-        const img = new Image();
-        img.onload = () => {
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d')!;
-            ctx.drawImage(img, 0, 0);
-            ctx.globalCompositeOperation = 'source-atop';
-            ctx.fillStyle = color;
-            ctx.fillRect(0, 0, img.width, img.height);
-        };
-        img.src = url;
+        const div = document.createElement('div');
+        div.style.cssText = `
+            background-color: ${overlayColor};
+            background-image: url(${url});
+            background-blend-mode: multiply;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 12px;
+            height: 12px;
+            pointer-events: none;
+        `;
+        if (filterStr) div.style.filter = filterStr;
+        wrapper.appendChild(div);
     } else {
         const img = document.createElement('img');
         img.src = url;
         img.draggable = false;
+        if (filterStr) img.style.filter = filterStr;
         wrapper.appendChild(img);
     }
 
