@@ -4,28 +4,157 @@ import type { Flight } from '../types/flight';
 import type { Condition, AircraftMarkerEntry } from '../types/config';
 import type { CardState } from '../types/cardState';
 
+const DISPLAY_SIZE = 12;
+
+const imgCache = new Map<string, Promise<HTMLImageElement>>();
+const renderCache = new Map<string, Promise<HTMLCanvasElement>>();
+
 function parseMarkerCenter(center: string | undefined): [number, number] {
     if (!center) return [0, 0];
     const parts = center.split(',').map(Number);
     return [parts[0] || 0, parts[1] || 0];
 }
 
-function buildOutlineFilter(width: number, color: string): string[] {
-    if (width <= 0) return [];
-    const filters: string[] = [];
-    for (let y = -width; y <= width; y++) {
-        for (let x = -width; x <= width; x++) {
-            if (x === 0 && y === 0) continue;
-            if (Math.abs(x) + Math.abs(y) > width) continue;
-            filters.push(`drop-shadow(${x}px ${y}px 0 ${color})`);
-        }
+interface ParsedShadow {
+    offsetX: number;
+    offsetY: number;
+    blur: number;
+    color: string;
+}
+
+function parseShadow(shadow: string): ParsedShadow {
+    const result: ParsedShadow = { offsetX: 0, offsetY: 0, blur: 0, color: 'rgba(0,0,0,0.5)' };
+    if (!shadow) return result;
+    const parts = shadow.trim().split(/\s+/);
+    if (parts.length < 2) return result;
+    result.offsetX = parseFloat(parts[0]) || 0;
+    result.offsetY = parseFloat(parts[1]) || 0;
+    let ci = 2;
+    if (parts.length > 2 && /^[\d.]+(?:px|em|rem|pt|cm|mm|in|pc|ex|ch|vw|vh|vmin|vmax)$/i.test(parts[2])) {
+        result.blur = Math.max(0, parseFloat(parts[2]) || 0);
+        ci = 3;
     }
-    return filters;
+    if (parts.length > ci) {
+        result.color = parts.slice(ci).join(' ');
+    }
+    return result;
+}
+
+function loadImage(url: string): Promise<HTMLImageElement> {
+    const cached = imgCache.get(url);
+    if (cached) return cached;
+    const promise = new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error(`Failed to load marker image: ${url}`));
+        img.src = url;
+    });
+    imgCache.set(url, promise);
+    return promise;
+}
+
+function renderMarker(img: HTMLImageElement, entry: AircraftMarkerEntry): HTMLCanvasElement {
+    const iw = img.width;
+    const ih = img.height;
+    const pxRatio = iw / DISPLAY_SIZE;
+
+    const overlayColor = entry['aircraft-marker-color-overlay'];
+    const outlineWidth = entry['aircraft-marker-outline-width'] ?? 0;
+    const outlineColor = entry['aircraft-marker-outline-color'] || '#000000';
+    const shadow = entry['aircraft-marker-shadow'] || '';
+
+    const sp = parseShadow(shadow);
+    const csOffX = Math.round(sp.offsetX * pxRatio);
+    const csOffY = Math.round(sp.offsetY * pxRatio);
+    const csBlur = Math.round(sp.blur * pxRatio);
+
+    const csOutline = Math.ceil(outlineWidth * pxRatio);
+    const outlineBlur = Math.max(1, Math.round(csOutline * 0.4));
+
+    const pad = Math.ceil(Math.max(
+        csOutline + outlineBlur * 2,
+        Math.abs(csOffX) + csBlur * 2,
+        Math.abs(csOffY) + csBlur * 2,
+    ));
+    const cw = iw + 2 * pad;
+    const ch = ih + 2 * pad;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = cw;
+    canvas.height = ch;
+    const ctx = canvas.getContext('2d')!;
+
+    const bx = pad;
+    const by = pad;
+
+    // Layer 1: Shadow
+    if (shadow && (csOffX !== 0 || csOffY !== 0 || csBlur > 0)) {
+        const sc = document.createElement('canvas');
+        sc.width = iw;
+        sc.height = ih;
+        const sctx = sc.getContext('2d')!;
+        sctx.drawImage(img, 0, 0, iw, ih);
+        sctx.globalCompositeOperation = 'source-atop';
+        sctx.fillStyle = sp.color;
+        sctx.fillRect(0, 0, iw, ih);
+
+        ctx.save();
+        if (csBlur > 0) ctx.filter = `blur(${csBlur}px)`;
+        ctx.drawImage(sc, bx + csOffX, by + csOffY, iw, ih);
+        ctx.restore();
+    }
+
+    // Layer 2: Outline
+    if (csOutline > 0) {
+        const oc = document.createElement('canvas');
+        oc.width = cw;
+        oc.height = ch;
+        const octx = oc.getContext('2d')!;
+        const sw = iw + 2 * csOutline;
+        const sh = ih + 2 * csOutline;
+        octx.save();
+        octx.filter = `blur(${outlineBlur}px)`;
+        octx.drawImage(img, bx - csOutline, by - csOutline, sw, sh);
+        octx.filter = 'none';
+        octx.globalCompositeOperation = 'source-atop';
+        octx.fillStyle = outlineColor;
+        octx.fillRect(0, 0, cw, ch);
+        octx.restore();
+
+        ctx.drawImage(oc, 0, 0);
+    }
+
+    // Layer 3: Main image
+    ctx.drawImage(img, bx, by, iw, ih);
+    if (overlayColor) {
+        ctx.globalCompositeOperation = 'source-atop';
+        ctx.fillStyle = overlayColor;
+        ctx.fillRect(bx, by, iw, ih);
+    }
+
+    return canvas;
+}
+
+function markerCacheKey(entry: AircraftMarkerEntry): string {
+    return `${entry['aircraft-marker-url']}|${entry['aircraft-marker-color-overlay']}|${entry['aircraft-marker-outline-width']}|${entry['aircraft-marker-outline-color']}|${entry['aircraft-marker-shadow']}`;
+}
+
+function getOrCreateRenderPromise(entry: AircraftMarkerEntry): Promise<HTMLCanvasElement> {
+    const key = markerCacheKey(entry);
+    const cached = renderCache.get(key);
+    if (cached) return cached;
+    const promise = loadImage(entry['aircraft-marker-url']).then(img => renderMarker(img, entry));
+    renderCache.set(key, promise);
+    return promise;
 }
 
 function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDivElement {
-    const filterWrapper = document.createElement('div');
-    filterWrapper.className = 'custom-marker';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'custom-marker';
+
+    const transformEl = document.createElement('div');
+    transformEl.className = 'custom-marker-transform';
+    wrapper.appendChild(transformEl);
 
     const url = entry['aircraft-marker-url'];
     const overlayColor = entry['aircraft-marker-color-overlay'];
@@ -33,36 +162,19 @@ function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDi
     const outlineColor = entry['aircraft-marker-outline-color'] || '#000000';
     const shadow = entry['aircraft-marker-shadow'] || '';
 
-    // Build outline + shadow CSS filters on the filterWrapper
-    const filters: string[] = [];
-    filters.push(...buildOutlineFilter(outlineWidth, outlineColor));
-    if (shadow) {
-        filters.push(`drop-shadow(${shadow})`);
-    }
-    if (filters.length > 0) {
-        filterWrapper.style.filter = filters.join(' ');
-    }
+    const hasEffects = overlayColor || outlineWidth > 0 || shadow.length > 0;
 
-    // Inner element: handles rotation/scale separately from filter
-    const transformEl = document.createElement('div');
-    transformEl.className = 'custom-marker-transform';
-    filterWrapper.appendChild(transformEl);
-
-    // Render content: canvas for color overlay, plain img otherwise
-    if (overlayColor) {
+    if (hasEffects) {
         const canvas = document.createElement('canvas');
         transformEl.appendChild(canvas);
-        const img = new Image();
-        img.onload = () => {
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d')!;
-            ctx.drawImage(img, 0, 0);
-            ctx.globalCompositeOperation = 'source-atop';
-            ctx.fillStyle = overlayColor;
-            ctx.fillRect(0, 0, img.width, img.height);
-        };
-        img.src = url;
+
+        getOrCreateRenderPromise(entry)
+            .then(src => {
+                canvas.width = src.width;
+                canvas.height = src.height;
+                canvas.getContext('2d')!.drawImage(src, 0, 0);
+            })
+            .catch(() => {});
     } else {
         const img = document.createElement('img');
         img.src = url;
@@ -77,7 +189,7 @@ function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDi
     transformEl.style.transform = `rotate(${heading + rotation}deg) scale(${scaleVal})`;
     transformEl.style.transformOrigin = `calc(50% + ${centerX}px) calc(50% + ${centerY}px)`;
 
-    return filterWrapper;
+    return wrapper;
 }
 
 export function renderRadar(cardState: CardState): void {
