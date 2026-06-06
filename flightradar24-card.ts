@@ -222,9 +222,8 @@ class Flightradar24Card extends HTMLElement implements MainCard {
                 }
             });
             this._radarResizeObserver.observe(radar);
-            const radarOverlay = this.shadowRoot?.getElementById('radar-overlay') || null;
             if (this._zoomCleanup) this._zoomCleanup();
-            this._zoomCleanup = setupZoomHandlers(this.cardState as Parameters<typeof setupZoomHandlers>[0], radarOverlay);
+            this._zoomCleanup = setupZoomHandlers(this.cardState as Parameters<typeof setupZoomHandlers>[0], radar);
         } catch (e) {
             console.error('[FR24Card] observeRadarResize error:', e);
         }

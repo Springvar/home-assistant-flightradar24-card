@@ -88,7 +88,7 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
       margin-bottom: 5%;
       z-index: 1;
       opacity: 0;
-      pointer-events: auto;
+      pointer-events: none;
       border-radius: 50%;
       overflow: hidden;
     }

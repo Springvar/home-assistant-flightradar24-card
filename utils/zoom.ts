@@ -7,7 +7,7 @@ interface ZoomCardState extends CardState {
     };
 }
 
-export function setupZoomHandlers(cardState: ZoomCardState, radarOverlay: HTMLElement | null): () => void {
+export function setupZoomHandlers(cardState: ZoomCardState, radar: HTMLElement | null): () => void {
     let initialPinchDistance: number | null = null;
     let initialRadarRange: number | null = null;
 
@@ -62,19 +62,19 @@ export function setupZoomHandlers(cardState: ZoomCardState, radarOverlay: HTMLEl
         }
     }
 
-    if (radarOverlay) {
-        radarOverlay.addEventListener('wheel', handleWheel, { passive: false });
-        radarOverlay.addEventListener('touchstart', handleTouchStart, { passive: true });
-        radarOverlay.addEventListener('touchmove', handleTouchMove, { passive: false });
-        radarOverlay.addEventListener('touchend', handleTouchEnd, { passive: true });
+    if (radar) {
+        radar.addEventListener('wheel', handleWheel, { passive: false });
+        radar.addEventListener('touchstart', handleTouchStart, { passive: true });
+        radar.addEventListener('touchmove', handleTouchMove, { passive: false });
+        radar.addEventListener('touchend', handleTouchEnd, { passive: true });
     }
 
     return () => {
-        if (radarOverlay) {
-            radarOverlay.removeEventListener('wheel', handleWheel);
-            radarOverlay.removeEventListener('touchstart', handleTouchStart);
-            radarOverlay.removeEventListener('touchmove', handleTouchMove);
-            radarOverlay.removeEventListener('touchend', handleTouchEnd);
+        if (radar) {
+            radar.removeEventListener('wheel', handleWheel);
+            radar.removeEventListener('touchstart', handleTouchStart);
+            radar.removeEventListener('touchmove', handleTouchMove);
+            radar.removeEventListener('touchend', handleTouchEnd);
         }
     };
 }

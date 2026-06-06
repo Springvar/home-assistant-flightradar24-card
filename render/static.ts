@@ -56,8 +56,8 @@ export function renderStatic(cardState: StaticCardState, mainCard: StaticMainCar
         requestAnimationFrame(() => {
             renderRadarScreen(cardState);
             mainCard.observeRadarResize();
-            setupZoomHandlers(cardState as Parameters<typeof setupZoomHandlers>[0], radarOverlay);
-            radarOverlay.addEventListener('click', (e: MouseEvent) => {
+            setupZoomHandlers(cardState as Parameters<typeof setupZoomHandlers>[0], radar);
+            radar.addEventListener('click', (e: MouseEvent) => {
                 handleRadarTap(cardState as CardState, e.clientX, e.clientY);
             });
         });
