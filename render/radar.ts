@@ -4,35 +4,28 @@ import type { Flight } from '../types/flight';
 import type { Condition, AircraftMarkerEntry } from '../types/config';
 import type { CardState } from '../types/cardState';
 
-const DRAW_SIZE = 12;
-
 function parseMarkerCenter(center: string | undefined): [number, number] {
     if (!center) return [0, 0];
     const parts = center.split(',').map(Number);
     return [parts[0] || 0, parts[1] || 0];
 }
 
-function parseShadow(shadow: string): { offsetX: number; offsetY: number; blur: number; color: string } {
-    const result = { offsetX: 0, offsetY: 0, blur: 0, color: 'rgba(0,0,0,0.5)' };
-    if (!shadow) return result;
-    const parts = shadow.trim().split(/\s+/);
-    if (parts.length < 2) return result;
-    result.offsetX = parseFloat(parts[0]) || 0;
-    result.offsetY = parseFloat(parts[1]) || 0;
-    let ci = 2;
-    if (parts.length > 2 && /^[\d.]+(?:px|em|rem|pt|cm|mm|in|pc|ex|ch|vw|vh|vmin|vmax)$/i.test(parts[2])) {
-        result.blur = Math.max(0, parseFloat(parts[2]) || 0);
-        ci = 3;
+function buildOutlineFilter(width: number, color: string): string[] {
+    if (width <= 0) return [];
+    const filters: string[] = [];
+    for (let y = -width; y <= width; y++) {
+        for (let x = -width; x <= width; x++) {
+            if (x === 0 && y === 0) continue;
+            if (Math.abs(x) + Math.abs(y) > width) continue;
+            filters.push(`drop-shadow(${x}px ${y}px 0 ${color})`);
+        }
     }
-    if (parts.length > ci) {
-        result.color = parts.slice(ci).join(' ');
-    }
-    return result;
+    return filters;
 }
 
 function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDivElement {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'custom-marker';
+    const filterWrapper = document.createElement('div');
+    filterWrapper.className = 'custom-marker';
 
     const url = entry['aircraft-marker-url'];
     const overlayColor = entry['aircraft-marker-color-overlay'];
@@ -40,85 +33,51 @@ function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDi
     const outlineColor = entry['aircraft-marker-outline-color'] || '#000000';
     const shadow = entry['aircraft-marker-shadow'] || '';
 
-    const hasEffects = overlayColor || outlineWidth > 0 || shadow.length > 0;
+    // Build outline + shadow CSS filters on the filterWrapper
+    const filters: string[] = [];
+    filters.push(...buildOutlineFilter(outlineWidth, outlineColor));
+    if (shadow) {
+        filters.push(`drop-shadow(${shadow})`);
+    }
+    if (filters.length > 0) {
+        filterWrapper.style.filter = filters.join(' ');
+    }
 
-    if (hasEffects) {
+    // Inner element: handles rotation/scale separately from filter
+    const transformEl = document.createElement('div');
+    transformEl.className = 'custom-marker-transform';
+    filterWrapper.appendChild(transformEl);
+
+    // Render content: canvas for color overlay, plain img otherwise
+    if (overlayColor) {
         const canvas = document.createElement('canvas');
-        wrapper.appendChild(canvas);
+        transformEl.appendChild(canvas);
         const img = new Image();
         img.onload = () => {
-            const iw = img.width;
-            const ih = img.height;
-            const scale = iw / DRAW_SIZE;
-
-            const csOutline = Math.ceil(outlineWidth * scale);
-            const sp = parseShadow(shadow);
-            const csOffX = sp.offsetX * scale;
-            const csOffY = sp.offsetY * scale;
-            const csBlur = sp.blur * scale;
-
-            const pad = Math.ceil(Math.max(csOutline, Math.abs(csOffX) + csBlur, Math.abs(csOffY) + csBlur));
-            const cw = iw + 2 * pad;
-            const ch = ih + 2 * pad;
-            canvas.width = cw;
-            canvas.height = ch;
+            canvas.width = img.width;
+            canvas.height = img.height;
             const ctx = canvas.getContext('2d')!;
-
-            const drawScaledFill = (
-                fill: string | CanvasGradient | CanvasPattern,
-                dx: number, dy: number, dw: number, dh: number,
-                blur?: number,
-            ) => {
-                ctx.save();
-                if (blur && blur > 0) ctx.filter = `blur(${blur}px)`;
-                ctx.drawImage(img, dx, dy, dw, dh);
-                ctx.filter = 'none';
-                ctx.globalCompositeOperation = 'source-atop';
-                ctx.fillStyle = fill;
-                ctx.fillRect(dx, dy, dw, dh);
-                ctx.restore();
-            };
-
-            const bx = pad;
-            const by = pad;
-
-            const sw = iw + 2 * csOutline;
-            const sh = ih + 2 * csOutline;
-
-            // 1. Drop shadow
-            if (shadow && (csOffX !== 0 || csOffY !== 0 || csBlur > 0)) {
-                drawScaledFill(sp.color, bx - csOutline + csOffX, by - csOutline + csOffY, sw, sh, csBlur || undefined);
-            }
-
-            // 2. Outline (scaled up image filled with outline color)
-            if (csOutline > 0) {
-                drawScaledFill(outlineColor, bx - csOutline, by - csOutline, sw, sh);
-            }
-
-            // 3. Main image with color overlay
-            ctx.drawImage(img, bx, by, iw, ih);
-            if (overlayColor) {
-                ctx.globalCompositeOperation = 'source-atop';
-                ctx.fillStyle = overlayColor;
-                ctx.fillRect(bx, by, iw, ih);
-            }
+            ctx.drawImage(img, 0, 0);
+            ctx.globalCompositeOperation = 'source-atop';
+            ctx.fillStyle = overlayColor;
+            ctx.fillRect(0, 0, img.width, img.height);
         };
         img.src = url;
     } else {
         const img = document.createElement('img');
         img.src = url;
         img.draggable = false;
-        wrapper.appendChild(img);
+        transformEl.appendChild(img);
     }
 
     const rotation = entry['aircraft-marker-rotation'] ?? 0;
     const scaleVal = entry['aircraft-marker-scale'] ?? 1;
     const [centerX, centerY] = parseMarkerCenter(entry['aircraft-marker-center']);
 
-    wrapper.style.transform = `rotate(${heading + rotation}deg) scale(${scaleVal})`;
-    wrapper.style.transformOrigin = `calc(50% + ${centerX}px) calc(50% + ${centerY}px)`;
+    transformEl.style.transform = `rotate(${heading + rotation}deg) scale(${scaleVal})`;
+    transformEl.style.transformOrigin = `calc(50% + ${centerX}px) calc(50% + ${centerY}px)`;
 
-    return wrapper;
+    return filterWrapper;
 }
 
 export function renderRadar(cardState: CardState): void {
