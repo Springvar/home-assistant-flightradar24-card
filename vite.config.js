@@ -9,7 +9,7 @@ export default defineConfig({
     build: {
         lib: {
             entry: 'flightradar24-card.ts',
-            formats: ['iife'],
+            formats: ['es'],
             name: 'Flightradar24Card',
             fileName: 'home-assistant-flightradar24-card'
         },

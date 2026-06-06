@@ -604,3 +604,13 @@ class Flightradar24Card extends HTMLElement implements MainCard {
 }
 
 customElements.define('flightradar24-card', Flightradar24Card);
+
+if (typeof window !== 'undefined') {
+    (window as any).customCards = (window as any).customCards || [];
+    (window as any).customCards.push({
+        type: 'flightradar24-card',
+        name: 'Flightradar24 Card',
+        preview: false,
+        description: 'A custom card for displaying Flightradar24 flight tracking data.',
+    });
+}
