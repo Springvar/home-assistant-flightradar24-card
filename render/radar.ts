@@ -166,8 +166,6 @@ function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDi
 
     if (hasEffects) {
         const canvas = document.createElement('canvas');
-        canvas.width = 16;
-        canvas.height = 16;
         transformEl.appendChild(canvas);
 
         getOrCreateRenderPromise(entry)

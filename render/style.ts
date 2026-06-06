@@ -212,14 +212,12 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
       top: 50%;
       left: 50%;
       translate: -50% -50%;
-      pointer-events: none;
     }
     .custom-marker img,
     .custom-marker canvas {
       display: block;
       width: 12px;
       height: auto;
-      pointer-events: none;
     }
 
     .callsign-label {
