@@ -237,9 +237,6 @@ radar:
             aircraft-marker-center: 0,0
             aircraft-marker-scale: 1
             aircraft-marker-color-overlay: '#ff0000'
-            aircraft-marker-outline-width: 1
-            aircraft-marker-outline-color: '#000000'
-            aircraft-marker-shadow: 1px 1px 2px rgba(0,0,0,0.5)
 ```
 
 | Name                          | Description                                          | Default Value                    | Constraints                                    |
@@ -249,9 +246,6 @@ radar:
 | `aircraft-marker-center`      | Rotation center offset as `x,y` in px                | `0,0`                            | Two comma-separated numbers                    |
 | `aircraft-marker-scale`       | Scale factor for the marker                          | `1`                              | Positive number                                |
 | `aircraft-marker-color-overlay`| Tint the non-transparent areas of the image         | None (no overlay)                | Must be a valid CSS color                      |
-| `aircraft-marker-outline-width`| Outline thickness around the image                  | `0` (none)                       | Number (px, 0 = disabled)                      |
-| `aircraft-marker-outline-color`| Color of the outline                                | `#000000`                        | Must be a valid CSS color                      |
-| `aircraft-marker-shadow`      | Drop shadow in CSS `drop-shadow()` format            | None (no shadow)                 | CSS drop-shadow value (e.g. `1px 1px 2px rgba(0,0,0,0.5)`) |
 
 The `aircraft-marker` configuration supports multiple named entries keyed by aircraft identifier (e.g., registration, model, or airline). The `default` entry applies when no specific match is found.
 
