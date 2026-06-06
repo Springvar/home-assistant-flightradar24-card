@@ -58,7 +58,7 @@ export function renderStatic(cardState: StaticCardState, mainCard: StaticMainCar
             mainCard.observeRadarResize();
             setupZoomHandlers(cardState as Parameters<typeof setupZoomHandlers>[0], radar);
             radar.addEventListener('click', (e: MouseEvent) => {
-                if ((e.target as HTMLElement).closest('.plane')) return;
+                if ((e as MouseEvent).composedPath().some((el: EventTarget) => (el as HTMLElement).classList?.contains?.('plane'))) return;
                 handleRadarTap(cardState as CardState, e.clientX, e.clientY);
             });
         });

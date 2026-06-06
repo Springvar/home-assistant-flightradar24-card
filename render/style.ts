@@ -179,6 +179,10 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
       width: 8px;
       height: 16px;
     }
+    .plane.plane-custom {
+      width: 12px;
+      height: 14px;
+    }
     .plane .arrow {
       position: absolute;
       width: 0;

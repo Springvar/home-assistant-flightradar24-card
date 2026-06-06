@@ -232,6 +232,7 @@ export function renderRadar(cardState: CardState): void {
                 plane.style.left = x + 'px';
 
                 if (defaultMarkerEntry?.['aircraft-marker-url']) {
+                    plane.classList.add('plane-custom');
                     const marker = createCustomMarker(defaultMarkerEntry, flight.heading ?? 0);
                     plane.appendChild(marker);
                 } else {
