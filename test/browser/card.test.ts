@@ -113,4 +113,40 @@ describe('Flightradar24Card browser tests', () => {
             window.removeEventListener('unhandledrejection', handler);
         }
     });
+
+    it('should suggest the card with a custom: type for the flights sensor', async () => {
+        await import('../../flightradar24-card');
+
+        const entry = (window as unknown as { customCards: Array<{
+            type: string;
+            getEntitySuggestion: (hass: Record<string, unknown>, entityId: string) => unknown;
+        }> }).customCards.find((card) => card.type === 'flightradar24-radar-card');
+
+        expect(entry).toBeDefined();
+
+        const suggestion = entry!.getEntitySuggestion(
+            { states: { 'sensor.flightradar24_flights': { attributes: { flights: [] } } } } as Record<string, unknown>,
+            'sensor.flightradar24_flights'
+        ) as { config: { type: string; flights_entity: string } };
+
+        expect(suggestion.config.type).toBe('custom:flightradar24-radar-card');
+        expect(suggestion.config.flights_entity).toBe('sensor.flightradar24_flights');
+    });
+
+    it('should not suggest the card for entities without a flights attribute', async () => {
+        await import('../../flightradar24-card');
+
+        const entry = (window as unknown as { customCards: Array<{
+            getEntitySuggestion: (hass: Record<string, unknown>, entityId: string) => unknown;
+        }> }).customCards.find((card) => card.type === 'flightradar24-radar-card');
+
+        expect(entry).toBeDefined();
+
+        const suggestion = entry!.getEntitySuggestion(
+            { states: { 'sensor.outside_temperature': { attributes: { unit_of_measurement: '°C' } } } } as Record<string, unknown>,
+            'sensor.outside_temperature'
+        );
+
+        expect(suggestion).toBeNull();
+    });
 });

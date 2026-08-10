@@ -630,7 +630,7 @@ if (typeof window !== 'undefined') {
             }
             return {
                 config: {
-                    type: 'flightradar24-radar-card',
+                    type: 'custom:flightradar24-radar-card',
                     flights_entity: entityId
                 }
             };

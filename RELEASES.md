@@ -1,5 +1,11 @@
 # Release Notes
 
+## v0.3.0-pre.2
+
+### Fixed
+
+- The "By entity" card suggestion now returns the config with the full `custom:flightradar24-radar-card` type. Previously the prefix was missing, so picking the suggestion from the entity tab showed "Unknown type encountered".
+
 ## v0.3.0-pre.1
 
 ### Renamed card type to avoid conflict with the Flightradar24 integration
