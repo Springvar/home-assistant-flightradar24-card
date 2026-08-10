@@ -1,6 +1,6 @@
 {
     "name": "flightradar24-card",
-    "version": "1.0.0",
+    "version": "0.3.0-pre.1",
     "type": "module",
     "description": "Home Assistant custom card for Flightradar24 integration",
     "devDependencies": {

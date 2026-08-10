@@ -3413,4 +3413,15 @@ export class Flightradar24CardEditor extends HTMLElement {
     }
 }
 
-customElements.define('flightradar24-card-editor', Flightradar24CardEditor);
+customElements.define('flightradar24-radar-card-editor', Flightradar24CardEditor);
+
+// Backwards-compatible alias for the original editor element. The Flightradar24
+// integration ships its own card under 'flightradar24-card-editor', so only
+// register this alias when that name is not already taken by another card.
+if (!customElements.get('flightradar24-card-editor')) {
+    try {
+        customElements.define('flightradar24-card-editor', class extends Flightradar24CardEditor {});
+    } catch (e) {
+        console.error('[FR24Card] Could not register flightradar24-card-editor alias:', e);
+    }
+}

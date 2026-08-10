@@ -145,7 +145,7 @@
 
         <div class="card-wrapper">
             <h3>Card Preview</h3>
-            <flightradar24-card id="fr24card"></flightradar24-card>
+            <flightradar24-radar-card id="fr24card"></flightradar24-radar-card>
         </div>
 
         <div class="log-container" id="log-container">
@@ -306,7 +306,7 @@
         };
 
         const cardConfig = {
-            type: 'custom:flightradar24-card',
+            type: 'custom:flightradar24-radar-card',
             flights_entity: 'sensor.flightradar24_current_in_area',
             location_tracker: 'device_tracker.phone',
             radar: {
@@ -318,7 +318,7 @@
 
         // Wait for custom element to be defined before initializing
         let card;
-        customElements.whenDefined('flightradar24-card').then(() => {
+        customElements.whenDefined('flightradar24-radar-card').then(() => {
             card = document.getElementById('fr24card');
             card.setConfig(cardConfig);
             card.hass = dummyHass;

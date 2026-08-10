@@ -16,7 +16,7 @@ describe('Flightradar24Card browser tests', () => {
     afterEach(() => {
         console.error = originalConsoleError;
         // Clean up any created elements
-        const card = document.querySelector('flightradar24-card');
+        const card = document.querySelector('flightradar24-radar-card');
         if (card) {
             card.remove();
         }
@@ -26,6 +26,13 @@ describe('Flightradar24Card browser tests', () => {
         // Dynamically import the card module to register the custom element
         await import('../../flightradar24-card');
 
+        expect(customElements.get('flightradar24-radar-card')).toBeDefined();
+        expect(consoleErrors).toHaveLength(0);
+    });
+
+    it('should register flightradar24-card alias when name is free', async () => {
+        await import('../../flightradar24-card');
+
         expect(customElements.get('flightradar24-card')).toBeDefined();
         expect(consoleErrors).toHaveLength(0);
     });
@@ -33,7 +40,7 @@ describe('Flightradar24Card browser tests', () => {
     it('should create card element without throwing', async () => {
         await import('../../flightradar24-card');
 
-        const card = document.createElement('flightradar24-card');
+        const card = document.createElement('flightradar24-radar-card');
         document.body.appendChild(card);
 
         expect(card).toBeInstanceOf(HTMLElement);
@@ -43,7 +50,7 @@ describe('Flightradar24Card browser tests', () => {
     it('should handle setConfig without errors', async () => {
         await import('../../flightradar24-card');
 
-        const card = document.createElement('flightradar24-card') as HTMLElement & {
+        const card = document.createElement('flightradar24-radar-card') as HTMLElement & {
             setConfig: (config: Record<string, unknown>) => void;
         };
         document.body.appendChild(card);
@@ -63,7 +70,7 @@ describe('Flightradar24Card browser tests', () => {
     it('should render static content in shadow DOM', async () => {
         await import('../../flightradar24-card');
 
-        const card = document.createElement('flightradar24-card') as HTMLElement & {
+        const card = document.createElement('flightradar24-radar-card') as HTMLElement & {
             setConfig: (config: Record<string, unknown>) => void;
         };
         document.body.appendChild(card);
@@ -88,7 +95,7 @@ describe('Flightradar24Card browser tests', () => {
         try {
             await import('../../flightradar24-card');
 
-            const card = document.createElement('flightradar24-card') as HTMLElement & {
+            const card = document.createElement('flightradar24-radar-card') as HTMLElement & {
                 setConfig: (config: Record<string, unknown>) => void;
             };
             document.body.appendChild(card);

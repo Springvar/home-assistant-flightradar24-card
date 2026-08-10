@@ -92,11 +92,11 @@
                 /* Ensure the card can't capture events outside this container */
                 contain: layout style;
             }
-            flightradar24-card {
+            flightradar24-radar-card {
                 display: block;
                 position: relative;
             }
-            flightradar24-card-editor {
+            flightradar24-radar-card-editor {
                 display: block;
                 position: relative;
             }
@@ -160,7 +160,7 @@
 
                         <div class="card-preview">
                             <div class="card-wrapper">
-                                <flightradar24-card id="fr24card"></flightradar24-card>
+                                <flightradar24-radar-card id="fr24card"></flightradar24-radar-card>
                             </div>
                         </div>
 
@@ -349,8 +349,8 @@
 
                     // Wait for both custom elements to be defined
                     Promise.all([
-                        window.customElements.whenDefined('flightradar24-card-editor'),
-                        window.customElements.whenDefined('flightradar24-card')
+                        window.customElements.whenDefined('flightradar24-radar-card-editor'),
+                        window.customElements.whenDefined('flightradar24-radar-card')
                     ]).then(() => {
                         // Initialize editor
                         const editor = document.getElementById('fr24editor');
@@ -380,8 +380,8 @@
 
                     // Use default config
                     Promise.all([
-                        window.customElements.whenDefined('flightradar24-card-editor'),
-                        window.customElements.whenDefined('flightradar24-card')
+                        window.customElements.whenDefined('flightradar24-radar-card-editor'),
+                        window.customElements.whenDefined('flightradar24-radar-card')
                     ]).then(() => {
                         const editor = document.getElementById('fr24editor');
                         editor.hass = dummyHass;
