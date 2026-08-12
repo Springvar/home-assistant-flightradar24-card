@@ -1,5 +1,29 @@
 # Release Notes
 
+## v0.3.0
+
+### Breaking change: card type renamed to `custom:flightradar24-radar-card`
+
+The Flightradar24 integration now ships its own built-in card registered as `custom:flightradar24-card` — the same type this card previously used. Since a custom element type can only be registered once, the two cards can no longer coexist under that name. This card is now registered as **`custom:flightradar24-radar-card`**.
+
+### Updating your configuration
+
+**If you have the Flightradar24 integration installed**, the integration's built-in card takes over the `custom:flightradar24-card` type. To keep using this card, update every card on your dashboards:
+
+1. In the dashboard editor, edit the card.
+2. Change the card **Type** to `custom:flightradar24-radar-card`.
+3. Or, in YAML, replace `type: custom:flightradar24-card` with `type: custom:flightradar24-radar-card`.
+
+That is the only change required — all other configuration options are unchanged.
+
+**If you do not have the Flightradar24 integration installed**, existing `custom:flightradar24-card` configs keep working without changes (the old name is registered as an alias when it is not taken by another card). Still, update to the new type to be future-proof.
+
+### What's new
+
+- Card is registered as `custom:flightradar24-radar-card`, with a guarded `custom:flightradar24-card` alias for backward compatibility.
+- The card now appears in the Add card dialog's **"By entity"** suggestions for your Flightradar24 flights sensor.
+- Added a live preview in the **Add card** dialog (listed as "Flightradar24 Radar Card").
+
 ## v0.3.0-pre.2
 
 ### Fixed
