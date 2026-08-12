@@ -8,15 +8,18 @@ The Flightradar24 integration now ships its own built-in card registered as `cus
 
 ### Updating your configuration
 
-**If you have the Flightradar24 integration installed**, the integration's built-in card takes over the `custom:flightradar24-card` type. To keep using this card, update every card on your dashboards:
+The Flightradar24 integration's built-in card now owns the `custom:flightradar24-card` type, so update every card on your dashboards to keep using this card:
 
-1. In the dashboard editor, edit the card.
-2. Change the card **Type** to `custom:flightradar24-radar-card`.
-3. Or, in YAML, replace `type: custom:flightradar24-card` with `type: custom:flightradar24-radar-card`.
+The card **type** cannot be changed in the visual card editor — it has to be updated in the dashboard's raw YAML configuration:
+
+1. Open the dashboard, click the edit (pencil) icon, then the three-dot menu (⋮) and select **Raw config editor** (or edit `ui-lovelace.yaml` directly if your dashboards use YAML mode).
+2. Replace `type: custom:flightradar24-card` with `type: custom:flightradar24-radar-card`.
+
+```yaml
+type: custom:flightradar24-radar-card
+```
 
 That is the only change required — all other configuration options are unchanged.
-
-**If you do not have the Flightradar24 integration installed**, existing `custom:flightradar24-card` configs keep working without changes (the old name is registered as an alias when it is not taken by another card). Still, update to the new type to be future-proof.
 
 ### What's new
 
