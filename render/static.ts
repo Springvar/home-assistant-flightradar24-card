@@ -20,6 +20,17 @@ export function renderStatic(cardState: StaticCardState, mainCard: StaticMainCar
     const card = document.createElement('ha-card');
     card.id = 'flights-card';
 
+    // Layout wrapper that holds the radar/map and the flights list. The class
+    // reflects the configured list position so CSS can lay them out side by side
+    // on wide cards, falling back to a stacked "below" layout on narrow cards.
+    const layoutRoot = document.createElement('div');
+    layoutRoot.id = 'layout-root';
+    const listPosition = cardState.list?.position || 'below';
+    layoutRoot.classList.add(`layout-${listPosition}`);
+    if (cardState.radar?.view === 'map') {
+        layoutRoot.classList.add('view-map');
+    }
+
     if (!cardState.radar?.hide) {
         const radarContainer = document.createElement('div');
         radarContainer.id = 'radar-container';
@@ -51,7 +62,7 @@ export function renderStatic(cardState: StaticCardState, mainCard: StaticMainCar
 
         radarContainer.appendChild(radar);
         radarContainer.appendChild(toggleContainer);
-        card.appendChild(radarContainer);
+        layoutRoot.appendChild(radarContainer);
 
         requestAnimationFrame(() => {
             renderRadarScreen(cardState);
@@ -69,6 +80,7 @@ export function renderStatic(cardState: StaticCardState, mainCard: StaticMainCar
         cardState.dom.radar = radar;
         cardState.dom.radarScreen = radarScreenDiv;
         cardState.dom.radarInfoDisplay = radarInfoDisplay;
+        cardState.dom.radarContainer = radarContainer;
         cardState.dom.shadowRoot = mainCard.shadowRoot;
         cardState.mainCard = mainCard;
     }
@@ -78,7 +90,9 @@ export function renderStatic(cardState: StaticCardState, mainCard: StaticMainCar
     if (cardState.list && cardState.list.hide === true) {
         flightsContainer.style.display = 'none';
     }
-    card.appendChild(flightsContainer);
+    layoutRoot.appendChild(flightsContainer);
+
+    card.appendChild(layoutRoot);
 
     mainCard.shadowRoot.appendChild(card);
 

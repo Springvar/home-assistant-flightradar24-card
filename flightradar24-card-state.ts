@@ -18,6 +18,7 @@ interface Defaults {
     units: UnitsConfig;
     radar: {
         range: number;
+        view: 'radar' | 'map';
         background_map: BackgroundMapType;
         background_map_opacity: number;
         background_map_api_key: string;
@@ -31,10 +32,11 @@ const defaults: Defaults = {
     flights_entity: 'sensor.flightradar24_current_in_area',
     projection_interval: 5,
     no_flights_message: 'No flights are currently visible. Please check back later.',
-    list: { hide: false, showListStatus: true },
+    list: { hide: false, showListStatus: true, position: 'below' },
     units: unitsConfig,
     radar: {
         range: unitsConfig.distance === 'km' ? 35 : 25,
+        view: 'radar',
         background_map: 'none',
         background_map_opacity: 0,
         background_map_api_key: ''
@@ -59,6 +61,7 @@ export class Flightradar24CardState implements CardState {
     selectedFlights: string[];
     renderDynamicOnRangeChange: boolean;
     _leafletMap: LeafletMap | null;
+    _currentMapConfig?: { type: string; apiKey?: string };
     sortFn: (a: Flight, b: Flight) => number;
     renderDynamicFn?: () => void;
     dom?: DomRefs;
@@ -95,6 +98,7 @@ export class Flightradar24CardState implements CardState {
         this.units = { ...defaults.units, ...config.units };
         this.radar = {
             range: this.units.distance === 'km' ? defaults.radar.range : 25,
+            view: config.radar?.view ?? defaults.radar.view,
             background_map: config.radar?.background_map ?? defaults.radar.background_map,
             background_map_opacity: config.radar?.background_map_opacity ?? defaults.radar.background_map_opacity,
             background_map_api_key: config.radar?.background_map_api_key ?? defaults.radar.background_map_api_key,

@@ -66,12 +66,20 @@ export interface AircraftMarkerEntry {
     'aircraft-marker-shadow'?: string;
 }
 
+export type RadarView = 'radar' | 'map';
+
 export interface RadarConfig {
     range?: number;
     initialRange?: number;
     min_range?: number;
     max_range?: number;
     ring_distance?: number;
+    // Display mode: 'radar' = circular radar screen (default), 'map' = square full-bleed map
+    view?: RadarView;
+    // Whether to draw the radar grid rings / bearing lines. Defaults to on for
+    // the circular 'radar' view and off for the square 'map' view. Set explicitly
+    // to override.
+    rings?: boolean;
     filter?: boolean | Condition[];
     // Old color properties (kept for backwards compatibility)
     'primary-color'?: string;
@@ -96,9 +104,14 @@ export interface RadarConfig {
     background_map_api_key?: string;
 }
 
+export type ListPosition = 'below' | 'left' | 'right';
+
 export interface ListConfig {
     hide?: boolean;
     showListStatus?: boolean;
+    // Position of the flight list relative to the radar/map.
+    // Falls back to 'below' when the card is too narrow (see README).
+    position?: ListPosition;
 }
 
 export interface UnitsConfig {

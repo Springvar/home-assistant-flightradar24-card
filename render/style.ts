@@ -32,9 +32,42 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
       padding: 16px;
       transform: scale(${scale});
       transform-origin: top center;
+      container-type: inline-size;
+    }
+    #layout-root {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+    /*
+      Responsive list position: when the list is configured to sit on the
+      left or right of the radar/map, only keep it side by side when the card
+      is wide enough. Narrower cards fall back to the stacked "below" layout.
+    */
+    @container (min-width: 560px) {
+      #layout-root.layout-left,
+      #layout-root.layout-right {
+        flex-direction: row;
+        align-items: stretch;
+        gap: 16px;
+      }
+      #layout-root.layout-left #radar-container,
+      #layout-root.layout-right #radar-container {
+        flex: 1 1 60%;
+        min-width: 0;
+      }
+      #layout-root.layout-left #flights,
+      #layout-root.layout-right #flights {
+        flex: 1 1 40%;
+        min-width: 0;
+      }
+      #layout-root.layout-left #flights {
+        order: -1;
+      }
     }
     #flights {
       padding: 0px;
+      min-width: 0;
     }
     #flights .flight {
       margin-top: 16px;
@@ -79,6 +112,7 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
       display: flex;
       justify-content: space-between;
       position: relative;
+      min-width: 0;
     }
     #radar-overlay {
       position: absolute;
@@ -128,6 +162,13 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
       margin-bottom: 5%;
       border-radius: 50%;
       overflow: hidden;
+    }
+    /* Square map view: full-bleed square map instead of the circular radar screen */
+    #layout-root.view-map #radar {
+      width: 100%;
+      margin: 0;
+      padding-bottom: 100%;
+      border-radius: 0;
     }
     #radar-screen {
       position: absolute;

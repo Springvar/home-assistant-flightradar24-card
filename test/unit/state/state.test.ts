@@ -78,7 +78,21 @@ describe('Flightradar24CardState', () => {
             const state = new Flightradar24CardState();
             state.setConfig({ list: { hide: true } });
 
-            expect(state.list).toEqual({ hide: true, showListStatus: true });
+            expect(state.list).toEqual({ hide: true, showListStatus: true, position: 'below' });
+        });
+
+        it('sets default list position to below', () => {
+            const state = new Flightradar24CardState();
+            state.setConfig({});
+
+            expect(state.list.position).toBe('below');
+        });
+
+        it('uses custom list position', () => {
+            const state = new Flightradar24CardState();
+            state.setConfig({ list: { position: 'right' } });
+
+            expect(state.list.position).toBe('right');
         });
 
         it('merges units config with defaults', () => {
@@ -113,6 +127,20 @@ describe('Flightradar24CardState', () => {
 
             expect(state.radar.range).toBe(50);
             expect(state.radar.background_map).toBe('dark');
+        });
+
+        it('sets default radar view to radar', () => {
+            const state = new Flightradar24CardState();
+            state.setConfig({});
+
+            expect(state.radar.view).toBe('radar');
+        });
+
+        it('uses custom radar view from config', () => {
+            const state = new Flightradar24CardState();
+            state.setConfig({ radar: { view: 'map' } });
+
+            expect(state.radar.view).toBe('map');
         });
 
         it('sets initialRange from range', () => {

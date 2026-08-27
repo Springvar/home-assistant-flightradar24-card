@@ -1,4 +1,4 @@
-import type { CardConfig, Condition, FieldCondition, GroupCondition, NotCondition, SortCriterion, ToggleConfig, AnnotationConfig, RadarFeature, LocationFeature, RunwayFeature, OutlineFeature, UnitsConfig, RadarConfig, ListConfig } from './types/config';
+import type { CardConfig, Condition, FieldCondition, GroupCondition, NotCondition, SortCriterion, ToggleConfig, AnnotationConfig, RadarFeature, LocationFeature, RunwayFeature, OutlineFeature, UnitsConfig, RadarConfig, ListConfig, AircraftMarkerEntry } from './types/config';
 import { searchRunways } from './utils/runwayLookup';
 import { templateConfig } from './config/templateConfig';
 
@@ -1121,6 +1121,23 @@ export class Flightradar24CardEditor extends HTMLElement {
                         </label>
                     </div>
 
+                    <div class="form-row">
+                        <label>View:</label>
+                        <select id="radar-view">
+                            <option value="radar" ${(radar.view || 'radar') === 'radar' ? 'selected' : ''}>Radar (circular screen)</option>
+                            <option value="map" ${radar.view === 'map' ? 'selected' : ''}>Map (square, full-bleed)</option>
+                        </select>
+                        <span class="help-text">"Map" displays a square map that fills the available width (great for fullscreen and wide layouts) instead of the circular radar screen. The radar size setting is ignored in map view.</span>
+                    </div>
+
+                    <div class="form-row">
+                        <label>
+                            <input type="checkbox" id="radar-rings" ${(radar.rings ?? radar.view !== 'map') ? 'checked' : ''} />
+                            Show Radar Rings / Lines
+                        </label>
+                        <span class="help-text">Draw the radar grid rings and bearing lines on top of the display. On by default for the circular "Radar" view and off by default for the "Map" view; tick or untick to override.</span>
+                    </div>
+
                     <details data-section-id="radar-range">
                         <summary><h4>Range</h4></summary>
                         <div class="section-content">
@@ -1209,7 +1226,7 @@ export class Flightradar24CardEditor extends HTMLElement {
                                 <legend>Custom Image Marker</legend>
                                 <p class="help-text">Use a PNG image as aircraft marker instead of the default triangle. Image should have a transparent background.</p>
                                 ${(() => {
-                                    const marker = radar['aircraft-marker']?.default || {};
+                                    const marker: AircraftMarkerEntry = radar['aircraft-marker']?.default || ({} as AircraftMarkerEntry);
                                     return `
                                     <div class="form-row">
                                         <label>Image URL:</label>
@@ -1313,6 +1330,15 @@ export class Flightradar24CardEditor extends HTMLElement {
                             <input type="checkbox" id="list-show-status" ${list.showListStatus !== false ? 'checked' : ''} />
                             Show List Status
                         </label>
+                    </div>
+                    <div class="form-row">
+                        <label>Position:</label>
+                        <select id="list-position">
+                            <option value="below" ${(list.position || 'below') === 'below' ? 'selected' : ''}>Below (default)</option>
+                            <option value="left" ${list.position === 'left' ? 'selected' : ''}>Left</option>
+                            <option value="right" ${list.position === 'right' ? 'selected' : ''}>Right</option>
+                        </select>
+                        <span class="help-text">Place the flight list to the side of the radar/map on wide cards. If the card is too narrow to fit the flight list side by side, it automatically falls back to the "below" layout.</span>
                     </div>
                     <div class="form-row">
                         <label>No Flights Message:</label>
@@ -2014,6 +2040,27 @@ export class Flightradar24CardEditor extends HTMLElement {
             }
         });
 
+        // Radar view mode
+        const radarView = root.getElementById('radar-view') as HTMLSelectElement;
+        if (radarView) {
+            radarView.addEventListener('change', (e) => {
+                const radar = this._config.radar || {};
+                this._config = { ...this._config, radar: { ...radar, view: (e.target as HTMLSelectElement).value as 'radar' | 'map' } };
+                this._emitConfigChanged();
+                this._render();
+            });
+        }
+
+        // Radar rings / lines
+        const radarRings = root.getElementById('radar-rings') as HTMLInputElement;
+        if (radarRings) {
+            radarRings.addEventListener('change', (e) => {
+                const radar = this._config.radar || {};
+                this._config = { ...this._config, radar: { ...radar, rings: (e.target as HTMLInputElement).checked } };
+                this._emitConfigChanged();
+            });
+        }
+
         // Radar colors (new properties)
         ['background-color', 'aircraft-color', 'aircraft-selected-color', 'radar-grid-color', 'local-features-color'].forEach(prop => {
             // Properties already prefixed with 'radar-' don't need the extra prefix
@@ -2170,6 +2217,19 @@ export class Flightradar24CardEditor extends HTMLElement {
                 const showListStatus = checked ? undefined : false;
                 this._config = { ...this._config, list: { ...list, showListStatus } };
                 this._emitConfigChanged();
+            });
+        }
+
+        const listPosition = root.getElementById('list-position') as HTMLSelectElement;
+        if (listPosition) {
+            listPosition.addEventListener('change', (e) => {
+                const list = this._config.list || {};
+                const value = (e.target as HTMLSelectElement).value as 'below' | 'left' | 'right';
+                // 'below' is the default, so only persist it when it is not the default
+                const position = value === 'below' ? undefined : value;
+                this._config = { ...this._config, list: { ...list, position } };
+                this._emitConfigChanged();
+                this._render();
             });
         }
 

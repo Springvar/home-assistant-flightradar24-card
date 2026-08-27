@@ -28,7 +28,7 @@ interface LeafletMapOptions {
     doubleClickZoom: boolean;
     keyboard: boolean;
     touchZoom: boolean;
-    zoomSnap: number;
+    zoomSnap?: number;
     pointerEvents: boolean;
 }
 
@@ -51,6 +51,8 @@ const VALID_MAPS = new Set<string>(['bw', 'light', 'color', 'dark', 'voyager', '
 export function shouldRenderRadarBackgroundMap(cardState: CardState): boolean {
     const radar = cardState?.radar;
     if (!radar || radar.hide === true) return false;
+    // Square map view always renders a map background
+    if (radar.view === 'map') return true;
     if (!radar.background_map || !VALID_MAPS.has(radar.background_map)) return false;
     return true;
 }
@@ -124,7 +126,13 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
         return;
     }
 
-    const type = config?.radar?.background_map as BackgroundMapType | undefined;
+    const configuredType = config?.radar?.background_map as BackgroundMapType | undefined;
+    // In map view, always show a map. Fall back to the auto dark/light "system"
+    // tiles when the user has not chosen an explicit background map.
+    let type = configuredType;
+    if (cardState.radar?.view === 'map' && (!configuredType || configuredType === 'none' || !VALID_MAPS.has(configuredType))) {
+        type = 'system';
+    }
 
     const TILE_LAYERS: Record<string, TileLayerConfig | null> = {
         bw: [
@@ -188,7 +196,10 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
         system: null
     };
 
-    const opacity = typeof config?.radar?.background_map_opacity === 'number' ? Math.max(0, Math.min(1, config.radar.background_map_opacity)) : 1;
+    const mapView = cardState.radar?.view === 'map';
+    const opacity = mapView
+        ? 1
+        : (typeof config?.radar?.background_map_opacity === 'number' ? Math.max(0, Math.min(1, config.radar.background_map_opacity)) : 1);
 
     let mapBg = radarScreen.querySelector('#radar-map-bg') as HTMLDivElement | null;
     if (!mapBg) {

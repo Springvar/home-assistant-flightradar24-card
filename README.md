@@ -229,8 +229,12 @@ radar:
 | `hide`                   | Option to hide the radar                                  | `false`                         | Must be `true` or `false`                             |
 | `hide_range`           | Option to hide the radar range                       | `false`                           | Must be `true` or `false`                             |
 | `radar_size`             | Size of the radar as percentage of card width             | `70`                            | Number between 30 and 90                              |
+| `view`                   | Display mode of the radar area                            | `radar`                         | `radar` (circular screen) or `map` (square, full-bleed) |
+| `rings`                  | Draw the radar grid rings / bearing lines                 | `true` in radar view, `false` in map view | Must be `true` or `false`  |
 
 **Note:** For backwards compatibility, the old color property names (`primary-color`, `accent-color`, `feature-color`) are still supported but deprecated. They will be automatically migrated to the new names when using the visual editor.
+
+**Square map mode (`view: map`):** Instead of the circular radar screen, the radar area is rendered as a square map that fills the full width of the card (each side of the square equals the card's inner width). This works great in fullscreen and multi-column layouts where you want a large, unobstructed map. The `radar_size` setting is ignored in map mode. When no `background_map` is selected in map mode, the card automatically falls back to the `system` map type so a map is always shown. Radar grid rings and bearing lines are hidden in map mode by default; set `rings: true` to force them back on.
 
 ##### Radar Filter
 
@@ -404,14 +408,18 @@ Configure flight list settings with the `list` option.
 list:
     hide: true
     showListStatus: true
+    position: below
 ```
 
-| Name             | Description                                                                       | Default Value | Constraints               |
-| ---------------- | --------------------------------------------------------------------------------- | ------------- | ------------------------- |
-| `hide`           | Option to hide the flight list below the radar card                               | `false`       | Must be `true` or `false` |
-| `showListStatus` | Show a summary/status line above the list showing flights listed and total count. | `false`       | Must be `true` or `false` |
+| Name             | Description                                                                       | Default Value | Constraints                                   |
+| ---------------- | --------------------------------------------------------------------------------- | ------------- | --------------------------------------------- |
+| `hide`           | Option to hide the flight list below the radar card                               | `false`       | Must be `true` or `false`                     |
+| `showListStatus` | Show a summary/status line above the list showing flights listed and total count. | `false`       | Must be `true` or `false`                     |
+| `position`       | Position of the flight list relative to the radar/map                              | `below`       | Must be `below`, `left`, or `right`           |
 
 **Note:** When `list.hide` is enabled, the detailed flight list will not be displayed.
+
+**Responsive fallback:** The `left` and `right` positions place the flight list beside the radar/map on wide cards. If the card is too narrow to fit the radar and flight list side by side comfortably (below ~560px), the layout automatically falls back to the `below` position. This is handled with CSS container queries, so the layout adapts dynamically as the card is resized (e.g. when switching between single-, multi-column, and fullscreen dashboards) without any configuration changes.
 
 #### Annotation Configuration
 
