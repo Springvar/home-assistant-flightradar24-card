@@ -38,6 +38,7 @@ class Flightradar24Card extends HTMLElement implements MainCard {
     _visibilityChangeHandler: (() => void) | null = null;
     cardState: Flightradar24CardState;
     shadowRoot!: ShadowRoot;
+    _layoutOptions: Record<string, unknown> | null = null;
 
     constructor() {
         super();
@@ -88,6 +89,28 @@ class Flightradar24Card extends HTMLElement implements MainCard {
                 max_range: 100
             }
         };
+    }
+
+    /**
+     * Modern (sections/masonry) view layout support.
+     * Home Assistant calls getGridSize() to decide how many grid cells a card
+     * occupies in the sections view. Without it the card is pinned to 1x1 and
+     * can never grow into a wider section.
+     */
+    getGridSize(): number {
+        return 1;
+    }
+
+    getLayoutOptions(): unknown {
+        return this._layoutOptions ?? { columns: 1, rows: 1 };
+    }
+
+    setLayoutOptions(layout: unknown): void {
+        this._layoutOptions = layout as Record<string, unknown>;
+    }
+
+    cardSize(): number {
+        return 2;
     }
 
     set hass(hass: Hass) {
