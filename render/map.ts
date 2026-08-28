@@ -44,11 +44,11 @@ interface TileLayerOptions {
 
 type LatLngBoundsLiteral = [[number, number], [number, number]];
 
-type BackgroundMapType = 'none' | 'system' | 'bw' | 'color' | 'dark' | 'outlines' | 'hydda';
+type BackgroundMapType = 'none' | 'system' | 'bw' | 'color' | 'dark' | 'outlines';
 
 // Keyless maps are always usable. Maps which require an API key are wired so a
 // configured key is appended to the tile URL with the provider's query param.
-const VALID_MAPS = new Set<string>(['bw', 'hydda', 'light', 'color', 'dark', 'voyager', 'satellite', 'topo', 'outlines', 'system']);
+const VALID_MAPS = new Set<string>(['bw', 'light', 'color', 'dark', 'voyager', 'satellite', 'topo', 'outlines', 'system']);
 
 export function shouldRenderRadarBackgroundMap(cardState: CardState): boolean {
     const radar = cardState?.radar;
@@ -143,13 +143,6 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
             {
                 attribution: '&copy; OpenStreetMap contributors',
                 subdomains: ['a', 'b', 'c']
-            }
-        ],
-        hydda: [
-            'https://tile.openstreetmap.de/{z}/{x}/{y}.png',
-            {
-                attribution: '&copy; OpenStreetMap contributors',
-                subdomains: []
             }
         ],
         satellite: [

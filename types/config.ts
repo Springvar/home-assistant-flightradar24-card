@@ -99,7 +99,7 @@ export interface RadarConfig {
     hide_range?: boolean;
     radar_size?: number;
     local_features?: RadarFeature[];
-    background_map?: 'none' | 'system' | 'bw' | 'light' | 'color' | 'dark' | 'voyager' | 'satellite' | 'topo' | 'outlines' | 'hydda';
+    background_map?: 'none' | 'system' | 'bw' | 'light' | 'color' | 'dark' | 'voyager' | 'satellite' | 'topo' | 'outlines';
     background_map_opacity?: number;
     background_map_api_key?: string;
 }
