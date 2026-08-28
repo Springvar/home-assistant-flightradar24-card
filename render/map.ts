@@ -44,9 +44,11 @@ interface TileLayerOptions {
 
 type LatLngBoundsLiteral = [[number, number], [number, number]];
 
-type BackgroundMapType = 'none' | 'system' | 'bw' | 'color' | 'dark' | 'outlines';
+type BackgroundMapType = 'none' | 'system' | 'bw' | 'color' | 'dark' | 'outlines' | 'hydda';
 
-const VALID_MAPS = new Set<string>(['bw', 'light', 'color', 'dark', 'voyager', 'satellite', 'topo', 'outlines', 'system']);
+// Keyless maps are always usable. Maps which require an API key are wired so a
+// configured key is appended to the tile URL with the provider's query param.
+const VALID_MAPS = new Set<string>(['bw', 'hydda', 'light', 'color', 'dark', 'voyager', 'satellite', 'topo', 'outlines', 'system']);
 
 export function shouldRenderRadarBackgroundMap(cardState: CardState): boolean {
     const radar = cardState?.radar;
@@ -135,21 +137,7 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
     }
 
     const TILE_LAYERS: Record<string, TileLayerConfig | null> = {
-        bw: [
-            'https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png',
-            {
-                api_key: '?api_key=',
-                attribution: 'Map tiles by Stamen Design, CC BY 3.0 — Map data © OpenStreetMap',
-                subdomains: []
-            }
-        ],
-        light: [
-            'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-            {
-                attribution: '&copy; CartoDB, &copy; OpenStreetMap contributors',
-                subdomains: ['a', 'b', 'c', 'd']
-            }
-        ],
+        // --- Keyless providers (no API key required) ---
         color: [
             'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             {
@@ -157,17 +145,10 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
                 subdomains: ['a', 'b', 'c']
             }
         ],
-        dark: [
-            'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+        hydda: [
+            'https://{s}.tile.openstreetmap.se/hydda/full/{z}/{x}/{y}.png',
             {
-                attribution: '&copy; CartoDB, &copy; OpenStreetMap contributors',
-                subdomains: ['a', 'b', 'c', 'd']
-            }
-        ],
-        voyager: [
-            'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-            {
-                attribution: '&copy; CartoDB, &copy; OpenStreetMap contributors',
+                attribution: '&copy; OpenStreetMap contributors',
                 subdomains: ['a', 'b', 'c', 'd']
             }
         ],
@@ -183,6 +164,40 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
             {
                 attribution: '&copy; OpenTopoMap, &copy; OpenStreetMap contributors',
                 subdomains: ['a', 'b', 'c']
+            }
+        ],
+        // --- CARTO raster baseline (now require an API key, appended as ?key=) ---
+        light: [
+            'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+            {
+                api_key: '?key=',
+                attribution: '&copy; CartoDB, &copy; OpenStreetMap contributors',
+                subdomains: ['a', 'b', 'c', 'd']
+            }
+        ],
+        dark: [
+            'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+            {
+                api_key: '?key=',
+                attribution: '&copy; CartoDB, &copy; OpenStreetMap contributors',
+                subdomains: ['a', 'b', 'c', 'd']
+            }
+        ],
+        voyager: [
+            'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+            {
+                api_key: '?key=',
+                attribution: '&copy; CartoDB, &copy; OpenStreetMap contributors',
+                subdomains: ['a', 'b', 'c', 'd']
+            }
+        ],
+        // --- Stadia Maps (require an API key, appended as ?api_key=) ---
+        bw: [
+            'https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png',
+            {
+                api_key: '?api_key=',
+                attribution: 'Map tiles by Stamen Design, CC BY 3.0 — Map data © OpenStreetMap',
+                subdomains: []
             }
         ],
         outlines: [

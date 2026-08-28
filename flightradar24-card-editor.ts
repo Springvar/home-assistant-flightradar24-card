@@ -79,8 +79,8 @@ export class Flightradar24CardEditor extends HTMLElement {
     }
 
     private _mapTypeRequiresApiKey(mapType?: string): boolean {
-        // Stadia Maps tiles (bw and outlines) require an API key
-        return mapType === 'bw' || mapType === 'outlines';
+        // CARTO raster (light/dark/voyager) and Stadia Maps tiles (bw/outlines) require an API key
+        return mapType === 'bw' || mapType === 'outlines' || mapType === 'light' || mapType === 'dark' || mapType === 'voyager';
     }
 
     // Validation methods
@@ -1264,22 +1264,27 @@ export class Flightradar24CardEditor extends HTMLElement {
                                 <select id="radar-background-map">
                                     <option value="none" ${(radar.background_map || 'none') === 'none' ? 'selected' : ''}>None</option>
                                     <option value="system" ${radar.background_map === 'system' ? 'selected' : ''}>System (auto dark/light)</option>
-                                    <option value="bw" ${radar.background_map === 'bw' ? 'selected' : ''}>Black & White (requires API key)</option>
-                                    <option value="light" ${radar.background_map === 'light' ? 'selected' : ''}>Light</option>
-                                    <option value="color" ${radar.background_map === 'color' ? 'selected' : ''}>Color</option>
-                                    <option value="dark" ${radar.background_map === 'dark' ? 'selected' : ''}>Dark</option>
-                                    <option value="voyager" ${radar.background_map === 'voyager' ? 'selected' : ''}>Voyager</option>
-                                    <option value="satellite" ${radar.background_map === 'satellite' ? 'selected' : ''}>Satellite</option>
-                                    <option value="topo" ${radar.background_map === 'topo' ? 'selected' : ''}>Topographic</option>
-                                    <option value="outlines" ${radar.background_map === 'outlines' ? 'selected' : ''}>Outlines (requires API key)</option>
+                                    <optgroup label="Keyless">
+                                        <option value="color" ${radar.background_map === 'color' ? 'selected' : ''}>Color (OpenStreetMap)</option>
+                                        <option value="hydda" ${radar.background_map === 'hydda' ? 'selected' : ''}>Hydda (Light)</option>
+                                        <option value="satellite" ${radar.background_map === 'satellite' ? 'selected' : ''}>Satellite</option>
+                                        <option value="topo" ${radar.background_map === 'topo' ? 'selected' : ''}>Topographic</option>
+                                    </optgroup>
+                                    <optgroup label="Requires API key">
+                                        <option value="light" ${radar.background_map === 'light' ? 'selected' : ''}>Light (CARTO)</option>
+                                        <option value="dark" ${radar.background_map === 'dark' ? 'selected' : ''}>Dark (CARTO)</option>
+                                        <option value="voyager" ${radar.background_map === 'voyager' ? 'selected' : ''}>Voyager (CARTO)</option>
+                                        <option value="bw" ${radar.background_map === 'bw' ? 'selected' : ''}>Black &amp; White (Stadia)</option>
+                                        <option value="outlines" ${radar.background_map === 'outlines' ? 'selected' : ''}>Outlines (Stadia)</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             ${this._mapTypeRequiresApiKey(radar.background_map) ? `
                                 <div class="form-row">
-                                    <label>Stadia Maps API Key:</label>
+                                    <label>Map Tile API Key:</label>
                                     <input type="text" class="full-width" id="radar-background-map-api-key"
-                                        value="${radar.background_map_api_key || ''}" placeholder="Get free key at stadiamaps.com" />
-                                    <span class="help-text">Required for Black & White and Outlines map types. <a href="https://stadiamaps.com/" target="_blank" rel="noopener noreferrer">Get a free API key</a></span>
+                                        value="${radar.background_map_api_key || ''}" placeholder="Paste your API key" />
+                                    <span class="help-text">Required for this map type. CARTO keys for Light/Dark/Voyager: <a href="https://carto.com/basemaps/apikey" target="_blank" rel="noopener noreferrer">request a free key</a>. Stadia keys for Black &amp; White/Outlines: <a href="https://stadiamaps.com/" target="_blank" rel="noopener noreferrer">get a free key</a>.</span>
                                 </div>
                             ` : ''}
                             <div class="form-row">
