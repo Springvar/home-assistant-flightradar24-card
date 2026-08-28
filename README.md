@@ -373,22 +373,31 @@ The desc: fields will be ignored by the Card, but will be useful if you want to 
 
 ```yaml
 radar:
-    background_map: bw # Options: bw, color, dark, outlines
+    background_map: color # Options: keyless (color, satellite, topo) or keyed (light, dark, voyager, bw, outlines)
     background_map_opacity: 0.7 # Opacity of the map (0=transparent, 1=opaque)
-    background_map_api_key: YOUR_API_KEY # Optional, for some providers
+    background_map_api_key: YOUR_API_KEY # Required only for keyed map types
 ```
 
-| Option                   | Description                                                                                                                | Values                                      | Default |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ------- |
-| `background_map`         | Type of map background. <br> - `system`: Auto-selects 'dark' or 'color' style to match Home Assistant or system Dark Mode. | `system`, `bw`, `color`, `dark`, `outlines` | `none`  |
-| `background_map_opacity` | Opacity for background map (0 [visible] to 1 [transparent]).                                                               | 0–1 (float)                                 | 0       |
-| `background_map_api_key` | API key for selected tile provider (optional, for providers that require it).                                              | string (optional)                           | –       |
+| Option                   | Description                                                                                                                | Values                                                                | Default |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------- |
+| `background_map`         | Type of map background. <br> - `system`: Auto-selects 'dark' or 'color' style to match Home Assistant or system Dark Mode. | `system`, `color`, `satellite`, `topo`, `light`, `dark`, `voyager`, `bw`, `outlines` | `none`  |
+| `background_map_opacity` | Opacity for background map (0=transparent, 1=opaque).                                                                      | 0–1 (float)                                                            | 0       |
+| `background_map_api_key` | API key for the selected tile provider. Required only for keyed map types (see below).                                     | string (optional)                                                      | –       |
 
+**Keyless maps** (no API key required — work out of the box):
 -   **`system`**: Automatically uses a dark map (`dark`) in dark mode and a standard colored map (`color`) in light mode, matching your Home Assistant or operating system theme.
--   **`bw`**: Black-and-white (Stamen Toner)
 -   **`color`**: Standard OpenStreetMap (colored)
--   **`dark`**: Dark theme map (CartoDB)
--   **`outlines`**: Geographic outlines only
+-   **`satellite`**: Esri World Imagery (aerial/satellite)
+-   **`topo`**: OpenTopoMap (topographic)
+
+**Keyed maps** (require `background_map_api_key` to render — the tile provider serves an "API key required" watermark without it):
+-   **`light`**: CartoDB Positron (light). [Request a free CARTO key](https://carto.com/basemaps/apikey)
+-   **`dark`**: CartoDB Dark Matter (dark). [Request a free CARTO key](https://carto.com/basemaps/apikey)
+-   **`voyager`**: CartoDB Voyager (color). [Request a free CARTO key](https://carto.com/basemaps/apikey)
+-   **`bw`**: Stamen Toner, black-and-white (Stadia Maps). [Get a free Stadia Maps key](https://stadiamaps.com/)
+-   **`outlines`**: Geographic outlines only (Stadia Maps). [Get a free Stadia Maps key](https://stadiamaps.com/)
+
+> CARTO and Stadia tiles require a per-user API key. Per provider terms the key must not be shared, so the card does not ship a default key — each user requests their own and enters it in the `background_map_api_key` field (or in the card editor).
 
 Example:
 

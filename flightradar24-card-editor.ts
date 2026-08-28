@@ -558,6 +558,21 @@ export class Flightradar24CardEditor extends HTMLElement {
                 margin: 2px 0;
                 line-height: 1.3;
             }
+            .input-with-help {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                gap: 8px;
+            }
+            .input-with-help .full-width {
+                flex: 1;
+                min-width: 0;
+            }
+            .input-with-help .help-text {
+                flex: 0 0 auto;
+                max-width: 60%;
+                margin: 0;
+            }
             .item-box {
                 border: 1px solid var(--divider-color, #ccc);
                 border-radius: 4px;
@@ -1281,9 +1296,13 @@ export class Flightradar24CardEditor extends HTMLElement {
                             ${this._mapTypeRequiresApiKey(radar.background_map) ? `
                                 <div class="form-row">
                                     <label>Map Tile API Key:</label>
-                                    <input type="text" class="full-width" id="radar-background-map-api-key"
-                                        value="${radar.background_map_api_key || ''}" placeholder="Paste your API key" />
-                                    <span class="help-text">Required for this map type. CARTO keys for Light/Dark/Voyager: <a href="https://carto.com/basemaps/apikey" target="_blank" rel="noopener noreferrer">request a free key</a>. Stadia keys for Black &amp; White/Outlines: <a href="https://stadiamaps.com/" target="_blank" rel="noopener noreferrer">get a free key</a>.</span>
+                                    <div class="input-with-help">
+                                        <input type="text" class="full-width" id="radar-background-map-api-key"
+                                            value="${radar.background_map_api_key || ''}" placeholder="Paste your API key" />
+                                        <span class="help-text">${radar.background_map === 'bw' || radar.background_map === 'outlines'
+                                            ? 'Required for Black &amp; White and Outlines. <a href="https://stadiamaps.com/" target="_blank" rel="noopener noreferrer">Get a free Stadia Maps key</a>.'
+                                            : 'Required for Light, Dark and Voyager. <a href="https://carto.com/basemaps/apikey" target="_blank" rel="noopener noreferrer">Request a free CARTO key</a>.'}</span>
+                                    </div>
                                 </div>
                             ` : ''}
                             <div class="form-row">
