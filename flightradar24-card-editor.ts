@@ -1266,7 +1266,7 @@ export class Flightradar24CardEditor extends HTMLElement {
                                     <option value="system" ${radar.background_map === 'system' ? 'selected' : ''}>System (auto dark/light)</option>
                                     <optgroup label="Keyless">
                                         <option value="color" ${radar.background_map === 'color' ? 'selected' : ''}>Color (OpenStreetMap)</option>
-                                        <option value="hydda" ${radar.background_map === 'hydda' ? 'selected' : ''}>Hydda (Light)</option>
+                                        <option value="hydda" ${radar.background_map === 'hydda' ? 'selected' : ''}>Light (OpenStreetMap.de)</option>
                                         <option value="satellite" ${radar.background_map === 'satellite' ? 'selected' : ''}>Satellite</option>
                                         <option value="topo" ${radar.background_map === 'topo' ? 'selected' : ''}>Topographic</option>
                                     </optgroup>

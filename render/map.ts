@@ -146,10 +146,10 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
             }
         ],
         hydda: [
-            'https://{s}.tile.openstreetmap.se/hydda/full/{z}/{x}/{y}.png',
+            'https://tile.openstreetmap.de/{z}/{x}/{y}.png',
             {
                 attribution: '&copy; OpenStreetMap contributors',
-                subdomains: ['a', 'b', 'c', 'd']
+                subdomains: []
             }
         ],
         satellite: [
