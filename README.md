@@ -234,7 +234,7 @@ radar:
 
 **Note:** For backwards compatibility, the old color property names (`primary-color`, `accent-color`, `feature-color`) are still supported but deprecated. They will be automatically migrated to the new names when using the visual editor.
 
-**Square map mode (`view: map`):** Instead of the circular radar screen, the radar area is rendered as a square map that fills the full width of the card (each side of the square equals the card's inner width). This works great in fullscreen and multi-column layouts where you want a large, unobstructed map. The `radar_size` setting is ignored in map mode. When no `background_map` is configured in map mode, the card automatically falls back to the `system` map type so a map is always shown. Setting `background_map: none` hides the map even in map mode. Radar grid rings and bearing lines are hidden in map mode by default; set `rings: true` to force them back on.
+**Square map mode (`view: map`):** Instead of the circular radar screen, the radar area is rendered as a square map that fills the full width of the card (each side of the square equals the card's inner width). This works great in fullscreen and multi-column layouts where you want a large, unobstructed map. The `radar_size` setting is ignored in map mode. When no `background_map` is configured in map mode, the card automatically falls back to the `system` map type so a map is always shown. Setting `background_map: none` skips the tiled background — the map area still renders with the radar background color, overlays, and flights on top. Radar grid rings and bearing lines are hidden in map mode by default; set `rings: true` to force them back on.
 
 ##### Radar Filter
 

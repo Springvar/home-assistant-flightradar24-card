@@ -83,6 +83,12 @@ function isDarkTheme(): boolean {
  */
 export function ensureLeafletLoadedIfNeeded(cardState: CardState, shadowRoot: ShadowRoot, onReady: () => void): void {
     if (!shouldRenderRadarBackgroundMap(cardState)) {
+        // No tiled background is wanted (e.g. background_map: 'none'), but the
+        // map area with radar overlays and flights still renders. Run the render
+        // callback immediately instead of gating it behind Leaflet.
+        if (cardState.radar?.hide !== true) {
+            onReady();
+        }
         return;
     }
     // Always ensure Leaflet CSS is present. renderStatic clears shadow DOM,
