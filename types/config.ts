@@ -102,6 +102,12 @@ export interface RadarConfig {
     background_map?: 'none' | 'system' | 'bw' | 'light' | 'color' | 'dark' | 'voyager' | 'satellite' | 'topo' | 'outlines';
     background_map_opacity?: number;
     background_map_api_key?: string;
+    // Per-theme maps used when background_map is 'system' (auto dark/light).
+    // Each can carry its own API key.
+    background_map_light?: 'bw' | 'light' | 'color' | 'dark' | 'voyager' | 'satellite' | 'topo' | 'outlines';
+    background_map_dark?: 'bw' | 'light' | 'color' | 'dark' | 'voyager' | 'satellite' | 'topo' | 'outlines';
+    background_map_light_api_key?: string;
+    background_map_dark_api_key?: string;
 }
 
 export type ListPosition = 'below' | 'left' | 'right';

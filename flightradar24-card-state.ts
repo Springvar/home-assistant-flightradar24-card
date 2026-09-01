@@ -8,7 +8,8 @@ import type { Hass } from './types/hass';
 import type { CardConfig, RadarConfig, ListConfig, UnitsConfig, SortCriterion } from './types/config';
 import type { CardState, Dimensions, FlightsContext, DomRefs, MainCard, LeafletMap } from './types/cardState';
 
-type BackgroundMapType = 'none' | 'system' | 'bw' | 'color' | 'dark' | 'outlines';
+type BackgroundMapType = 'none' | 'system' | 'bw' | 'light' | 'color' | 'dark' | 'voyager' | 'satellite' | 'topo' | 'outlines';
+type ThemeMapType = Exclude<BackgroundMapType, 'none' | 'system'>;
 
 interface Defaults {
     flights_entity: string;
@@ -22,6 +23,10 @@ interface Defaults {
         background_map: BackgroundMapType;
         background_map_opacity: number;
         background_map_api_key: string;
+        background_map_light: ThemeMapType;
+        background_map_dark: ThemeMapType;
+        background_map_light_api_key: string;
+        background_map_dark_api_key: string;
     };
     sort: SortCriterion[];
     templates: Record<string, string>;
@@ -39,7 +44,11 @@ const defaults: Defaults = {
         view: 'radar',
         background_map: 'none',
         background_map_opacity: 0,
-        background_map_api_key: ''
+        background_map_api_key: '',
+        background_map_light: 'color',
+        background_map_dark: 'dark',
+        background_map_light_api_key: '',
+        background_map_dark_api_key: ''
     },
     sort: sortConfig,
     templates: templateConfig,
@@ -102,6 +111,10 @@ export class Flightradar24CardState implements CardState {
             background_map: config.radar?.background_map ?? defaults.radar.background_map,
             background_map_opacity: config.radar?.background_map_opacity ?? defaults.radar.background_map_opacity,
             background_map_api_key: config.radar?.background_map_api_key ?? defaults.radar.background_map_api_key,
+            background_map_light: config.radar?.background_map_light ?? defaults.radar.background_map_light,
+            background_map_dark: config.radar?.background_map_dark ?? defaults.radar.background_map_dark,
+            background_map_light_api_key: config.radar?.background_map_light_api_key ?? defaults.radar.background_map_light_api_key,
+            background_map_dark_api_key: config.radar?.background_map_dark_api_key ?? defaults.radar.background_map_dark_api_key,
             ...config.radar
         };
         this.radar.initialRange = this.radar.range;

@@ -59,6 +59,18 @@ export function shouldRenderRadarBackgroundMap(cardState: CardState): boolean {
     return VALID_MAPS.has(radar.background_map) || radar.background_map === 'system';
 }
 
+/** Best-effort dark theme detection (Home Assistant parent theme, else OS preference). */
+function isDarkTheme(): boolean {
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    let haDark = false;
+    try {
+        haDark = !!(window.parent && window.parent.document && window.parent.document.body.classList.contains('dark'));
+    } catch (_e) {
+        // Cross-origin access may fail, ignore
+    }
+    return haDark || prefersDark;
+}
+
 /**
  * Ensures Leaflet CSS/JS are loaded into shadowRoot if needed.
  * Only loads if cardState wants a map background and radar is shown.
@@ -131,9 +143,9 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
     const configuredType = config?.radar?.background_map as string | undefined;
     // In map view, always show a map. Fall back to the auto dark/light "system"
     // tiles when the user has not chosen an explicit background map.
-    let type = configuredType;
+    let mode = configuredType;
     if (cardState.radar?.view === 'map' && (!configuredType || configuredType === 'none' || !VALID_MAPS.has(configuredType))) {
-        type = 'system';
+        mode = 'system';
     }
 
     const mapView = cardState.radar?.view === 'map';
@@ -182,32 +194,35 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
         [lat - deltaLat, lon - deltaLon],
         [lat + deltaLat, lon + deltaLon]
     ];
-    let resolvedType = type;
-    if (type === 'system') {
-        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        let haDark = false;
-        try {
-            haDark = !!(window.parent && window.parent.document && window.parent.document.body.classList.contains('dark'));
-        } catch (_e) {
-            // Cross-origin access may fail, ignore
-        }
-        if (haDark || prefersDark) {
-            resolvedType = 'dark';
+    // Resolve the effective map type and its API key.
+    // - 'system' (auto dark/light) picks from the user's two configured maps,
+    //   one for light theme and one for dark theme, each with its own key.
+    // - an explicit provider id uses background_map + background_map_api_key
+    //   (kept for backwards compatibility).
+    let finalType: string;
+    let effectiveApiKey: string | undefined;
+    if (mode === 'system') {
+        if (isDarkTheme()) {
+            finalType = config?.radar?.background_map_dark || 'dark';
+            effectiveApiKey = config?.radar?.background_map_dark_api_key || '';
         } else {
-            resolvedType = 'color';
+            finalType = config?.radar?.background_map_light || 'color';
+            effectiveApiKey = config?.radar?.background_map_light_api_key || '';
         }
+    } else {
+        finalType = configuredType && VALID_MAPS.has(configuredType) ? configuredType : 'color';
+        effectiveApiKey = config?.radar?.background_map_api_key || '';
     }
 
-    const finalType = resolvedType || 'color';
     const provider = getTileProvider(finalType);
     if (!provider) return mapBg;
-    const tileUrl = buildTileUrl(finalType, config?.radar?.background_map_api_key);
+    const tileUrl = buildTileUrl(finalType, effectiveApiKey);
     if (!tileUrl) return mapBg;
     const tileOpts = { attribution: provider.attribution, subdomains: provider.subdomains };
 
     // If this provider requires an API key and none is configured, show a notice.
     if (requiresApiKey(finalType)) {
-        const hasApiKey = config?.radar?.background_map_api_key && config.radar.background_map_api_key.trim().length > 0;
+        const hasApiKey = effectiveApiKey && effectiveApiKey.trim().length > 0;
         if (!hasApiKey) {
             if (cardState._leafletMap) {
                 cardState._leafletMap.remove();
@@ -223,7 +238,7 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
     }
 
     if (window.L) {
-        const newMapConfig = { type: resolvedType || 'color', apiKey: config?.radar?.background_map_api_key };
+        const newMapConfig = { type: finalType, apiKey: effectiveApiKey };
         const mapConfigChanged = !cardState._currentMapConfig ||
             cardState._currentMapConfig.type !== newMapConfig.type ||
             cardState._currentMapConfig.apiKey !== newMapConfig.apiKey;

@@ -96,6 +96,25 @@ export class Flightradar24CardEditor extends HTMLElement {
         return buildGroup('Keyless', 'keyless') + buildGroup('Requires API key', 'keyed');
     }
 
+    // Provider-only <select> options (no 'none'/'system') for a per-theme map.
+    private _themeMapOptionsHtml(selected: string): string {
+        return this._backgroundMapOptionsHtml(selected);
+    }
+
+    // Build an API key input row for a per-theme map, shown only when that map needs a key.
+    private _themeApiKeyRowHtml(idSuffix: string, label: string, mapType: string, apiKey?: string): string {
+        if (!this._mapTypeRequiresApiKey(mapType)) return '';
+        return `
+            <div class="form-row">
+                <label>${label}:</label>
+                <div class="input-with-help">
+                    <input type="text" class="full-width" id="radar-background-map-${idSuffix}-api-key"
+                        value="${apiKey || ''}" placeholder="Paste your API key" />
+                    <span class="help-text">${getTileProviderHelp(mapType)}</span>
+                </div>
+            </div>`;
+    }
+
     // Validation methods
     private get validFlightFields(): Set<string> {
         return new Set(this.availableFlightFields.map(f => f.value));
@@ -1295,16 +1314,36 @@ export class Flightradar24CardEditor extends HTMLElement {
                                     ${this._backgroundMapOptionsHtml(radar.background_map || 'none')}
                                 </select>
                             </div>
-                            ${this._mapTypeRequiresApiKey(radar.background_map) ? `
-                                <div class="form-row">
-                                    <label>Map Tile API Key:</label>
-                                    <div class="input-with-help">
-                                        <input type="text" class="full-width" id="radar-background-map-api-key"
-                                            value="${radar.background_map_api_key || ''}" placeholder="Paste your API key" />
-                                        <span class="help-text">${getTileProviderHelp(radar.background_map)}</span>
+                            ${
+                                radar.background_map === 'system'
+                                ? `
+                                    <p class="help-text">Pick one map for light themes and one for dark themes. Each map can have its own API key.</p>
+                                    <div class="form-row">
+                                        <label>Light Theme Map:</label>
+                                        <select id="radar-background-map-light">
+                                            ${this._themeMapOptionsHtml(radar.background_map_light || 'color')}
+                                        </select>
                                     </div>
-                                </div>
-                            ` : ''}
+                                    ${this._themeApiKeyRowHtml('light', 'Light Map API Key', radar.background_map_light || 'color', radar.background_map_light_api_key)}
+                                    <div class="form-row">
+                                        <label>Dark Theme Map:</label>
+                                        <select id="radar-background-map-dark">
+                                            ${this._themeMapOptionsHtml(radar.background_map_dark || 'dark')}
+                                        </select>
+                                    </div>
+                                    ${this._themeApiKeyRowHtml('dark', 'Dark Map API Key', radar.background_map_dark || 'dark', radar.background_map_dark_api_key)}
+                                `
+                                : this._mapTypeRequiresApiKey(radar.background_map) ? `
+                                    <div class="form-row">
+                                        <label>Map Tile API Key:</label>
+                                        <div class="input-with-help">
+                                            <input type="text" class="full-width" id="radar-background-map-api-key"
+                                                value="${radar.background_map_api_key || ''}" placeholder="Paste your API key" />
+                                            <span class="help-text">${getTileProviderHelp(radar.background_map)}</span>
+                                        </div>
+                                    </div>
+                                ` : ''
+                            }
                             <div class="form-row">
                                 <label>Map Opacity:</label>
                                 <input type="number" min="0" max="1" step="0.1" id="radar-background-map-opacity"
@@ -2197,6 +2236,34 @@ export class Flightradar24CardEditor extends HTMLElement {
                 this._render();
             });
         }
+
+        const bindThemeMapSelect = (id: string, field: 'background_map_light' | 'background_map_dark') => {
+            const el = root.getElementById(id) as HTMLSelectElement;
+            if (el) {
+                el.addEventListener('change', (e) => {
+                    const radar = this._config.radar || {};
+                    this._config = { ...this._config, radar: { ...radar, [field]: (e.target as HTMLSelectElement).value as any } };
+                    this._emitConfigChanged();
+                    this._render();
+                });
+            }
+        };
+        bindThemeMapSelect('radar-background-map-light', 'background_map_light');
+        bindThemeMapSelect('radar-background-map-dark', 'background_map_dark');
+
+        const bindThemeMapKey = (id: string, field: 'background_map_light_api_key' | 'background_map_dark_api_key') => {
+            const el = root.getElementById(id) as HTMLInputElement;
+            if (el) {
+                el.addEventListener('input', (e) => {
+                    const radar = this._config.radar || {};
+                    const value = (e.target as HTMLInputElement).value;
+                    this._config = { ...this._config, radar: { ...radar, [field]: value || undefined } };
+                    this._emitConfigChanged();
+                });
+            }
+        };
+        bindThemeMapKey('radar-background-map-light-api-key', 'background_map_light_api_key');
+        bindThemeMapKey('radar-background-map-dark-api-key', 'background_map_dark_api_key');
 
         const radarBackgroundMapApiKey = root.getElementById('radar-background-map-api-key') as HTMLInputElement;
         if (radarBackgroundMapApiKey) {

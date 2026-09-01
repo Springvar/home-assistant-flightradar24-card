@@ -129,6 +129,35 @@ describe('Flightradar24CardState', () => {
             expect(state.radar.background_map).toBe('dark');
         });
 
+        it('defaults per-theme maps for system mode and keeps them backwards compatible', () => {
+            const state = new Flightradar24CardState();
+            state.setConfig({ radar: { background_map: 'system' } });
+
+            expect(state.radar.background_map).toBe('system');
+            expect(state.radar.background_map_light).toBe('color');
+            expect(state.radar.background_map_dark).toBe('dark');
+            expect(state.radar.background_map_light_api_key).toBe('');
+            expect(state.radar.background_map_dark_api_key).toBe('');
+        });
+
+        it('merges per-theme map config and their api keys', () => {
+            const state = new Flightradar24CardState();
+            state.setConfig({
+                radar: {
+                    background_map: 'system',
+                    background_map_light: 'voyager',
+                    background_map_dark: 'satellite',
+                    background_map_light_api_key: 'light-key',
+                    background_map_dark_api_key: 'dark-key'
+                }
+            });
+
+            expect(state.radar.background_map_light).toBe('voyager');
+            expect(state.radar.background_map_dark).toBe('satellite');
+            expect(state.radar.background_map_light_api_key).toBe('light-key');
+            expect(state.radar.background_map_dark_api_key).toBe('dark-key');
+        });
+
         it('sets default radar view to radar', () => {
             const state = new Flightradar24CardState();
             state.setConfig({});
