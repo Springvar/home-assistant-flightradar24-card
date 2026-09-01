@@ -53,10 +53,16 @@ type LatLngBoundsLiteral = [[number, number], [number, number]];
 export function shouldRenderRadarBackgroundMap(cardState: CardState): boolean {
     const radar = cardState?.radar;
     if (!radar || radar.hide === true) return false;
-    // Square map view always renders a map background
-    if (radar.view === 'map') return true;
-    if (!radar.background_map || radar.background_map === 'none') return false;
-    return VALID_MAPS.has(radar.background_map) || radar.background_map === 'system';
+    // Read the raw config so the default 'none' (nothing configured) can be told
+    // apart from an explicit "none" choice, which hides the map entirely.
+    const configured = cardState?.config?.radar?.background_map as string | undefined;
+    const isValid = !!configured && (VALID_MAPS.has(configured) || configured === 'system');
+    // Square map view always renders a map background unless 'none' was chosen.
+    if (radar.view === 'map') {
+        return !configured || isValid;
+    }
+    if (!configured || configured === 'none') return false;
+    return isValid;
 }
 
 /** Best-effort dark theme detection (Home Assistant parent theme, else OS preference). */
