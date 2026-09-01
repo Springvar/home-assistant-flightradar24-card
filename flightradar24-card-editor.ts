@@ -1,6 +1,7 @@
 import type { CardConfig, Condition, FieldCondition, GroupCondition, NotCondition, SortCriterion, ToggleConfig, AnnotationConfig, RadarFeature, LocationFeature, RunwayFeature, OutlineFeature, UnitsConfig, RadarConfig, ListConfig, AircraftMarkerEntry } from './types/config';
 import { searchRunways } from './utils/runwayLookup';
 import { templateConfig } from './config/templateConfig';
+import { TILE_PROVIDERS, requiresApiKey, getTileProviderHelp } from './render/tileProviders';
 
 export class Flightradar24CardEditor extends HTMLElement {
     private _config: CardConfig = {};
@@ -79,8 +80,20 @@ export class Flightradar24CardEditor extends HTMLElement {
     }
 
     private _mapTypeRequiresApiKey(mapType?: string): boolean {
-        // CARTO raster (light/dark/voyager) and Stadia Maps tiles (bw/outlines) require an API key
-        return mapType === 'bw' || mapType === 'outlines' || mapType === 'light' || mapType === 'dark' || mapType === 'voyager';
+        // Delegates to the tile provider store so provider quirks live in one place
+        return requiresApiKey(mapType);
+    }
+
+    // Build the <select> options for background maps straight from the provider store.
+    private _backgroundMapOptionsHtml(selected: string): string {
+        const buildGroup = (label: string, group: 'keyless' | 'keyed') => {
+            const options = TILE_PROVIDERS
+                .filter((p) => p.group === group)
+                .map((p) => `<option value="${p.id}" ${selected === p.id ? 'selected' : ''}>${p.label}</option>`)
+                .join('');
+            return `<optgroup label="${label}">${options}</optgroup>`;
+        };
+        return buildGroup('Keyless', 'keyless') + buildGroup('Requires API key', 'keyed');
     }
 
     // Validation methods
@@ -1279,18 +1292,7 @@ export class Flightradar24CardEditor extends HTMLElement {
                                 <select id="radar-background-map">
                                     <option value="none" ${(radar.background_map || 'none') === 'none' ? 'selected' : ''}>None</option>
                                     <option value="system" ${radar.background_map === 'system' ? 'selected' : ''}>System (auto dark/light)</option>
-                                    <optgroup label="Keyless">
-                                        <option value="color" ${radar.background_map === 'color' ? 'selected' : ''}>Color (OpenStreetMap)</option>
-                                        <option value="satellite" ${radar.background_map === 'satellite' ? 'selected' : ''}>Satellite</option>
-                                        <option value="topo" ${radar.background_map === 'topo' ? 'selected' : ''}>Topographic</option>
-                                    </optgroup>
-                                    <optgroup label="Requires API key">
-                                        <option value="light" ${radar.background_map === 'light' ? 'selected' : ''}>Light (CARTO)</option>
-                                        <option value="dark" ${radar.background_map === 'dark' ? 'selected' : ''}>Dark (CARTO)</option>
-                                        <option value="voyager" ${radar.background_map === 'voyager' ? 'selected' : ''}>Voyager (CARTO)</option>
-                                        <option value="bw" ${radar.background_map === 'bw' ? 'selected' : ''}>Black &amp; White (Stadia)</option>
-                                        <option value="outlines" ${radar.background_map === 'outlines' ? 'selected' : ''}>Outlines (Stadia)</option>
-                                    </optgroup>
+                                    ${this._backgroundMapOptionsHtml(radar.background_map || 'none')}
                                 </select>
                             </div>
                             ${this._mapTypeRequiresApiKey(radar.background_map) ? `
@@ -1299,9 +1301,7 @@ export class Flightradar24CardEditor extends HTMLElement {
                                     <div class="input-with-help">
                                         <input type="text" class="full-width" id="radar-background-map-api-key"
                                             value="${radar.background_map_api_key || ''}" placeholder="Paste your API key" />
-                                        <span class="help-text">${radar.background_map === 'bw' || radar.background_map === 'outlines'
-                                            ? 'Required for Black &amp; White and Outlines. <a href="https://stadiamaps.com/" target="_blank" rel="noopener noreferrer">Get a free Stadia Maps key</a>.'
-                                            : 'Required for Light, Dark and Voyager. <a href="https://carto.com/basemaps/apikey" target="_blank" rel="noopener noreferrer">Request a free CARTO key</a>.'}</span>
+                                        <span class="help-text">${getTileProviderHelp(radar.background_map)}</span>
                                     </div>
                                 </div>
                             ` : ''}

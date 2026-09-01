@@ -1,5 +1,11 @@
 import { getLocation } from '../utils/location';
 import { haversine } from '../utils/geometric';
+import {
+    getTileProvider,
+    buildTileUrl,
+    requiresApiKey,
+    VALID_MAPS
+} from './tileProviders';
 import type { CardState, LeafletMap } from '../types/cardState';
 
 declare global {
@@ -44,19 +50,13 @@ interface TileLayerOptions {
 
 type LatLngBoundsLiteral = [[number, number], [number, number]];
 
-type BackgroundMapType = 'none' | 'system' | 'bw' | 'color' | 'dark' | 'outlines';
-
-// Keyless maps are always usable. Maps which require an API key are wired so a
-// configured key is appended to the tile URL with the provider's query param.
-const VALID_MAPS = new Set<string>(['bw', 'light', 'color', 'dark', 'voyager', 'satellite', 'topo', 'outlines', 'system']);
-
 export function shouldRenderRadarBackgroundMap(cardState: CardState): boolean {
     const radar = cardState?.radar;
     if (!radar || radar.hide === true) return false;
     // Square map view always renders a map background
     if (radar.view === 'map') return true;
-    if (!radar.background_map || !VALID_MAPS.has(radar.background_map)) return false;
-    return true;
+    if (!radar.background_map || radar.background_map === 'none') return false;
+    return VALID_MAPS.has(radar.background_map) || radar.background_map === 'system';
 }
 
 /**
@@ -128,81 +128,13 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
         return;
     }
 
-    const configuredType = config?.radar?.background_map as BackgroundMapType | undefined;
+    const configuredType = config?.radar?.background_map as string | undefined;
     // In map view, always show a map. Fall back to the auto dark/light "system"
     // tiles when the user has not chosen an explicit background map.
     let type = configuredType;
     if (cardState.radar?.view === 'map' && (!configuredType || configuredType === 'none' || !VALID_MAPS.has(configuredType))) {
         type = 'system';
     }
-
-    const TILE_LAYERS: Record<string, TileLayerConfig | null> = {
-        // --- Keyless providers (no API key required) ---
-        color: [
-            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            {
-                attribution: '&copy; OpenStreetMap contributors',
-                subdomains: ['a', 'b', 'c']
-            }
-        ],
-        satellite: [
-            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-            {
-                attribution: '&copy; Esri, Maxar, Earthstar Geographics',
-                subdomains: []
-            }
-        ],
-        topo: [
-            'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-            {
-                attribution: '&copy; OpenTopoMap, &copy; OpenStreetMap contributors',
-                subdomains: ['a', 'b', 'c']
-            }
-        ],
-        // --- CARTO raster baseline (now require an API key, appended as ?key=) ---
-        light: [
-            'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-            {
-                api_key: '?key=',
-                attribution: '&copy; CartoDB, &copy; OpenStreetMap contributors',
-                subdomains: ['a', 'b', 'c', 'd']
-            }
-        ],
-        dark: [
-            'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-            {
-                api_key: '?key=',
-                attribution: '&copy; CartoDB, &copy; OpenStreetMap contributors',
-                subdomains: ['a', 'b', 'c', 'd']
-            }
-        ],
-        voyager: [
-            'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-            {
-                api_key: '?key=',
-                attribution: '&copy; CartoDB, &copy; OpenStreetMap contributors',
-                subdomains: ['a', 'b', 'c', 'd']
-            }
-        ],
-        // --- Stadia Maps (require an API key, appended as ?api_key=) ---
-        bw: [
-            'https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png',
-            {
-                api_key: '?api_key=',
-                attribution: 'Map tiles by Stamen Design, CC BY 3.0 — Map data © OpenStreetMap',
-                subdomains: []
-            }
-        ],
-        outlines: [
-            'https://tiles.stadiamaps.com/tiles/stamen_toner_lines/{z}/{x}/{y}.png',
-            {
-                api_key: '?api_key=',
-                attribution: 'Map tiles by Stamen Design, hosted by Stadia Maps; Data by OpenStreetMap',
-                subdomains: []
-            }
-        ],
-        system: null
-    };
 
     const mapView = cardState.radar?.view === 'map';
     const opacity = mapView
@@ -265,30 +197,29 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
             resolvedType = 'color';
         }
     }
-    const tileLayerConfig = TILE_LAYERS[resolvedType || 'color'] || TILE_LAYERS.color;
-    if (!tileLayerConfig) return mapBg;
 
-    let [tileUrl, tileOpts] = tileLayerConfig; // eslint-disable-line prefer-const
+    const finalType = resolvedType || 'color';
+    const provider = getTileProvider(finalType);
+    if (!provider) return mapBg;
+    const tileUrl = buildTileUrl(finalType, config?.radar?.background_map_api_key);
+    if (!tileUrl) return mapBg;
+    const tileOpts = { attribution: provider.attribution, subdomains: provider.subdomains };
 
-    // Check if this tile provider requires an API key
-    const requiresApiKey = tileOpts && 'api_key' in tileOpts;
-    const hasApiKey = config?.radar?.background_map_api_key && config.radar.background_map_api_key.trim().length > 0;
-
-    if (requiresApiKey && !hasApiKey) {
-        if (cardState._leafletMap) {
-            cardState._leafletMap.remove();
-            cardState._leafletMap = null;
+    // If this provider requires an API key and none is configured, show a notice.
+    if (requiresApiKey(finalType)) {
+        const hasApiKey = config?.radar?.background_map_api_key && config.radar.background_map_api_key.trim().length > 0;
+        if (!hasApiKey) {
+            if (cardState._leafletMap) {
+                cardState._leafletMap.remove();
+                cardState._leafletMap = null;
+            }
+            mapBg.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--secondary-text-color); text-align: center; padding: 20px; font-size: 0.9em;">API key required for this map type. Configure in Background Map settings.</div>';
+            return mapBg;
         }
-        mapBg.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--secondary-text-color); text-align: center; padding: 20px; font-size: 0.9em;">API key required for this map type. Configure in Background Map settings.</div>';
-        return mapBg;
     }
 
     if (!cardState._leafletMap) {
         mapBg.innerHTML = '';
-    }
-
-    if (requiresApiKey && hasApiKey && config?.radar?.background_map_api_key) {
-        tileUrl = tileUrl + tileOpts.api_key + encodeURIComponent(config.radar.background_map_api_key);
     }
 
     if (window.L) {
