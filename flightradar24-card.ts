@@ -628,17 +628,6 @@ class Flightradar24Card extends HTMLElement implements MainCard {
 
 customElements.define('flightradar24-radar-card', Flightradar24Card);
 
-// Backwards-compatible alias for the original card type. The Flightradar24
-// integration ships its own card under 'flightradar24-card', so only register
-// this alias when that name is not already taken by another card.
-if (!customElements.get('flightradar24-card')) {
-    try {
-        customElements.define('flightradar24-card', class extends Flightradar24Card {});
-    } catch (e) {
-        console.error('[FR24Card] Could not register flightradar24-card alias:', e);
-    }
-}
-
 if (typeof window !== 'undefined') {
     (window as any).customCards = (window as any).customCards || [];
     (window as any).customCards.push({

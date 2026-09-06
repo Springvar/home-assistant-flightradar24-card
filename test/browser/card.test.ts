@@ -30,10 +30,10 @@ describe('Flightradar24Card browser tests', () => {
         expect(consoleErrors).toHaveLength(0);
     });
 
-    it('should register flightradar24-card alias when name is free', async () => {
+    it('should not register flightradar24-card to avoid colliding with the integration card', async () => {
         await import('../../flightradar24-card');
 
-        expect(customElements.get('flightradar24-card')).toBeDefined();
+        expect(customElements.get('flightradar24-card')).toBeUndefined();
         expect(consoleErrors).toHaveLength(0);
     });
 
