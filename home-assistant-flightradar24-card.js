@@ -586,7 +586,8 @@ function Bt(t, e) {
   if (!M) return d;
   const w = {
     attribution: C.attribution,
-    subdomains: C.subdomains
+    subdomains: C.subdomains,
+    referrerPolicy: "strict-origin-when-cross-origin"
   };
   if (xt(x) && !($ && $.trim().length > 0))
     return t._leafletMap && (t._leafletMap.remove(), t._leafletMap = null), d.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--secondary-text-color); text-align: center; padding: 20px; font-size: 0.9em;">API key required for this map type. Configure in Background Map settings.</div>', d;
@@ -4118,7 +4119,10 @@ var q, B, le = J((() => {
         zoomControl: !0,
         attributionControl: !1
       });
-      window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(o), window.L.circleMarker([a.latitude, a.longitude], {
+      window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        referrerPolicy: "strict-origin-when-cross-origin"
+      }).addTo(o), window.L.circleMarker([a.latitude, a.longitude], {
         radius: 6,
         color: "#2196f3",
         fillColor: "#2196f3",
