@@ -46,6 +46,7 @@ interface TileLayerOptions {
     api_key?: string;
     attribution?: string;
     subdomains?: string[];
+    referrerPolicy?: string;
 }
 
 type LatLngBoundsLiteral = [[number, number], [number, number]];
@@ -230,7 +231,13 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
     if (!provider) return mapBg;
     const tileUrl = buildTileUrl(finalType, effectiveApiKey);
     if (!tileUrl) return mapBg;
-    const tileOpts = { attribution: provider.attribution, subdomains: provider.subdomains };
+    // OSM requires a Referer header; HA's page-level "same-origin" policy
+    // strips it on cross-origin tile requests, causing 403s.
+    const tileOpts = {
+        attribution: provider.attribution,
+        subdomains: provider.subdomains,
+        referrerPolicy: 'strict-origin-when-cross-origin'
+    };
 
     // If this provider requires an API key and none is configured, show a notice.
     if (requiresApiKey(finalType)) {

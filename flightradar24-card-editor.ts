@@ -3234,9 +3234,11 @@ export class Flightradar24CardEditor extends HTMLElement {
             attributionControl: false
         });
 
-        // Add tile layer
+        // referrerPolicy: HA's page-level "same-origin" policy strips the
+        // Referer header that OSM requires, otherwise tiles return 403.
         (window as any).L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19
+            maxZoom: 19,
+            referrerPolicy: 'strict-origin-when-cross-origin'
         }).addTo(map);
 
         // Add center marker
