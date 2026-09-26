@@ -38,6 +38,7 @@ class Flightradar24Card extends HTMLElement implements MainCard {
     _visibilityChangeHandler: (() => void) | null = null;
     cardState: Flightradar24CardState;
     shadowRoot!: ShadowRoot;
+    _layoutOptions: Record<string, unknown> | null = null;
 
     constructor() {
         super();
@@ -88,6 +89,28 @@ class Flightradar24Card extends HTMLElement implements MainCard {
                 max_range: 100
             }
         };
+    }
+
+    /**
+     * Modern (sections/masonry) view layout support.
+     * Home Assistant calls getGridSize() to decide how many grid cells a card
+     * occupies in the sections view. Without it the card is pinned to 1x1 and
+     * can never grow into a wider section.
+     */
+    getGridSize(): number {
+        return 1;
+    }
+
+    getLayoutOptions(): unknown {
+        return this._layoutOptions ?? { columns: 1, rows: 1 };
+    }
+
+    setLayoutOptions(layout: unknown): void {
+        this._layoutOptions = layout as Record<string, unknown>;
+    }
+
+    cardSize(): number {
+        return 2;
     }
 
     set hass(hass: Hass) {
@@ -604,17 +627,6 @@ class Flightradar24Card extends HTMLElement implements MainCard {
 }
 
 customElements.define('flightradar24-radar-card', Flightradar24Card);
-
-// Backwards-compatible alias for the original card type. The Flightradar24
-// integration ships its own card under 'flightradar24-card', so only register
-// this alias when that name is not already taken by another card.
-if (!customElements.get('flightradar24-card')) {
-    try {
-        customElements.define('flightradar24-card', class extends Flightradar24Card {});
-    } catch (e) {
-        console.error('[FR24Card] Could not register flightradar24-card alias:', e);
-    }
-}
 
 if (typeof window !== 'undefined') {
     (window as any).customCards = (window as any).customCards || [];

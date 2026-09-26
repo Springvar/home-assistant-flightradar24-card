@@ -43,6 +43,7 @@ export interface LeafletMap {
     containerPointToLatLng(point: { x: number; y: number }): { lat: number; lng: number };
     getZoom(): number;
     setZoom(zoom: number): void;
+    invalidateSize(options?: { pan?: boolean }): void;
 }
 
 /**

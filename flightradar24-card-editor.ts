@@ -1,6 +1,7 @@
-import type { CardConfig, Condition, FieldCondition, GroupCondition, NotCondition, SortCriterion, ToggleConfig, AnnotationConfig, RadarFeature, LocationFeature, RunwayFeature, OutlineFeature, UnitsConfig, RadarConfig, ListConfig } from './types/config';
+import type { CardConfig, Condition, FieldCondition, GroupCondition, NotCondition, SortCriterion, ToggleConfig, AnnotationConfig, RadarFeature, LocationFeature, RunwayFeature, OutlineFeature, UnitsConfig, RadarConfig, ListConfig, AircraftMarkerEntry } from './types/config';
 import { searchRunways } from './utils/runwayLookup';
 import { templateConfig } from './config/templateConfig';
+import { TILE_PROVIDERS, requiresApiKey, getTileProviderHelp } from './render/tileProviders';
 
 export class Flightradar24CardEditor extends HTMLElement {
     private _config: CardConfig = {};
@@ -79,8 +80,39 @@ export class Flightradar24CardEditor extends HTMLElement {
     }
 
     private _mapTypeRequiresApiKey(mapType?: string): boolean {
-        // Stadia Maps tiles (bw and outlines) require an API key
-        return mapType === 'bw' || mapType === 'outlines';
+        // Delegates to the tile provider store so provider quirks live in one place
+        return requiresApiKey(mapType);
+    }
+
+    // Build the <select> options for background maps straight from the provider store.
+    private _backgroundMapOptionsHtml(selected: string): string {
+        const buildGroup = (label: string, group: 'keyless' | 'keyed') => {
+            const options = TILE_PROVIDERS
+                .filter((p) => p.group === group)
+                .map((p) => `<option value="${p.id}" ${selected === p.id ? 'selected' : ''}>${p.label}</option>`)
+                .join('');
+            return `<optgroup label="${label}">${options}</optgroup>`;
+        };
+        return buildGroup('Keyless', 'keyless') + buildGroup('Requires API key', 'keyed');
+    }
+
+    // Provider-only <select> options (no 'none'/'system') for a per-theme map.
+    private _themeMapOptionsHtml(selected: string): string {
+        return this._backgroundMapOptionsHtml(selected);
+    }
+
+    // Build an API key input row for a per-theme map, shown only when that map needs a key.
+    private _themeApiKeyRowHtml(idSuffix: string, label: string, mapType: string, apiKey?: string): string {
+        if (!this._mapTypeRequiresApiKey(mapType)) return '';
+        return `
+            <div class="form-row">
+                <label>${label}:</label>
+                <div class="input-with-help">
+                    <input type="text" class="full-width" id="radar-background-map-${idSuffix}-api-key"
+                        value="${apiKey || ''}" placeholder="Paste your API key" />
+                    <span class="help-text">${getTileProviderHelp(mapType)}</span>
+                </div>
+            </div>`;
     }
 
     // Validation methods
@@ -557,6 +589,21 @@ export class Flightradar24CardEditor extends HTMLElement {
                 font-size: 0.85em;
                 margin: 2px 0;
                 line-height: 1.3;
+            }
+            .input-with-help {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                gap: 8px;
+            }
+            .input-with-help .full-width {
+                flex: 1;
+                min-width: 0;
+            }
+            .input-with-help .help-text {
+                flex: 0 0 auto;
+                max-width: 60%;
+                margin: 0;
             }
             .item-box {
                 border: 1px solid var(--divider-color, #ccc);
@@ -1121,6 +1168,23 @@ export class Flightradar24CardEditor extends HTMLElement {
                         </label>
                     </div>
 
+                    <div class="form-row">
+                        <label>View:</label>
+                        <select id="radar-view">
+                            <option value="radar" ${(radar.view || 'radar') === 'radar' ? 'selected' : ''}>Radar (circular screen)</option>
+                            <option value="map" ${radar.view === 'map' ? 'selected' : ''}>Map (square, full-bleed)</option>
+                        </select>
+                        <span class="help-text">"Map" displays a square map that fills the available width (great for fullscreen and wide layouts) instead of the circular radar screen. The radar size setting is ignored in map view.</span>
+                    </div>
+
+                    <div class="form-row">
+                        <label>
+                            <input type="checkbox" id="radar-rings" ${(radar.rings ?? radar.view !== 'map') ? 'checked' : ''} />
+                            Show Radar Rings / Lines
+                        </label>
+                        <span class="help-text">Draw the radar grid rings and bearing lines on top of the display. On by default for the circular "Radar" view and off by default for the "Map" view; tick or untick to override.</span>
+                    </div>
+
                     <details data-section-id="radar-range">
                         <summary><h4>Range</h4></summary>
                         <div class="section-content">
@@ -1209,7 +1273,7 @@ export class Flightradar24CardEditor extends HTMLElement {
                                 <legend>Custom Image Marker</legend>
                                 <p class="help-text">Use a PNG image as aircraft marker instead of the default triangle. Image should have a transparent background.</p>
                                 ${(() => {
-                                    const marker = radar['aircraft-marker']?.default || {};
+                                    const marker: AircraftMarkerEntry = radar['aircraft-marker']?.default || ({} as AircraftMarkerEntry);
                                     return `
                                     <div class="form-row">
                                         <label>Image URL:</label>
@@ -1247,24 +1311,39 @@ export class Flightradar24CardEditor extends HTMLElement {
                                 <select id="radar-background-map">
                                     <option value="none" ${(radar.background_map || 'none') === 'none' ? 'selected' : ''}>None</option>
                                     <option value="system" ${radar.background_map === 'system' ? 'selected' : ''}>System (auto dark/light)</option>
-                                    <option value="bw" ${radar.background_map === 'bw' ? 'selected' : ''}>Black & White (requires API key)</option>
-                                    <option value="light" ${radar.background_map === 'light' ? 'selected' : ''}>Light</option>
-                                    <option value="color" ${radar.background_map === 'color' ? 'selected' : ''}>Color</option>
-                                    <option value="dark" ${radar.background_map === 'dark' ? 'selected' : ''}>Dark</option>
-                                    <option value="voyager" ${radar.background_map === 'voyager' ? 'selected' : ''}>Voyager</option>
-                                    <option value="satellite" ${radar.background_map === 'satellite' ? 'selected' : ''}>Satellite</option>
-                                    <option value="topo" ${radar.background_map === 'topo' ? 'selected' : ''}>Topographic</option>
-                                    <option value="outlines" ${radar.background_map === 'outlines' ? 'selected' : ''}>Outlines (requires API key)</option>
+                                    ${this._backgroundMapOptionsHtml(radar.background_map || 'none')}
                                 </select>
                             </div>
-                            ${this._mapTypeRequiresApiKey(radar.background_map) ? `
-                                <div class="form-row">
-                                    <label>Stadia Maps API Key:</label>
-                                    <input type="text" class="full-width" id="radar-background-map-api-key"
-                                        value="${radar.background_map_api_key || ''}" placeholder="Get free key at stadiamaps.com" />
-                                    <span class="help-text">Required for Black & White and Outlines map types. <a href="https://stadiamaps.com/" target="_blank" rel="noopener noreferrer">Get a free API key</a></span>
-                                </div>
-                            ` : ''}
+                            ${
+                                radar.background_map === 'system'
+                                ? `
+                                    <p class="help-text">Pick one map for light themes and one for dark themes. Each map can have its own API key.</p>
+                                    <div class="form-row">
+                                        <label>Light Theme Map:</label>
+                                        <select id="radar-background-map-light">
+                                            ${this._themeMapOptionsHtml(radar.background_map_light || 'color')}
+                                        </select>
+                                    </div>
+                                    ${this._themeApiKeyRowHtml('light', 'Light Map API Key', radar.background_map_light || 'color', radar.background_map_light_api_key)}
+                                    <div class="form-row">
+                                        <label>Dark Theme Map:</label>
+                                        <select id="radar-background-map-dark">
+                                            ${this._themeMapOptionsHtml(radar.background_map_dark || 'dark')}
+                                        </select>
+                                    </div>
+                                    ${this._themeApiKeyRowHtml('dark', 'Dark Map API Key', radar.background_map_dark || 'dark', radar.background_map_dark_api_key)}
+                                `
+                                : this._mapTypeRequiresApiKey(radar.background_map) ? `
+                                    <div class="form-row">
+                                        <label>Map Tile API Key:</label>
+                                        <div class="input-with-help">
+                                            <input type="text" class="full-width" id="radar-background-map-api-key"
+                                                value="${radar.background_map_api_key || ''}" placeholder="Paste your API key" />
+                                            <span class="help-text">${getTileProviderHelp(radar.background_map)}</span>
+                                        </div>
+                                    </div>
+                                ` : ''
+                            }
                             <div class="form-row">
                                 <label>Map Opacity:</label>
                                 <input type="number" min="0" max="1" step="0.1" id="radar-background-map-opacity"
@@ -1313,6 +1392,15 @@ export class Flightradar24CardEditor extends HTMLElement {
                             <input type="checkbox" id="list-show-status" ${list.showListStatus !== false ? 'checked' : ''} />
                             Show List Status
                         </label>
+                    </div>
+                    <div class="form-row">
+                        <label>Position:</label>
+                        <select id="list-position">
+                            <option value="below" ${(list.position || 'below') === 'below' ? 'selected' : ''}>Below (default)</option>
+                            <option value="left" ${list.position === 'left' ? 'selected' : ''}>Left</option>
+                            <option value="right" ${list.position === 'right' ? 'selected' : ''}>Right</option>
+                        </select>
+                        <span class="help-text">Place the flight list to the side of the radar/map on wide cards. If the card is too narrow to fit the flight list side by side, it automatically falls back to the "below" layout.</span>
                     </div>
                     <div class="form-row">
                         <label>No Flights Message:</label>
@@ -2014,6 +2102,27 @@ export class Flightradar24CardEditor extends HTMLElement {
             }
         });
 
+        // Radar view mode
+        const radarView = root.getElementById('radar-view') as HTMLSelectElement;
+        if (radarView) {
+            radarView.addEventListener('change', (e) => {
+                const radar = this._config.radar || {};
+                this._config = { ...this._config, radar: { ...radar, view: (e.target as HTMLSelectElement).value as 'radar' | 'map' } };
+                this._emitConfigChanged();
+                this._render();
+            });
+        }
+
+        // Radar rings / lines
+        const radarRings = root.getElementById('radar-rings') as HTMLInputElement;
+        if (radarRings) {
+            radarRings.addEventListener('change', (e) => {
+                const radar = this._config.radar || {};
+                this._config = { ...this._config, radar: { ...radar, rings: (e.target as HTMLInputElement).checked } };
+                this._emitConfigChanged();
+            });
+        }
+
         // Radar colors (new properties)
         ['background-color', 'aircraft-color', 'aircraft-selected-color', 'radar-grid-color', 'local-features-color'].forEach(prop => {
             // Properties already prefixed with 'radar-' don't need the extra prefix
@@ -2128,6 +2237,34 @@ export class Flightradar24CardEditor extends HTMLElement {
             });
         }
 
+        const bindThemeMapSelect = (id: string, field: 'background_map_light' | 'background_map_dark') => {
+            const el = root.getElementById(id) as HTMLSelectElement;
+            if (el) {
+                el.addEventListener('change', (e) => {
+                    const radar = this._config.radar || {};
+                    this._config = { ...this._config, radar: { ...radar, [field]: (e.target as HTMLSelectElement).value as any } };
+                    this._emitConfigChanged();
+                    this._render();
+                });
+            }
+        };
+        bindThemeMapSelect('radar-background-map-light', 'background_map_light');
+        bindThemeMapSelect('radar-background-map-dark', 'background_map_dark');
+
+        const bindThemeMapKey = (id: string, field: 'background_map_light_api_key' | 'background_map_dark_api_key') => {
+            const el = root.getElementById(id) as HTMLInputElement;
+            if (el) {
+                el.addEventListener('input', (e) => {
+                    const radar = this._config.radar || {};
+                    const value = (e.target as HTMLInputElement).value;
+                    this._config = { ...this._config, radar: { ...radar, [field]: value || undefined } };
+                    this._emitConfigChanged();
+                });
+            }
+        };
+        bindThemeMapKey('radar-background-map-light-api-key', 'background_map_light_api_key');
+        bindThemeMapKey('radar-background-map-dark-api-key', 'background_map_dark_api_key');
+
         const radarBackgroundMapApiKey = root.getElementById('radar-background-map-api-key') as HTMLInputElement;
         if (radarBackgroundMapApiKey) {
             radarBackgroundMapApiKey.addEventListener('input', (e) => {
@@ -2170,6 +2307,19 @@ export class Flightradar24CardEditor extends HTMLElement {
                 const showListStatus = checked ? undefined : false;
                 this._config = { ...this._config, list: { ...list, showListStatus } };
                 this._emitConfigChanged();
+            });
+        }
+
+        const listPosition = root.getElementById('list-position') as HTMLSelectElement;
+        if (listPosition) {
+            listPosition.addEventListener('change', (e) => {
+                const list = this._config.list || {};
+                const value = (e.target as HTMLSelectElement).value as 'below' | 'left' | 'right';
+                // 'below' is the default, so only persist it when it is not the default
+                const position = value === 'below' ? undefined : value;
+                this._config = { ...this._config, list: { ...list, position } };
+                this._emitConfigChanged();
+                this._render();
             });
         }
 
@@ -3084,9 +3234,11 @@ export class Flightradar24CardEditor extends HTMLElement {
             attributionControl: false
         });
 
-        // Add tile layer
+        // referrerPolicy: HA's page-level "same-origin" policy strips the
+        // Referer header that OSM requires, otherwise tiles return 403.
         (window as any).L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19
+            maxZoom: 19,
+            referrerPolicy: 'strict-origin-when-cross-origin'
         }).addTo(map);
 
         // Add center marker
@@ -3414,14 +3566,3 @@ export class Flightradar24CardEditor extends HTMLElement {
 }
 
 customElements.define('flightradar24-radar-card-editor', Flightradar24CardEditor);
-
-// Backwards-compatible alias for the original editor element. The Flightradar24
-// integration ships its own card under 'flightradar24-card-editor', so only
-// register this alias when that name is not already taken by another card.
-if (!customElements.get('flightradar24-card-editor')) {
-    try {
-        customElements.define('flightradar24-card-editor', class extends Flightradar24CardEditor {});
-    } catch (e) {
-        console.error('[FR24Card] Could not register flightradar24-card-editor alias:', e);
-    }
-}

@@ -1,5 +1,11 @@
 import { getLocation } from '../utils/location';
 import { haversine } from '../utils/geometric';
+import {
+    getTileProvider,
+    buildTileUrl,
+    requiresApiKey,
+    VALID_MAPS
+} from './tileProviders';
 import type { CardState, LeafletMap } from '../types/cardState';
 
 declare global {
@@ -28,7 +34,7 @@ interface LeafletMapOptions {
     doubleClickZoom: boolean;
     keyboard: boolean;
     touchZoom: boolean;
-    zoomSnap: number;
+    zoomSnap?: number;
     pointerEvents: boolean;
 }
 
@@ -40,19 +46,36 @@ interface TileLayerOptions {
     api_key?: string;
     attribution?: string;
     subdomains?: string[];
+    referrerPolicy?: string;
 }
 
 type LatLngBoundsLiteral = [[number, number], [number, number]];
 
-type BackgroundMapType = 'none' | 'system' | 'bw' | 'color' | 'dark' | 'outlines';
-
-const VALID_MAPS = new Set<string>(['bw', 'light', 'color', 'dark', 'voyager', 'satellite', 'topo', 'outlines', 'system']);
-
 export function shouldRenderRadarBackgroundMap(cardState: CardState): boolean {
     const radar = cardState?.radar;
     if (!radar || radar.hide === true) return false;
-    if (!radar.background_map || !VALID_MAPS.has(radar.background_map)) return false;
-    return true;
+    // Read the raw config so the default 'none' (nothing configured) can be told
+    // apart from an explicit "none" choice, which hides the map entirely.
+    const configured = cardState?.config?.radar?.background_map as string | undefined;
+    const isValid = !!configured && (VALID_MAPS.has(configured) || configured === 'system');
+    // Square map view always renders a map background unless 'none' was chosen.
+    if (radar.view === 'map') {
+        return !configured || isValid;
+    }
+    if (!configured || configured === 'none') return false;
+    return isValid;
+}
+
+/** Best-effort dark theme detection (Home Assistant parent theme, else OS preference). */
+function isDarkTheme(): boolean {
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    let haDark = false;
+    try {
+        haDark = !!(window.parent && window.parent.document && window.parent.document.body.classList.contains('dark'));
+    } catch (_e) {
+        // Cross-origin access may fail, ignore
+    }
+    return haDark || prefersDark;
 }
 
 /**
@@ -61,6 +84,12 @@ export function shouldRenderRadarBackgroundMap(cardState: CardState): boolean {
  */
 export function ensureLeafletLoadedIfNeeded(cardState: CardState, shadowRoot: ShadowRoot, onReady: () => void): void {
     if (!shouldRenderRadarBackgroundMap(cardState)) {
+        // No tiled background is wanted (e.g. background_map: 'none'), but the
+        // map area with radar overlays and flights still renders. Run the render
+        // callback immediately instead of gating it behind Leaflet.
+        if (cardState.radar?.hide !== true) {
+            onReady();
+        }
         return;
     }
     // Always ensure Leaflet CSS is present. renderStatic clears shadow DOM,
@@ -124,71 +153,18 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
         return;
     }
 
-    const type = config?.radar?.background_map as BackgroundMapType | undefined;
+    const configuredType = config?.radar?.background_map as string | undefined;
+    // In map view, always show a map. Fall back to the auto dark/light "system"
+    // tiles when the user has not chosen an explicit background map.
+    let mode = configuredType;
+    if (cardState.radar?.view === 'map' && (!configuredType || configuredType === 'none' || !VALID_MAPS.has(configuredType))) {
+        mode = 'system';
+    }
 
-    const TILE_LAYERS: Record<string, TileLayerConfig | null> = {
-        bw: [
-            'https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png',
-            {
-                api_key: '?api_key=',
-                attribution: 'Map tiles by Stamen Design, CC BY 3.0 — Map data © OpenStreetMap',
-                subdomains: []
-            }
-        ],
-        light: [
-            'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-            {
-                attribution: '&copy; CartoDB, &copy; OpenStreetMap contributors',
-                subdomains: ['a', 'b', 'c', 'd']
-            }
-        ],
-        color: [
-            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            {
-                attribution: '&copy; OpenStreetMap contributors',
-                subdomains: ['a', 'b', 'c']
-            }
-        ],
-        dark: [
-            'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-            {
-                attribution: '&copy; CartoDB, &copy; OpenStreetMap contributors',
-                subdomains: ['a', 'b', 'c', 'd']
-            }
-        ],
-        voyager: [
-            'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-            {
-                attribution: '&copy; CartoDB, &copy; OpenStreetMap contributors',
-                subdomains: ['a', 'b', 'c', 'd']
-            }
-        ],
-        satellite: [
-            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-            {
-                attribution: '&copy; Esri, Maxar, Earthstar Geographics',
-                subdomains: []
-            }
-        ],
-        topo: [
-            'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-            {
-                attribution: '&copy; OpenTopoMap, &copy; OpenStreetMap contributors',
-                subdomains: ['a', 'b', 'c']
-            }
-        ],
-        outlines: [
-            'https://tiles.stadiamaps.com/tiles/stamen_toner_lines/{z}/{x}/{y}.png',
-            {
-                api_key: '?api_key=',
-                attribution: 'Map tiles by Stamen Design, hosted by Stadia Maps; Data by OpenStreetMap',
-                subdomains: []
-            }
-        ],
-        system: null
-    };
-
-    const opacity = typeof config?.radar?.background_map_opacity === 'number' ? Math.max(0, Math.min(1, config.radar.background_map_opacity)) : 1;
+    const mapView = cardState.radar?.view === 'map';
+    const opacity = mapView
+        ? 1
+        : (typeof config?.radar?.background_map_opacity === 'number' ? Math.max(0, Math.min(1, config.radar.background_map_opacity)) : 1);
 
     let mapBg = radarScreen.querySelector('#radar-map-bg') as HTMLDivElement | null;
     if (!mapBg) {
@@ -231,49 +207,57 @@ export function setupRadarMapBg(cardState: CardState, radarScreen: HTMLElement):
         [lat - deltaLat, lon - deltaLon],
         [lat + deltaLat, lon + deltaLon]
     ];
-    let resolvedType = type;
-    if (type === 'system') {
-        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        let haDark = false;
-        try {
-            haDark = !!(window.parent && window.parent.document && window.parent.document.body.classList.contains('dark'));
-        } catch (_e) {
-            // Cross-origin access may fail, ignore
-        }
-        if (haDark || prefersDark) {
-            resolvedType = 'dark';
+    // Resolve the effective map type and its API key.
+    // - 'system' (auto dark/light) picks from the user's two configured maps,
+    //   one for light theme and one for dark theme, each with its own key.
+    // - an explicit provider id uses background_map + background_map_api_key
+    //   (kept for backwards compatibility).
+    let finalType: string;
+    let effectiveApiKey: string | undefined;
+    if (mode === 'system') {
+        if (isDarkTheme()) {
+            finalType = config?.radar?.background_map_dark || 'dark';
+            effectiveApiKey = config?.radar?.background_map_dark_api_key || '';
         } else {
-            resolvedType = 'color';
+            finalType = config?.radar?.background_map_light || 'color';
+            effectiveApiKey = config?.radar?.background_map_light_api_key || '';
         }
+    } else {
+        finalType = configuredType && VALID_MAPS.has(configuredType) ? configuredType : 'color';
+        effectiveApiKey = config?.radar?.background_map_api_key || '';
     }
-    const tileLayerConfig = TILE_LAYERS[resolvedType || 'color'] || TILE_LAYERS.color;
-    if (!tileLayerConfig) return mapBg;
 
-    let [tileUrl, tileOpts] = tileLayerConfig; // eslint-disable-line prefer-const
+    const provider = getTileProvider(finalType);
+    if (!provider) return mapBg;
+    const tileUrl = buildTileUrl(finalType, effectiveApiKey);
+    if (!tileUrl) return mapBg;
+    // OSM requires a Referer header; HA's page-level "same-origin" policy
+    // strips it on cross-origin tile requests, causing 403s.
+    const tileOpts = {
+        attribution: provider.attribution,
+        subdomains: provider.subdomains,
+        referrerPolicy: 'strict-origin-when-cross-origin'
+    };
 
-    // Check if this tile provider requires an API key
-    const requiresApiKey = tileOpts && 'api_key' in tileOpts;
-    const hasApiKey = config?.radar?.background_map_api_key && config.radar.background_map_api_key.trim().length > 0;
-
-    if (requiresApiKey && !hasApiKey) {
-        if (cardState._leafletMap) {
-            cardState._leafletMap.remove();
-            cardState._leafletMap = null;
+    // If this provider requires an API key and none is configured, show a notice.
+    if (requiresApiKey(finalType)) {
+        const hasApiKey = effectiveApiKey && effectiveApiKey.trim().length > 0;
+        if (!hasApiKey) {
+            if (cardState._leafletMap) {
+                cardState._leafletMap.remove();
+                cardState._leafletMap = null;
+            }
+            mapBg.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--secondary-text-color); text-align: center; padding: 20px; font-size: 0.9em;">API key required for this map type. Configure in Background Map settings.</div>';
+            return mapBg;
         }
-        mapBg.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--secondary-text-color); text-align: center; padding: 20px; font-size: 0.9em;">API key required for this map type. Configure in Background Map settings.</div>';
-        return mapBg;
     }
 
     if (!cardState._leafletMap) {
         mapBg.innerHTML = '';
     }
 
-    if (requiresApiKey && hasApiKey && config?.radar?.background_map_api_key) {
-        tileUrl = tileUrl + tileOpts.api_key + encodeURIComponent(config.radar.background_map_api_key);
-    }
-
     if (window.L) {
-        const newMapConfig = { type: resolvedType || 'color', apiKey: config?.radar?.background_map_api_key };
+        const newMapConfig = { type: finalType, apiKey: effectiveApiKey };
         const mapConfigChanged = !cardState._currentMapConfig ||
             cardState._currentMapConfig.type !== newMapConfig.type ||
             cardState._currentMapConfig.apiKey !== newMapConfig.apiKey;

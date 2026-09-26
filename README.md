@@ -74,14 +74,16 @@ To install the card, follow these steps:
 
 ### Migrating from `custom:flightradar24-card`
 
-The Flightradar24 integration now ships its own card under the type `custom:flightradar24-card`, which conflicts with this card's original type name. To resolve this, this card is now registered as **`custom:flightradar24-radar-card`**.
+The Flightradar24 integration now ships its own card under the type `custom:flightradar24-card`, which conflicts with this card's original type name. This card is therefore registered as **`custom:flightradar24-radar-card`** and no longer registers the `custom:flightradar24-card` type.
 
-- **If you have the Flightradar24 integration installed**, your existing `custom:flightradar24-card` cards now render the integration's built-in map card. Update them to `custom:flightradar24-radar-card` to keep using this card.
-- The card is now listed as **"Flightradar24 Radar Card"** in the Add card dialog, and appears in the "By entity" suggestions for your Flightradar24 flights sensor.
+As of **v0.4.1** the `custom:flightradar24-card` alias has been removed. Earlier versions registered it when the name was free, but a custom element type can only be registered once: if this card loaded its alias before the Flightradar24 integration's card, the integration's card failed to load. To avoid breaking the integration's card, the alias must not be registered at all.
+
+- Update every existing `custom:flightradar24-card` card on your dashboards to `custom:flightradar24-radar-card`.
+- The card is listed as **"Flightradar24 Radar Card"** in the Add card dialog, and appears in the "By entity" suggestions for your Flightradar24 flights sensor.
 
 #### Updating existing cards
 
-The Flightradar24 integration's built-in card now owns the `custom:flightradar24-card` type, and the card **type** cannot be changed in the visual card editor — it has to be updated in the dashboard's raw YAML configuration. There are two ways:
+The card **type** cannot be changed in the visual card editor — it has to be updated in the dashboard's raw YAML configuration. There are two ways:
 
 - **Dashboards with YAML mode** (`lovelace: mode: yaml`): edit `ui-lovelace.yaml` and replace `type: custom:flightradar24-card` with `type: custom:flightradar24-radar-card`.
 - **Dashboards managed via the UI**: open the dashboard, click the edit (pencil) icon, then the three-dot menu (⋮) and select **Raw config editor**. In the YAML, replace `type: custom:flightradar24-card` with `type: custom:flightradar24-radar-card`, then save.
@@ -229,8 +231,12 @@ radar:
 | `hide`                   | Option to hide the radar                                  | `false`                         | Must be `true` or `false`                             |
 | `hide_range`           | Option to hide the radar range                       | `false`                           | Must be `true` or `false`                             |
 | `radar_size`             | Size of the radar as percentage of card width             | `70`                            | Number between 30 and 90                              |
+| `view`                   | Display mode of the radar area                            | `radar`                         | `radar` (circular screen) or `map` (square, full-bleed) |
+| `rings`                  | Draw the radar grid rings / bearing lines                 | `true` in radar view, `false` in map view | Must be `true` or `false`  |
 
 **Note:** For backwards compatibility, the old color property names (`primary-color`, `accent-color`, `feature-color`) are still supported but deprecated. They will be automatically migrated to the new names when using the visual editor.
+
+**Square map mode (`view: map`):** Instead of the circular radar screen, the radar area is rendered as a square map that fills the full width of the card (each side of the square equals the card's inner width). This works great in fullscreen and multi-column layouts where you want a large, unobstructed map. The `radar_size` setting is ignored in map mode. When no `background_map` is configured in map mode, the card automatically falls back to the `system` map type so a map is always shown. Setting `background_map: none` skips the tiled background — the map area still renders with the radar background color, overlays, and flights on top. Radar grid rings and bearing lines are hidden in map mode by default; set `rings: true` to force them back on.
 
 ##### Radar Filter
 
@@ -369,22 +375,35 @@ The desc: fields will be ignored by the Card, but will be useful if you want to 
 
 ```yaml
 radar:
-    background_map: bw # Options: bw, color, dark, outlines
+    background_map: color # Options: keyless (color, satellite, topo) or keyed (light, dark, voyager, bw, outlines)
     background_map_opacity: 0.7 # Opacity of the map (0=transparent, 1=opaque)
-    background_map_api_key: YOUR_API_KEY # Optional, for some providers
+    background_map_api_key: YOUR_API_KEY # Required only for keyed map types
 ```
 
-| Option                   | Description                                                                                                                | Values                                      | Default |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ------- |
-| `background_map`         | Type of map background. <br> - `system`: Auto-selects 'dark' or 'color' style to match Home Assistant or system Dark Mode. | `system`, `bw`, `color`, `dark`, `outlines` | `none`  |
-| `background_map_opacity` | Opacity for background map (0 [visible] to 1 [transparent]).                                                               | 0–1 (float)                                 | 0       |
-| `background_map_api_key` | API key for selected tile provider (optional, for providers that require it).                                              | string (optional)                           | –       |
+| Option                   | Description                                                                                                                | Values                                                                | Default |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------- |
+| `background_map`         | Type of map background. <br> - `system`: Uses one map for light themes and one for dark themes (select each below).        | `system`, `none`, `color`, `satellite`, `topo`, `light`, `dark`, `voyager`, `bw`, `outlines` | `none`  |
+| `background_map_light`   | Map used in light theme when `background_map: system`.                                                                     | `color`, `satellite`, `topo`, `light`, `dark`, `voyager`, `bw`, `outlines` | `color` |
+| `background_map_dark`    | Map used in dark theme when `background_map: system`.                                                                      | `color`, `satellite`, `topo`, `light`, `dark`, `voyager`, `bw`, `outlines` | `dark`  |
+| `background_map_light_api_key` | API key for `background_map_light`, if that map requires one.                                                        | string (optional)                                                      | –       |
+| `background_map_dark_api_key`  | API key for `background_map_dark`, if that map requires one.                                                          | string (optional)                                                      | –       |
+| `background_map_opacity` | Opacity for background map (0=transparent, 1=opaque).                                                                      | 0–1 (float)                                                            | 0       |
+| `background_map_api_key` | API key for the selected tile provider. Required only for keyed map types (see below).                                     | string (optional)                                                      | –       |
 
--   **`system`**: Automatically uses a dark map (`dark`) in dark mode and a standard colored map (`color`) in light mode, matching your Home Assistant or operating system theme.
--   **`bw`**: Black-and-white (Stamen Toner)
+**Keyless maps** (no API key required — work out of the box):
+-   **`system`**: Auto-follows your Home Assistant or operating system theme. In light mode it uses your `background_map_light` map and in dark mode your `background_map_dark` map (each can have its own API key). Defaults to `color` (light) and `dark` (dark), matching the previous fixed behaviour — existing `system` configurations keep working unchanged after upgrading.
 -   **`color`**: Standard OpenStreetMap (colored)
--   **`dark`**: Dark theme map (CartoDB)
--   **`outlines`**: Geographic outlines only
+-   **`satellite`**: Esri World Imagery (aerial/satellite)
+-   **`topo`**: OpenTopoMap (topographic)
+
+**Keyed maps** (require `background_map_api_key` to render — the tile provider serves an "API key required" watermark without it):
+-   **`light`**: CartoDB Positron (light). [Request a free CARTO key](https://carto.com/basemaps/apikey)
+-   **`dark`**: CartoDB Dark Matter (dark). [Request a free CARTO key](https://carto.com/basemaps/apikey)
+-   **`voyager`**: CartoDB Voyager (color). [Request a free CARTO key](https://carto.com/basemaps/apikey)
+-   **`bw`**: Stamen Toner, black-and-white (Stadia Maps). [Get a free Stadia Maps key](https://stadiamaps.com/)
+-   **`outlines`**: Geographic outlines only (Stadia Maps). [Get a free Stadia Maps key](https://stadiamaps.com/)
+
+> CARTO and Stadia tiles require a per-user API key. Per provider terms the key must not be shared, so the card does not ship a default key — each user requests their own and enters it in the `background_map_api_key` field (or in the card editor).
 
 Example:
 
@@ -392,6 +411,16 @@ Example:
 radar:
     background_map: color
     background_map_opacity: 0.5
+```
+
+Example with per-theme maps (auto dark/light, each with its own key):
+
+```yaml
+radar:
+    background_map: system
+    background_map_light: color
+    background_map_dark: voyager
+    background_map_dark_api_key: YOUR_CARTO_KEY
 ```
 
 If `background_map` is configured, the selected map is rendered beneath the radar graphics. Use transparency to blend the map with the radar background color.
@@ -404,14 +433,18 @@ Configure flight list settings with the `list` option.
 list:
     hide: true
     showListStatus: true
+    position: below
 ```
 
-| Name             | Description                                                                       | Default Value | Constraints               |
-| ---------------- | --------------------------------------------------------------------------------- | ------------- | ------------------------- |
-| `hide`           | Option to hide the flight list below the radar card                               | `false`       | Must be `true` or `false` |
-| `showListStatus` | Show a summary/status line above the list showing flights listed and total count. | `false`       | Must be `true` or `false` |
+| Name             | Description                                                                       | Default Value | Constraints                                   |
+| ---------------- | --------------------------------------------------------------------------------- | ------------- | --------------------------------------------- |
+| `hide`           | Option to hide the flight list below the radar card                               | `false`       | Must be `true` or `false`                     |
+| `showListStatus` | Show a summary/status line above the list showing flights listed and total count. | `false`       | Must be `true` or `false`                     |
+| `position`       | Position of the flight list relative to the radar/map                              | `below`       | Must be `below`, `left`, or `right`           |
 
 **Note:** When `list.hide` is enabled, the detailed flight list will not be displayed.
+
+**Responsive fallback:** The `left` and `right` positions place the flight list beside the radar/map on wide cards. If the card is too narrow to fit the radar and flight list side by side comfortably (below ~560px), the layout automatically falls back to the `below` position. This is handled with CSS container queries, so the layout adapts dynamically as the card is resized (e.g. when switching between single-, multi-column, and fullscreen dashboards) without any configuration changes.
 
 #### Annotation Configuration
 

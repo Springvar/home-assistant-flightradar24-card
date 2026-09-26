@@ -30,10 +30,10 @@ describe('Flightradar24Card browser tests', () => {
         expect(consoleErrors).toHaveLength(0);
     });
 
-    it('should register flightradar24-card alias when name is free', async () => {
+    it('should not register flightradar24-card to avoid colliding with the integration card', async () => {
         await import('../../flightradar24-card');
 
-        expect(customElements.get('flightradar24-card')).toBeDefined();
+        expect(customElements.get('flightradar24-card')).toBeUndefined();
         expect(consoleErrors).toHaveLength(0);
     });
 
@@ -82,6 +82,56 @@ describe('Flightradar24Card browser tests', () => {
 
         // Check that shadow DOM has content
         expect(card.shadowRoot?.innerHTML).not.toBe('');
+    });
+
+    it('should apply the configured list position class to the layout root', async () => {
+        await import('../../flightradar24-card');
+
+        const card = document.createElement('flightradar24-radar-card') as HTMLElement & {
+            setConfig: (config: Record<string, unknown>) => void;
+        };
+        document.body.appendChild(card);
+
+        card.setConfig({
+            radar: {},
+            list: { position: 'left' }
+        });
+
+        const layoutRoot = card.shadowRoot?.getElementById('layout-root');
+        expect(layoutRoot).not.toBeNull();
+        expect(layoutRoot!.classList.contains('layout-left')).toBe(true);
+        // Radar is not hidden, so the radar container should be present
+        expect(card.shadowRoot?.getElementById('radar-container')).not.toBeNull();
+    });
+
+    it('should default the layout to the below position', async () => {
+        await import('../../flightradar24-card');
+
+        const card = document.createElement('flightradar24-radar-card') as HTMLElement & {
+            setConfig: (config: Record<string, unknown>) => void;
+        };
+        document.body.appendChild(card);
+
+        card.setConfig({ radar: {} });
+
+        const layoutRoot = card.shadowRoot?.getElementById('layout-root');
+        expect(layoutRoot).not.toBeNull();
+        expect(layoutRoot!.classList.contains('layout-below')).toBe(true);
+    });
+
+    it('should apply the map view class on the layout root', async () => {
+        await import('../../flightradar24-card');
+
+        const card = document.createElement('flightradar24-radar-card') as HTMLElement & {
+            setConfig: (config: Record<string, unknown>) => void;
+        };
+        document.body.appendChild(card);
+
+        card.setConfig({ radar: { view: 'map' } });
+
+        const layoutRoot = card.shadowRoot?.getElementById('layout-root');
+        expect(layoutRoot).not.toBeNull();
+        expect(layoutRoot!.classList.contains('view-map')).toBe(true);
     });
 
     it('should not produce unhandled promise rejections', async () => {
@@ -137,6 +187,7 @@ describe('Flightradar24Card browser tests', () => {
         await import('../../flightradar24-card');
 
         const entry = (window as unknown as { customCards: Array<{
+            type: string;
             getEntitySuggestion: (hass: Record<string, unknown>, entityId: string) => unknown;
         }> }).customCards.find((card) => card.type === 'flightradar24-radar-card');
 

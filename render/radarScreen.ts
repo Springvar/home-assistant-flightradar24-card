@@ -58,23 +58,30 @@ export function renderRadarScreen(cardState: CardState): void {
 
     const clippingRange = radarRange * 1.15;
 
-    const ringDistance = radar?.ring_distance ?? 10;
-    const ringCount = Math.floor(radarRange / ringDistance);
-    for (let i = 1; i <= ringCount; i++) {
-        const radius = i * ringDistance * scaleFactor;
-        const ring = document.createElement('div');
-        ring.className = 'ring';
-        ring.style.width = ring.style.height = radius * 2 + 'px';
-        ring.style.top = Math.floor(radarCenterY - radius) + 'px';
-        ring.style.left = Math.floor(radarCenterX - radius) + 'px';
-        radarScreen.appendChild(ring);
-    }
+    // In square map view the radar grid rings / bearing lines are hidden by
+    // default so the map is shown cleanly. They can be forced back on with
+    // the `radar.rings` setting. Flights are still rendered on top by renderRadar().
+    const showRings = radar?.rings ?? radar?.view !== 'map';
 
-    for (let angle = 0; angle < 360; angle += 45) {
-        const line = document.createElement('div');
-        line.className = 'dotted-line';
-        line.style.transform = `rotate(${angle - 90}deg)`;
-        radarScreen.appendChild(line);
+    if (showRings) {
+        const ringDistance = radar?.ring_distance ?? 10;
+        const ringCount = Math.floor(radarRange / ringDistance);
+        for (let i = 1; i <= ringCount; i++) {
+            const radius = i * ringDistance * scaleFactor;
+            const ring = document.createElement('div');
+            ring.className = 'ring';
+            ring.style.width = ring.style.height = radius * 2 + 'px';
+            ring.style.top = Math.floor(radarCenterY - radius) + 'px';
+            ring.style.left = Math.floor(radarCenterX - radius) + 'px';
+            radarScreen.appendChild(ring);
+        }
+
+        for (let angle = 0; angle < 360; angle += 45) {
+            const line = document.createElement('div');
+            line.className = 'dotted-line';
+            line.style.transform = `rotate(${angle - 90}deg)`;
+            radarScreen.appendChild(line);
+        }
     }
 
     const location = getLocation(cardState);

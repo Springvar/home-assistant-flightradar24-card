@@ -1,5 +1,32 @@
 # Release Notes
 
+## v0.4.2-pre.1
+
+### Fixed
+
+Background map tiles returned `403 Access Blocked (Referer required)` and never loaded.
+
+Home Assistant serves the frontend with a `same-origin` referrer policy, which strips the
+`Referer` header from cross-origin requests. OpenStreetMap's tile servers reject tile
+requests that arrive without a `Referer`, so every background map — including the
+`color` (OSM), `topo` and `light`/`dark`/`voyager` (CARTO) styles — failed to render.
+
+The tile layer now sets `referrerPolicy: "strict-origin-when-cross-origin"`, which sends
+the site origin to tile servers. This applies to the radar background map and to the map
+preview in the visual editor.
+
+## v0.4.1
+
+### Removed the `custom:flightradar24-card` backwards-compatible alias
+
+Earlier versions kept a guarded alias that registered `custom:flightradar24-card` when that name was not yet taken. A custom element type can only be registered once, however, so the guard was a race: if this card loaded before the Flightradar24 integration's built-in card, the alias claimed the name and the integration's card failed to load with `Failed to execute 'define' on 'CustomElementRegistry': the name "flightradar24-card" has already been used` on every dashboard load.
+
+The alias is now removed. The card only registers as **`custom:flightradar24-radar-card`** and no longer collides with the integration's card.
+
+### Action required
+
+Update any remaining `custom:flightradar24-card` cards on your dashboards to `custom:flightradar24-radar-card`. All other configuration options are unchanged.
+
 ## v0.3.0
 
 ### Breaking change: card type renamed to `custom:flightradar24-radar-card`
