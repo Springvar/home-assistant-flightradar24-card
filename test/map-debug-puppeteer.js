@@ -1,6 +1,6 @@
 import puppeteer from 'puppeteer';
 
-const DEV_SERVER_URL = 'http://localhost:5174/test/debug.html';
+const DEV_SERVER_URL = 'http://localhost:5173/test/debug.html';
 const WAIT_FOR_LOAD = 5000; // Wait for card to fully initialize and Leaflet to load tiles
 const WAIT_BETWEEN_ACTIONS = 3000;
 

@@ -1,6 +1,6 @@
 import puppeteer from 'puppeteer';
 
-const DEV_SERVER_URL = 'http://localhost:5174/test/debug.html';
+const DEV_SERVER_URL = 'http://localhost:5173/test/debug.html';
 
 async function diagnoseCard() {
     console.log('🚀 Launching browser...');

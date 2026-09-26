@@ -32,6 +32,7 @@
         "test:coverage": "vitest run --coverage",
         "test:browser": "vitest run --config vitest.browser.config.ts",
         "test:browser:watch": "vitest --config vitest.browser.config.ts",
+        "test:tile-referrer": "node test/verify-tile-referrer.js",
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
         "typecheck": "tsc --noEmit"
