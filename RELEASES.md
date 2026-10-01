@@ -1,5 +1,23 @@
 # Release Notes
 
+## v0.4.2
+
+### Fixed
+
+Background map tiles returned `403 Access Blocked (Referer required)` and never loaded.
+
+Home Assistant serves the frontend with a `same-origin` referrer policy, which strips the
+`Referer` header from cross-origin requests. OpenStreetMap's tile servers reject tile
+requests that arrive without a `Referer`, so the `color` (OpenStreetMap) and `topo`
+(OpenTopoMap) background maps failed to render entirely.
+
+The tile layer now sets `referrerPolicy: "strict-origin-when-cross-origin"`, which sends
+the site origin to tile servers. It is applied to every background-map provider, so
+`satellite` (Esri), `light`/`dark`/`voyager` (CARTO) and `bw`/`outlines` (Stadia) get it
+too. This applies to the radar background map and to the map preview in the visual editor.
+
+This is the stable release of `v0.4.2-pre.1`; the code is unchanged from that prerelease.
+
 ## v0.4.2-pre.1
 
 ### Fixed
