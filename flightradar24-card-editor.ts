@@ -1,5 +1,6 @@
 import type { CardConfig, Condition, FieldCondition, GroupCondition, NotCondition, SortCriterion, ToggleConfig, AnnotationConfig, RadarFeature, LocationFeature, RunwayFeature, OutlineFeature, UnitsConfig, RadarConfig, ListConfig, AircraftMarkerEntry } from './types/config';
 import { searchRunways } from './utils/runwayLookup';
+import { resolveThemedValue } from './utils/theme';
 import { templateConfig } from './config/templateConfig';
 import { TILE_PROVIDERS, requiresApiKey, getTileProviderHelp } from './render/tileProviders';
 
@@ -115,6 +116,13 @@ export class Flightradar24CardEditor extends HTMLElement {
             </div>`;
     }
 
+    // Extract the light part of an optional "light|dark" dual value so it can be
+    // shown in a color picker (which only accepts a single color).
+    private _colorPickerValue(value: string | undefined, fallback: string): string {
+        const v = value ?? fallback;
+        return v.split('|')[0].trim() || fallback;
+    }
+
     // Validation methods
     private get validFlightFields(): Set<string> {
         return new Set(this.availableFlightFields.map(f => f.value));
@@ -208,7 +216,7 @@ export class Flightradar24CardEditor extends HTMLElement {
         const allTemplates = { ...templateConfig, ...userTemplates };
 
         // Main templates that are always used
-        const mainTemplates = ['flight_element', 'radar_range', 'list_status'];
+        const mainTemplates = ['flight_element', 'radar_range', 'radar_label', 'list_status'];
         mainTemplates.forEach(k => {
             if (userTemplates[k] !== undefined) used.add(k);
         });
@@ -1212,7 +1220,7 @@ export class Flightradar24CardEditor extends HTMLElement {
                         <div class="section-content">
                             <div class="form-row">
                                 <label>Background Color:</label>
-                                <input type="color" id="radar-background-color" value="${radar['background-color'] ?? radar['primary-color'] ?? '#ffffff'}" />
+                                <input type="color" id="radar-background-color" value="${this._colorPickerValue(radar['background-color'] ?? radar['primary-color'], '#ffffff')}" />
                             </div>
                             <div class="form-row">
                                 <label>Background Opacity:</label>
@@ -1220,19 +1228,19 @@ export class Flightradar24CardEditor extends HTMLElement {
                             </div>
                             <div class="form-row">
                                 <label>Aircraft Marker:</label>
-                                <input type="color" id="radar-aircraft-color" value="${radar['aircraft-color'] ?? radar['accent-color'] ?? '#ff0000'}" />
+                                <input type="color" id="radar-aircraft-color" value="${this._colorPickerValue(radar['aircraft-color'] ?? radar['accent-color'], '#ff0000')}" />
                             </div>
                             <div class="form-row">
                                 <label>Aircraft Marker (Selected):</label>
-                                <input type="color" id="radar-aircraft-selected-color" value="${radar['aircraft-selected-color'] ?? radar['aircraft-color'] ?? radar['accent-color'] ?? '#ff6600'}" />
+                                <input type="color" id="radar-aircraft-selected-color" value="${this._colorPickerValue(radar['aircraft-selected-color'] ?? radar['aircraft-color'] ?? radar['accent-color'], '#ff6600')}" />
                             </div>
                             <div class="form-row">
                                 <label>Radar Grid:</label>
-                                <input type="color" id="radar-grid-color" value="${radar['radar-grid-color'] ?? radar['feature-color'] ?? '#888888'}" />
+                                <input type="color" id="radar-grid-color" value="${this._colorPickerValue(radar['radar-grid-color'] ?? radar['feature-color'], '#888888')}" />
                             </div>
                             <div class="form-row">
                                 <label>Local Features:</label>
-                                <input type="color" id="radar-local-features-color" value="${radar['local-features-color'] ?? radar['feature-color'] ?? radar['radar-grid-color'] ?? '#888888'}" />
+                                <input type="color" id="radar-local-features-color" value="${this._colorPickerValue(radar['local-features-color'] ?? radar['feature-color'] ?? radar['radar-grid-color'], '#888888')}" />
                             </div>
                         </div>
                     </details>
@@ -1247,9 +1255,9 @@ export class Flightradar24CardEditor extends HTMLElement {
                                         const selected = (radar['aircraft-marker-size'] || 'normal') === size;
                                         const scales: Record<string, number> = { small: 0.7, normal: 1.0, large: 1.4, 'x-large': 2.0, 'xx-large': 2.8 };
                                         const scale = scales[size];
-                                        // Use the same color resolution as render/style.ts
-                                        const backgroundColor = radar['background-color'] || radar['primary-color'] || '#1a1a1a';
-                                        const aircraftColor = radar['aircraft-color'] || radar['accent-color'] || '#ff0000';
+                                        // Use the same color resolution as render/style.ts, including "light|dark" dual values
+                                        const backgroundColor = resolveThemedValue(radar['background-color'] || radar['primary-color'] || '#1a1a1a');
+                                        const aircraftColor = resolveThemedValue(radar['aircraft-color'] || radar['accent-color'] || '#ff0000');
                                         const backgroundOpacity = radar['background-opacity'] ?? 0.05;
                                         return `
                                             <button class="marker-size-option ${selected ? 'selected' : ''}" data-size="${size}">
@@ -1529,7 +1537,7 @@ export class Flightradar24CardEditor extends HTMLElement {
         const templates = this._config.templates || {};
 
         // Define main templates that are directly used by renderers
-        const mainTemplates = ['flight_element', 'radar_range', 'list_status'];
+        const mainTemplates = ['flight_element', 'radar_range', 'radar_label', 'list_status'];
 
         // Get list of default templates that haven't been overridden
         const availableDefaults = Object.keys(templateConfig).filter(key => !(key in templates));
@@ -2136,7 +2144,10 @@ export class Flightradar24CardEditor extends HTMLElement {
                     if (prop === 'background-color' && configCopy.radar) delete configCopy.radar['primary-color'];
                     if (prop === 'aircraft-color' && configCopy.radar) delete configCopy.radar['accent-color'];
                     if ((prop === 'radar-grid-color' || prop === 'local-features-color') && configCopy.radar) delete configCopy.radar['feature-color'];
-                    this._config = { ...configCopy, radar: { ...radar, [prop]: (e.target as HTMLInputElement).value } };
+                    // The picker edits the light part; keep the dark part of a "light|dark" dual value
+                    const existing = (radar as Record<string, unknown>)[prop];
+                    const darkSuffix = typeof existing === 'string' && existing.includes('|') ? existing.slice(existing.indexOf('|')) : '';
+                    this._config = { ...configCopy, radar: { ...radar, [prop]: (e.target as HTMLInputElement).value + darkSuffix } };
                     this._emitConfigChanged();
                     // Re-render if background or aircraft color changed (updates marker preview buttons)
                     if (prop === 'background-color' || prop === 'aircraft-color') {

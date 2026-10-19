@@ -226,6 +226,7 @@ radar:
 | `radar-grid-color`       | Color for radar rings and cardinal direction lines        | `var(--secondary-text-color)`   | Must be a valid CSS color                             |
 | `local-features-color`   | Color for local features (runways, locations, outlines)   | Same as `radar-grid-color`      | Must be a valid CSS color                             |
 | `callsign-label-color`   | Color for callsign labels                                 | `var(--primary-background-color)`| Must be a valid CSS color                            |
+| `callsign-label-font-size` | Font size for callsign labels                           | `9px`                            | Must be a CSS font size such as `12px`, `0.8em` or `10pt` |
 | `aircraft-marker-size`   | Size of aircraft markers on the radar                     | `normal`                        | Must be `small`, `normal`, `large`, `x-large`, or `xx-large` |
 | `aircraft-marker`        | Custom image markers per aircraft (see below)             | None                            | Must be a mapping of aircraft identifiers to marker objects |
 | `hide`                   | Option to hide the radar                                  | `false`                         | Must be `true` or `false`                             |
@@ -235,6 +236,15 @@ radar:
 | `rings`                  | Draw the radar grid rings / bearing lines                 | `true` in radar view, `false` in map view | Must be `true` or `false`  |
 
 **Note:** For backwards compatibility, the old color property names (`primary-color`, `accent-color`, `feature-color`) are still supported but deprecated. They will be automatically migrated to the new names when using the visual editor.
+
+**Light/dark theme variants:** Every radar color option, plus `callsign-label-font-size`, accepts an optional dual value `"light|dark"`. The first value is used while a light theme is active, the second while a dark theme is active. Dark themes are detected from the Home Assistant theme, falling back to the OS preference. A single value keeps working as before, and an empty part falls back to the other part.
+
+```yaml
+radar:
+    aircraft-color: 'var(--accent-color)|#ff8a80'
+    callsign-label-color: 'rgba(255,255,255,0.8)|rgba(0,0,0,0.8)'
+    callsign-label-font-size: '10px|12px'
+```
 
 **Square map mode (`view: map`):** Instead of the circular radar screen, the radar area is rendered as a square map that fills the full width of the card (each side of the square equals the card's inner width). This works great in fullscreen and multi-column layouts where you want a large, unobstructed map. The `radar_size` setting is ignored in map mode. When no `background_map` is configured in map mode, the card automatically falls back to the `system` map type so a map is always shown. Setting `background_map: none` skips the tiled background — the map area still renders with the radar background color, overlays, and flights on top. Radar grid rings and bearing lines are hidden in map mode by default; set `rings: true` to force them back on.
 
@@ -564,6 +574,7 @@ By default, the card comes with predefined templates for each element. However, 
 | `proximity_info`        | Template for displaying proximity information when the flight is approaching.               | `<div style="font-weight: bold; font-style: italic;">${flight.is_approaching && flight.ground_speed > 70 && flight.closest_passing_distance < 15 ? 'Closest Distance: ${flight.closest_passing_distance} ${units.distance}, ETA: ${flight.eta_to_closest_distance} min' : ""}</div>` |
 | `flight_element`        | HTML template for rendering the complete flight element.                                    | `${tpl.header}${tpl.aircraft_info_element}${tpl.route_element}${tpl.flight_status}${tpl.position_status}${tpl.proximity_info}`                                                                                                                                                       |
 | `radar_range`           | Template for displaying the current radar range in the radar view.                          | `Range: ${radar_range} ${units.distance}`                                                                                                                                                                                                                                            |
+| `radar_label`           | Template for the aircraft label shown next to each marker in the radar/map view.             | `${flight.callsign ?? flight.aircraft_registration ?? "n/a"}`                                                                                                                                                                                                                        |
 
 **Note:** The template used when rendering flights is the `flight_element` template. The default `flight_element` consist of the templates for `header`, `aircraft_info_element`, `route_element`, `flight_status`, `position_status` and `proximity_info`.
 

@@ -1,5 +1,6 @@
 import { getLocation } from '../utils/location';
 import { haversine } from '../utils/geometric';
+import { isDarkTheme } from '../utils/theme';
 import {
     getTileProvider,
     buildTileUrl,
@@ -64,18 +65,6 @@ export function shouldRenderRadarBackgroundMap(cardState: CardState): boolean {
     }
     if (!configured || configured === 'none') return false;
     return isValid;
-}
-
-/** Best-effort dark theme detection (Home Assistant parent theme, else OS preference). */
-function isDarkTheme(): boolean {
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    let haDark = false;
-    try {
-        haDark = !!(window.parent && window.parent.document && window.parent.document.body.classList.contains('dark'));
-    } catch (_e) {
-        // Cross-origin access may fail, ignore
-    }
-    return haDark || prefersDark;
 }
 
 /**

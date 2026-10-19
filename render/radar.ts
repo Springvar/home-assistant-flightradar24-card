@@ -1,10 +1,16 @@
 import { applyFilter } from '../utils/filter';
 import { handleFlightTap } from '../utils/action';
+import { parseTemplate } from '../utils/template';
 import type { Flight } from '../types/flight';
 import type { Condition, AircraftMarkerEntry } from '../types/config';
 import type { CardState } from '../types/cardState';
 
 const DISPLAY_SIZE = 12;
+
+const joinList =
+    (joinWith: string) =>
+    (...elements: (string | undefined)[]) =>
+        elements?.filter((e) => e).join(joinWith || ' ');
 
 const imgCache = new Map<string, Promise<HTMLImageElement>>();
 const renderCache = new Map<string, Promise<HTMLCanvasElement>>();
@@ -250,7 +256,12 @@ export function renderRadar(cardState: CardState): void {
 
                 const label = document.createElement('div');
                 label.className = 'callsign-label';
-                label.textContent = flight.callsign ?? flight.aircraft_registration ?? 'n/a';
+                if (cardState.templates && 'radar_label' in cardState.templates) {
+                    label.innerHTML = parseTemplate(cardState, 'radar_label', flight, joinList);
+                } else {
+                    // Fallback for states without the radar_label template (e.g. partial states in tests)
+                    label.textContent = flight.callsign ?? flight.aircraft_registration ?? 'n/a';
+                }
                 planesContainer.appendChild(label);
 
                 const labelRect = label.getBoundingClientRect();
