@@ -1246,7 +1246,7 @@ export class Flightradar24CardEditor extends HTMLElement {
                     </details>
 
                     <details data-section-id="radar-aircraft-marker">
-                        <summary><h4>Aircraft Marker</h4></summary>
+                        <summary><h4>Aircraft Marker & Label</h4></summary>
                         <div class="section-content">
                             <div class="form-row">
                                 <label>Marker Size:</label>
@@ -1276,6 +1276,15 @@ export class Flightradar24CardEditor extends HTMLElement {
                                         `;
                                     }).join('')}
                                 </div>
+                            </div>
+                            <div class="form-row">
+                                <label>Label Color:</label>
+                                <input type="color" id="radar-callsign-label-color" value="${this._colorPickerValue(radar['callsign-label-color'], '#ffffff')}" />
+                            </div>
+                            <div class="form-row">
+                                <label>Label Font Size:</label>
+                                <input type="text" id="radar-callsign-label-font-size" value="${radar['callsign-label-font-size'] ?? ''}" placeholder="9px" />
+                                <span class="help-text">CSS size such as 9px, 12px or 0.8em. Use "light|dark" for per-theme values.</span>
                             </div>
                             <fieldset class="subsection">
                                 <legend>Custom Image Marker</legend>
@@ -2132,7 +2141,7 @@ export class Flightradar24CardEditor extends HTMLElement {
         }
 
         // Radar colors (new properties)
-        ['background-color', 'aircraft-color', 'aircraft-selected-color', 'radar-grid-color', 'local-features-color'].forEach(prop => {
+        ['background-color', 'aircraft-color', 'aircraft-selected-color', 'radar-grid-color', 'local-features-color', 'callsign-label-color'].forEach(prop => {
             // Properties already prefixed with 'radar-' don't need the extra prefix
             const id = prop.startsWith('radar-') ? prop : `radar-${prop}`;
             const input = root.getElementById(id) as HTMLInputElement;
@@ -2156,6 +2165,19 @@ export class Flightradar24CardEditor extends HTMLElement {
                 });
             }
         });
+
+        // Radar callsign label font size (CSS size, optionally "light|dark")
+        const callsignLabelFontSize = root.getElementById('radar-callsign-label-font-size') as HTMLInputElement;
+        if (callsignLabelFontSize) {
+            callsignLabelFontSize.addEventListener('input', (e) => {
+                const radar = { ...(this._config.radar || {}) };
+                const value = (e.target as HTMLInputElement).value.trim();
+                if (value) radar['callsign-label-font-size'] = value;
+                else delete radar['callsign-label-font-size'];
+                this._config = { ...this._config, radar };
+                this._emitConfigChanged();
+            });
+        }
 
         // Radar background opacity
         const radarBackgroundOpacity = root.getElementById('radar-background-opacity') as HTMLInputElement;
