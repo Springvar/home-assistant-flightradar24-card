@@ -25,5 +25,6 @@ export const templateConfig: Record<string, string> = {
         '<div style="font-weight: bold; font-style: italic;">${flight.is_approaching && flight.ground_speed > 70 && flight.closest_passing_distance < 15 ? `Closest Distance: ${flight.closest_passing_distance} ${units.distance}, ETA: ${flight.eta_to_closest_distance} min` : ""}</div>',
     flight_element: '${tpl.header}${tpl.aircraft_info_element}${tpl.route_element}${tpl.flight_status}${tpl.position_status}${tpl.proximity_info}',
     radar_range: 'Range: ${radar_range} ${units.distance}',
+    radar_label: '${flight.callsign ?? flight.aircraft_registration ?? "n/a"}',
     list_status: '${flights.shown}/${flights.total}'
 };

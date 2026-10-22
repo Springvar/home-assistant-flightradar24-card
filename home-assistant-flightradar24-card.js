@@ -1,28 +1,47 @@
-var ft = Object.defineProperty, J = (t, e) => () => (t && (e = t(t = 0)), e), It = (t, e) => {
+var mt = Object.defineProperty, G = (t, e) => () => (t && (e = t(t = 0)), e), Pt = (t, e) => {
   let a = {};
   for (var i in t)
-    ft(a, i, {
+    mt(a, i, {
       get: t[i],
       enumerable: !0
     });
-  return e || ft(a, Symbol.toStringTag, { value: "Module" }), a;
+  return e || mt(a, Symbol.toStringTag, { value: "Module" }), a;
 };
-function St(t, e) {
+function Mt() {
+  const t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  let e = !1;
+  try {
+    e = !!(window.parent && window.parent.document && window.parent.document.body.classList.contains("dark"));
+  } catch {
+  }
+  return e || t;
+}
+function j(t) {
+  if (!t.includes("|")) return t;
+  const e = t.indexOf("|"), a = t.slice(0, e).trim(), i = t.slice(e + 1).trim();
+  return (Mt() ? i : a) || a || i;
+}
+var tt = G((() => {
+}));
+tt();
+function Nt(t, e) {
   const a = e.querySelector("style[data-fr24-style]");
   a && a.remove();
-  const i = t.radar, o = i["background-color"] || i["primary-color"] || "var(--dark-primary-color)", r = i["aircraft-color"] || i["accent-color"] || "var(--accent-color)", n = i["aircraft-selected-color"] || i["aircraft-color"] || i["accent-color"] || "var(--accent-color)", d = i["radar-grid-color"] || i["feature-color"] || "var(--secondary-text-color)", l = i["local-features-color"] || i["feature-color"] || i["radar-grid-color"] || "var(--secondary-text-color)", u = i["callsign-label-color"] || "var(--primary-background-color)", _ = i["background-opacity"] !== void 0 ? Math.max(0, Math.min(1, i["background-opacity"])) : 0.05, m = i.radar_size !== void 0 ? Math.max(30, Math.min(90, i.radar_size)) : 70, g = (100 - m) / 2, y = t.config.scale !== void 0 ? Math.max(0.5, Math.min(3, t.config.scale)) : 1, k = document.createElement("style");
-  k.setAttribute("data-fr24-style", "1"), k.textContent = `
+  const i = t.radar, o = j(i["background-color"] || i["primary-color"] || "var(--dark-primary-color)"), r = j(i["aircraft-color"] || i["accent-color"] || "var(--accent-color)"), n = j(i["aircraft-selected-color"] || i["aircraft-color"] || i["accent-color"] || "var(--accent-color)"), s = j(i["radar-grid-color"] || i["feature-color"] || "var(--secondary-text-color)"), l = j(i["local-features-color"] || i["feature-color"] || i["radar-grid-color"] || "var(--secondary-text-color)"), u = j(i["callsign-label-color"] || "var(--primary-background-color)"), v = j(i["callsign-label-text-color"] || "var(--primary-text-color)"), m = j(i["callsign-label-font-size"] || ""), g = /^\d+(\.\d+)?(px|em|rem|pt)$/.test(m) ? m : "9px", y = i["background-opacity"] !== void 0 ? Math.max(0, Math.min(1, i["background-opacity"])) : 0.05, k = i.radar_size !== void 0 ? Math.max(30, Math.min(90, i.radar_size)) : 70, E = (100 - k) / 2, R = t.config.scale !== void 0 ? Math.max(0.5, Math.min(3, t.config.scale)) : 1, F = document.createElement("style");
+  F.setAttribute("data-fr24-style", "1"), F.textContent = `
     :host {
       --radar-background-color: ${o};
       --radar-aircraft-color: ${r};
       --radar-aircraft-selected-color: ${n};
-      --radar-grid-color: ${d};
+      --radar-grid-color: ${s};
       --radar-local-features-color: ${l};
       --radar-callsign-label-color: ${u};
+      --radar-callsign-label-text-color: ${v};
+      --radar-callsign-label-font-size: ${g};
     }
     #flights-card {
       padding: 16px;
-      transform: scale(${y});
+      transform: scale(${R});
       transform-origin: top center;
       container-type: inline-size;
     }
@@ -108,9 +127,9 @@ function St(t, e) {
     }
     #radar-overlay {
       position: absolute;
-      width: ${m}%;
-      left: ${g}%;
-      padding: 0 0 ${m}% 0;
+      width: ${k}%;
+      left: ${E}%;
+      padding: 0 0 ${k}% 0;
       margin-bottom: 5%;
       z-index: 1;
       opacity: 0;
@@ -147,10 +166,10 @@ function St(t, e) {
     }
     #radar {
       position: relative;
-      width: ${m}%;
+      width: ${k}%;
       height: 0;
-      margin: 0 ${g}%;
-      padding-bottom: ${m}%;
+      margin: 0 ${E}%;
+      padding-bottom: ${k}%;
       margin-bottom: 5%;
       border-radius: 50%;
       overflow: hidden;
@@ -176,7 +195,7 @@ function St(t, e) {
       margin: 0;
       padding: 0%;
       background-color: var(--radar-background-color);
-      opacity: ${_};
+      opacity: ${y};
     }
     #tracker {
       position: absolute;
@@ -266,8 +285,8 @@ function St(t, e) {
       padding: 0px;
       margin: 0px;
       border-radius: 3px;
-      font-size: 9px;
-      color: var(--primary-text-color);
+      font-size: var(--radar-callsign-label-font-size);
+      color: var(--radar-callsign-label-text-color);
       z-index: 2;
     }
     .ring {
@@ -322,17 +341,17 @@ function St(t, e) {
     .leaflet-tile {
       pointer-events: none;
     }
-  `, e.appendChild(k);
+  `, e.appendChild(F);
 }
-function Dt(t, e) {
+function jt(t, e) {
   if (!e) return;
   e.innerHTML = "";
   const a = t.config.toggles || {}, i = !!window.customElements && !!customElements.get("ha-switch");
   Object.keys(a).forEach((o) => {
     const r = a[o], n = document.createElement("div");
     n.className = "toggle";
-    const d = document.createElement("label");
-    d.textContent = r.label || o, n.appendChild(d);
+    const s = document.createElement("label");
+    s.textContent = r.label || o, n.appendChild(s);
     let l;
     i ? l = document.createElement("ha-switch") : (l = document.createElement("input"), l.type = "checkbox"), l.checked = r.default === !0, l.addEventListener("change", () => {
       t.setToggleValue && t.setToggleValue(o, l.checked);
@@ -342,29 +361,29 @@ function Dt(t, e) {
 function N(t) {
   return t * (Math.PI / 180);
 }
-function at(t) {
+function ot(t) {
   return t * (180 / Math.PI);
 }
-function j(t, e, a, i, o = "km") {
-  const n = N(a - t), d = N(i - e), l = Math.sin(n / 2) * Math.sin(n / 2) + Math.cos(N(t)) * Math.cos(N(a)) * Math.sin(d / 2) * Math.sin(d / 2), u = 2 * Math.atan2(Math.sqrt(l), Math.sqrt(1 - l));
+function q(t, e, a, i, o = "km") {
+  const n = N(a - t), s = N(i - e), l = Math.sin(n / 2) * Math.sin(n / 2) + Math.cos(N(t)) * Math.cos(N(a)) * Math.sin(s / 2) * Math.sin(s / 2), u = 2 * Math.atan2(Math.sqrt(l), Math.sqrt(1 - l));
   return o === "km" ? 6371 * u : 6371 * u / 1.60934;
 }
-function V(t, e, a, i) {
+function U(t, e, a, i) {
   const o = N(i - e), r = Math.sin(o) * Math.cos(N(a)), n = Math.cos(N(t)) * Math.sin(N(a)) - Math.sin(N(t)) * Math.cos(N(a)) * Math.cos(o);
-  return (at(Math.atan2(r, n)) + 360) % 360;
+  return (ot(Math.atan2(r, n)) + 360) % 360;
 }
-function it(t, e, a, i) {
-  const r = N(a), n = N(t), d = N(e), l = i / 6371, u = Math.asin(Math.sin(n) * Math.cos(l) + Math.cos(n) * Math.sin(l) * Math.cos(r)), _ = d + Math.atan2(Math.sin(r) * Math.sin(l) * Math.cos(n), Math.cos(l) - Math.sin(n) * Math.sin(u));
+function rt(t, e, a, i) {
+  const r = N(a), n = N(t), s = N(e), l = i / 6371, u = Math.asin(Math.sin(n) * Math.cos(l) + Math.cos(n) * Math.sin(l) * Math.cos(r)), v = s + Math.atan2(Math.sin(r) * Math.sin(l) * Math.cos(n), Math.cos(l) - Math.sin(n) * Math.sin(u));
   return {
-    lat: at(u),
-    lon: at(_)
+    lat: ot(u),
+    lon: ot(v)
   };
 }
-function zt(t, e, a, i, o) {
-  const r = V(a, i, t, e), n = Math.abs((o - r + 360) % 360);
-  return it(a, i, o, j(t, e, a, i) * Math.cos(N(n)));
+function qt(t, e, a, i, o) {
+  const r = U(a, i, t, e), n = Math.abs((o - r + 360) % 360);
+  return rt(a, i, o, q(t, e, a, i) * Math.cos(N(n)));
 }
-function Pt(t) {
+function Bt(t) {
   return [
     "N",
     "NE",
@@ -376,11 +395,11 @@ function Pt(t) {
     "NW"
   ][Math.round(t / 45) % 8];
 }
-function ht(t, e, a = 60) {
+function _t(t, e, a = 60) {
   const i = Math.abs((t - e + 360) % 360);
   return i <= a || i >= 360 - a;
 }
-function K(t) {
+function Y(t) {
   if (!t || !t.config)
     return console.error("Config not set in getLocation"), {
       latitude: 0,
@@ -408,22 +427,22 @@ function K(t) {
     longitude: 0
   };
 }
-function Q(t) {
+function et(t) {
   if (t)
-    return Ct.get(t);
+    return Et.get(t);
 }
-function xt(t) {
-  return !!Q(t)?.apiKeyParam;
+function Lt(t) {
+  return !!et(t)?.apiKeyParam;
 }
-function gt(t) {
-  return Q(t)?.apiKeyHelp || "";
+function vt(t) {
+  return et(t)?.apiKeyHelp || "";
 }
-function Nt(t, e) {
-  const a = Q(t);
+function Ht(t, e) {
+  const a = et(t);
   return a ? a.apiKeyParam && e && e.trim().length > 0 ? a.url + a.apiKeyParam + encodeURIComponent(e.trim()) : a.url : "";
 }
-var X, Ct, Z, $t = J((() => {
-  X = [
+var J, Et, Q, At = G((() => {
+  J = [
     {
       id: "color",
       label: "Color (OpenStreetMap)",
@@ -521,26 +540,18 @@ var X, Ct, Z, $t = J((() => {
       attribution: "Map tiles by Stamen Design, hosted by Stadia Maps; Data by OpenStreetMap",
       subdomains: []
     }
-  ], Ct = new Map(X.map((t) => [t.id, t])), Z = new Set(X.map((t) => t.id));
+  ], Et = new Map(J.map((t) => [t.id, t])), Q = new Set(J.map((t) => t.id));
 }));
-$t();
-function Mt(t) {
+tt();
+At();
+function Rt(t) {
   const e = t?.radar;
   if (!e || e.hide === !0) return !1;
-  const a = t?.config?.radar?.background_map, i = !!a && (Z.has(a) || a === "system");
+  const a = t?.config?.radar?.background_map, i = !!a && (Q.has(a) || a === "system");
   return e.view === "map" ? !a || i : !a || a === "none" ? !1 : i;
 }
-function jt() {
-  const t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-  let e = !1;
-  try {
-    e = !!(window.parent && window.parent.document && window.parent.document.body.classList.contains("dark"));
-  } catch {
-  }
-  return e || t;
-}
-function qt(t, e, a) {
-  if (!Mt(t)) {
+function Vt(t, e, a) {
+  if (!Rt(t)) {
     t.radar?.hide !== !0 && a();
     return;
   }
@@ -563,42 +574,42 @@ function qt(t, e, a) {
     }, e.appendChild(i);
   }
 }
-function Bt(t, e) {
+function Ut(t, e) {
   const { config: a, dimensions: i } = t;
-  if (!Mt(t)) {
+  if (!Rt(t)) {
     t._leafletMap && (t._leafletMap.remove(), t._leafletMap = null);
-    const E = e.querySelector("#radar-map-bg");
-    E && E.remove();
+    const A = e.querySelector("#radar-map-bg");
+    A && A.remove();
     return;
   }
   const o = a?.radar?.background_map;
   let r = o;
-  t.radar?.view === "map" && (!o || o === "none" || !Z.has(o)) && (r = "system");
+  t.radar?.view === "map" && (!o || o === "none" || !Q.has(o)) && (r = "system");
   const n = t.radar?.view === "map" ? 1 : typeof a?.radar?.background_map_opacity == "number" ? Math.max(0, Math.min(1, a.radar.background_map_opacity)) : 1;
-  let d = e.querySelector("#radar-map-bg");
-  d ? d.style.opacity = String(n) : (d = document.createElement("div"), d.id = "radar-map-bg", d.style.position = "absolute", d.style.top = "0", d.style.left = "0", d.style.width = "100%", d.style.height = "100%", d.style.zIndex = "0", d.style.pointerEvents = "none", d.style.opacity = String(n), e.appendChild(d)), d.style.transform = "", t._leafletMap && t._leafletMap.getContainer() !== d && (t._leafletMap.remove(), t._leafletMap = null);
-  const l = K(t), u = Math.max(i?.range || 1, 1), _ = t.units?.distance === "miles" ? u * 1.60934 : u, m = l?.latitude || 0, g = l?.longitude || 0, y = Math.PI / 180, k = 111.13209 - 0.56605 * Math.cos(2 * m * y) + 12e-4 * Math.cos(4 * m * y), A = 111.32 * Math.cos(m * y) - 0.094 * Math.cos(3 * m * y), R = _ / k, F = _ / A, S = [[m - R, g - F], [m + R, g + F]];
+  let s = e.querySelector("#radar-map-bg");
+  s ? s.style.opacity = String(n) : (s = document.createElement("div"), s.id = "radar-map-bg", s.style.position = "absolute", s.style.top = "0", s.style.left = "0", s.style.width = "100%", s.style.height = "100%", s.style.zIndex = "0", s.style.pointerEvents = "none", s.style.opacity = String(n), e.appendChild(s)), s.style.transform = "", t._leafletMap && t._leafletMap.getContainer() !== s && (t._leafletMap.remove(), t._leafletMap = null);
+  const l = Y(t), u = Math.max(i?.range || 1, 1), v = t.units?.distance === "miles" ? u * 1.60934 : u, m = l?.latitude || 0, g = l?.longitude || 0, y = Math.PI / 180, k = 111.13209 - 0.56605 * Math.cos(2 * m * y) + 12e-4 * Math.cos(4 * m * y), E = 111.32 * Math.cos(m * y) - 0.094 * Math.cos(3 * m * y), R = v / k, F = v / E, D = [[m - R, g - F], [m + R, g + F]];
   let x, $;
-  r === "system" ? jt() ? (x = a?.radar?.background_map_dark || "dark", $ = a?.radar?.background_map_dark_api_key || "") : (x = a?.radar?.background_map_light || "color", $ = a?.radar?.background_map_light_api_key || "") : (x = o && Z.has(o) ? o : "color", $ = a?.radar?.background_map_api_key || "");
-  const C = Q(x);
-  if (!C) return d;
-  const M = Nt(x, $);
-  if (!M) return d;
+  r === "system" ? Mt() ? (x = a?.radar?.background_map_dark || "dark", $ = a?.radar?.background_map_dark_api_key || "") : (x = a?.radar?.background_map_light || "color", $ = a?.radar?.background_map_light_api_key || "") : (x = o && Q.has(o) ? o : "color", $ = a?.radar?.background_map_api_key || "");
+  const C = et(x);
+  if (!C) return s;
+  const M = Ht(x, $);
+  if (!M) return s;
   const w = {
     attribution: C.attribution,
     subdomains: C.subdomains,
     referrerPolicy: "strict-origin-when-cross-origin"
   };
-  if (xt(x) && !($ && $.trim().length > 0))
-    return t._leafletMap && (t._leafletMap.remove(), t._leafletMap = null), d.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--secondary-text-color); text-align: center; padding: 20px; font-size: 0.9em;">API key required for this map type. Configure in Background Map settings.</div>', d;
-  if (t._leafletMap || (d.innerHTML = ""), window.L) {
-    const E = {
+  if (Lt(x) && !($ && $.trim().length > 0))
+    return t._leafletMap && (t._leafletMap.remove(), t._leafletMap = null), s.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--secondary-text-color); text-align: center; padding: 20px; font-size: 0.9em;">API key required for this map type. Configure in Background Map settings.</div>', s;
+  if (t._leafletMap || (s.innerHTML = ""), window.L) {
+    const A = {
       type: x,
       apiKey: $
-    }, L = !t._currentMapConfig || t._currentMapConfig.type !== E.type || t._currentMapConfig.apiKey !== E.apiKey;
+    }, L = !t._currentMapConfig || t._currentMapConfig.type !== A.type || t._currentMapConfig.apiKey !== A.apiKey;
     t._leafletMap ? L && (t._leafletMap.eachLayer((O) => {
       t._leafletMap.removeLayer(O);
-    }), window.L.tileLayer(M, w).addTo(t._leafletMap), t._currentMapConfig = E) : (t._leafletMap = window.L.map(d, {
+    }), window.L.tileLayer(M, w).addTo(t._leafletMap), t._currentMapConfig = A) : (t._leafletMap = window.L.map(s, {
       attributionControl: !1,
       zoomControl: !1,
       dragging: !1,
@@ -608,43 +619,43 @@ function Bt(t, e) {
       keyboard: !1,
       touchZoom: !1,
       pointerEvents: !1
-    }), window.L.tileLayer(M, w).addTo(t._leafletMap), t._currentMapConfig = E), Lt(t._leafletMap, d, S, _), t.mapCenter = {
+    }), window.L.tileLayer(M, w).addTo(t._leafletMap), t._currentMapConfig = A), Ot(t._leafletMap, s, D, v), t.mapCenter = {
       lat: Math.round(m * 100) / 100,
       lon: Math.round(g * 100) / 100
     }, t.mapZoom = Math.round(t._leafletMap.getZoom());
   }
-  return d;
+  return s;
 }
-function Lt(t, e, a, i, o = 15) {
+function Ot(t, e, a, i, o = 15) {
   e.offsetHeight;
-  const r = t.getContainer(), n = r.offsetWidth, d = r.offsetHeight;
-  if (n > 0 && d > 0) {
+  const r = t.getContainer(), n = r.offsetWidth, s = r.offsetHeight;
+  if (n > 0 && s > 0) {
     t.fitBounds(a, {
       animate: !1,
       padding: [0, 0]
     });
-    const l = window.L.point(0, d / 2), u = window.L.point(n, d / 2), _ = t.containerPointToLatLng(l), m = t.containerPointToLatLng(u), g = j(_.lat, _.lng, m.lat, m.lng, "km") / (i * 2);
+    const l = window.L.point(0, s / 2), u = window.L.point(n, s / 2), v = t.containerPointToLatLng(l), m = t.containerPointToLatLng(u), g = q(v.lat, v.lng, m.lat, m.lng, "km") / (i * 2);
     e.style.transform = `scale(${g})`;
   } else o > 0 && setTimeout(() => {
-    Lt(t, e, a, i, o - 1);
+    Ot(t, e, a, i, o - 1);
   }, 50);
 }
-function Ht(t) {
+function Wt(t) {
   const e = t._leafletMap;
   if (!e) return;
-  const a = K(t), i = Math.max(t.dimensions?.range || 1, 1), o = t.units?.distance === "miles" ? i * 1.60934 : i, r = a?.latitude || 0, n = a?.longitude || 0, d = Math.PI / 180, l = 111.13209 - 0.56605 * Math.cos(2 * r * d) + 12e-4 * Math.cos(4 * r * d), u = 111.32 * Math.cos(r * d) - 0.094 * Math.cos(3 * r * d), _ = o / l, m = o / u, g = [[r - _, n - m], [r + _, n + m]], y = e.getContainer();
+  const a = Y(t), i = Math.max(t.dimensions?.range || 1, 1), o = t.units?.distance === "miles" ? i * 1.60934 : i, r = a?.latitude || 0, n = a?.longitude || 0, s = Math.PI / 180, l = 111.13209 - 0.56605 * Math.cos(2 * r * s) + 12e-4 * Math.cos(4 * r * s), u = 111.32 * Math.cos(r * s) - 0.094 * Math.cos(3 * r * s), v = o / l, m = o / u, g = [[r - v, n - m], [r + v, n + m]], y = e.getContainer();
   y.offsetHeight;
-  const k = y.offsetWidth, A = y.offsetHeight;
-  if (k > 0 && A > 0) {
+  const k = y.offsetWidth, E = y.offsetHeight;
+  if (k > 0 && E > 0) {
     e.fitBounds(g, {
       animate: !1,
       padding: [0, 0]
     });
-    const R = window.L.point(0, A / 2), F = window.L.point(k, A / 2), S = e.containerPointToLatLng(R), x = e.containerPointToLatLng(F), $ = j(S.lat, S.lng, x.lat, x.lng, "km") / (o * 2);
+    const R = window.L.point(0, E / 2), F = window.L.point(k, E / 2), D = e.containerPointToLatLng(R), x = e.containerPointToLatLng(F), $ = q(D.lat, D.lng, x.lat, x.lng, "km") / (o * 2);
     y.style.transform = `scale(${$})`;
   }
 }
-function Et(t = {}, e, a = []) {
+function Ft(t = {}, e, a = []) {
   if (a.includes(e))
     return console.error("Circular template dependencies detected. " + a.join(" -> ") + " -> " + e), "";
   if (t["compiled_" + e]) return t["compiled_" + e];
@@ -655,29 +666,29 @@ function Et(t = {}, e, a = []) {
   let r;
   const n = {};
   for (; (r = o.exec(i)) !== null; ) {
-    const d = r[1];
-    n[d] || (n[d] = Et(t, d, [...a, e])), i = i.replace(`tpl.${d}`, "(`" + n[d] + '`).replace(/^undefined$/, "")');
+    const s = r[1];
+    n[s] || (n[s] = Ft(t, s, [...a, e])), i = i.replace(`tpl.${s}`, "(`" + n[s] + '`).replace(/^undefined$/, "")');
   }
   return t["compiled_" + e] = i, i;
 }
-function pt(t, e, a, i) {
+function at(t, e, a, i) {
   const o = t.templates || {}, r = t.flightsContext || {}, n = t.units || {
     distance: "km",
     altitude: "ft",
     speed: "kts"
-  }, d = t.radar || { range: 35 }, l = Et(o, e);
+  }, s = t.radar || { range: 35 }, l = Ft(o, e);
   try {
-    const u = new Function("flights", "flight", "tpl", "units", "radar_range", "joinList", `return \`${l.replace(/\${(.*?)}/g, (_, m) => `\${${m}}`)}\``)(r, a, {}, n, Math.round(d.range), i);
+    const u = new Function("flights", "flight", "tpl", "units", "radar_range", "joinList", `return \`${l.replace(/\${(.*?)}/g, (v, m) => `\${${m}}`)}\``)(r, a, {}, n, Math.round(s.range), i);
     return u !== "undefined" ? u : "";
   } catch (u) {
     return console.error("Error when rendering: " + l, u), "";
   }
 }
-function nt(t, e, a, i) {
-  const { defines: o = {}, config: r = {}, radar: n = { range: 35 }, selectedFlights: d = [] } = t;
+function st(t, e, a, i) {
+  const { defines: o = {}, config: r = {}, radar: n = { range: 35 }, selectedFlights: s = [] } = t;
   if (typeof e == "string" && e.startsWith("${") && e.endsWith("}")) {
     const l = e.slice(2, -1);
-    if (l === "selectedFlights") return d;
+    if (l === "selectedFlights") return s;
     if (l === "radar_range")
       return i && i(!0), n.range;
     if (l in o) return o[l];
@@ -687,7 +698,7 @@ function nt(t, e, a, i) {
   }
   return e;
 }
-function ot(t, e) {
+function lt(t, e) {
   if (!t) return "";
   try {
     const a = new Function("map_lat", "map_lon", "zoom", "radar_range", "click_lat", "click_lon", "flight", "entity", "return `" + t.replace(/\${(.*?)}/g, "${$1}") + "`")(e.map_lat, e.map_lon, e.zoom, e.radar_range, e.click_lat, e.click_lon, e.flight ?? null, e.entity ?? null);
@@ -696,65 +707,65 @@ function ot(t, e) {
     return console.error("Error rendering URL path:", t, a), t;
   }
 }
-function rt(t) {
+function dt(t) {
   const { units: e, radar: a, dom: i, dimensions: o, hass: r } = t, n = i?.radarInfoDisplay || i && i.radarContainer?.querySelector("#radar-info");
-  n && (n.innerHTML = [a?.hide_range !== !0 ? pt(t, "radar_range", null, void 0) : ""].filter((x) => x).join("<br />"));
-  const d = i?.radarScreen || i && i.radarContainer?.querySelector("#radar-screen") || t.mainCard?.shadowRoot && t.mainCard.shadowRoot.getElementById("radar-screen");
-  if (!d) return;
-  Array.from(d.childNodes).forEach((x) => {
+  n && (n.innerHTML = [a?.hide_range !== !0 ? at(t, "radar_range", null, void 0) : ""].filter((x) => x).join("<br />"));
+  const s = i?.radarScreen || i && i.radarContainer?.querySelector("#radar-screen") || t.mainCard?.shadowRoot && t.mainCard.shadowRoot.getElementById("radar-screen");
+  if (!s) return;
+  Array.from(s.childNodes).forEach((x) => {
     const $ = x;
-    $.id !== "radar-map-bg" && $.id !== "radar-screen-background" && d.removeChild(x);
+    $.id !== "radar-map-bg" && $.id !== "radar-screen-background" && s.removeChild(x);
   });
-  let l = d.querySelector("#radar-screen-background");
-  l || (l = document.createElement("div"), l.id = "radar-screen-background", d.appendChild(l));
-  const u = K(t);
+  let l = s.querySelector("#radar-screen-background");
+  l || (l = document.createElement("div"), l.id = "radar-screen-background", s.appendChild(l));
+  const u = Y(t);
   t.mapCenter = {
     lat: Math.round(u.latitude * 100) / 100,
     lon: Math.round(u.longitude * 100) / 100
-  }, t._leafletMap || (t.mapZoom = 8), Bt(t, d);
-  const { width: _, height: m, range: g, scaleFactor: y, centerX: k, centerY: A } = o || {};
-  if (!_ || !m || !g || !y || k == null || A == null) return;
+  }, t._leafletMap || (t.mapZoom = 8), Ut(t, s);
+  const { width: v, height: m, range: g, scaleFactor: y, centerX: k, centerY: E } = o || {};
+  if (!v || !m || !g || !y || k == null || E == null) return;
   const R = g * 1.15;
   if (a?.rings ?? a?.view !== "map") {
     const x = a?.ring_distance ?? 10, $ = Math.floor(g / x);
     for (let C = 1; C <= $; C++) {
       const M = C * x * y, w = document.createElement("div");
-      w.className = "ring", w.style.width = w.style.height = M * 2 + "px", w.style.top = Math.floor(A - M) + "px", w.style.left = Math.floor(k - M) + "px", d.appendChild(w);
+      w.className = "ring", w.style.width = w.style.height = M * 2 + "px", w.style.top = Math.floor(E - M) + "px", w.style.left = Math.floor(k - M) + "px", s.appendChild(w);
     }
     for (let C = 0; C < 360; C += 45) {
       const M = document.createElement("div");
-      M.className = "dotted-line", M.style.transform = `rotate(${C - 90}deg)`, d.appendChild(M);
+      M.className = "dotted-line", M.style.transform = `rotate(${C - 90}deg)`, s.appendChild(M);
     }
   }
-  const F = K(t), S = a?.local_features;
-  if (S && r && F) {
+  const F = Y(t), D = a?.local_features;
+  if (D && r && F) {
     const x = F.latitude, $ = F.longitude;
-    S.forEach((C) => {
+    D.forEach((C) => {
       if (!(C.max_range && a.range && C.max_range <= a.range)) {
         if (C.type === "outline" && C.points && C.points.length > 1) for (let M = 0; M < C.points.length - 1; M++) {
-          const w = C.points[M], E = C.points[M + 1], L = j(x, $, w.lat, w.lon, e.distance), O = j(x, $, E.lat, E.lon, e.distance);
+          const w = C.points[M], A = C.points[M + 1], L = q(x, $, w.lat, w.lon, e.distance), O = q(x, $, A.lat, A.lon, e.distance);
           if (L <= R || O <= R) {
-            const z = V(x, $, w.lat, w.lon), T = V(x, $, E.lat, E.lon), c = k + Math.cos((z - 90) * Math.PI / 180) * L * y, p = A + Math.sin((z - 90) * Math.PI / 180) * L * y, s = k + Math.cos((T - 90) * Math.PI / 180) * O * y, h = A + Math.sin((T - 90) * Math.PI / 180) * O * y, v = document.createElement("div");
-            v.className = "outline-line", v.style.width = Math.hypot(s - c, h - p) + "px", v.style.height = "1px", v.style.top = p + "px", v.style.left = c + "px", v.style.transformOrigin = "0 0", v.style.transform = `rotate(${Math.atan2(h - p, s - c) * (180 / Math.PI)}deg)`, d.appendChild(v);
+            const z = U(x, $, w.lat, w.lon), T = U(x, $, A.lat, A.lon), c = k + Math.cos((z - 90) * Math.PI / 180) * L * y, p = E + Math.sin((z - 90) * Math.PI / 180) * L * y, d = k + Math.cos((T - 90) * Math.PI / 180) * O * y, f = E + Math.sin((T - 90) * Math.PI / 180) * O * y, _ = document.createElement("div");
+            _.className = "outline-line", _.style.width = Math.hypot(d - c, f - p) + "px", _.style.height = "1px", _.style.top = p + "px", _.style.left = c + "px", _.style.transformOrigin = "0 0", _.style.transform = `rotate(${Math.atan2(f - p, d - c) * (180 / Math.PI)}deg)`, s.appendChild(_);
           }
         }
         else if ("position" in C && C.position) {
-          const { lat: M, lon: w } = C.position, E = j(x, $, M, w, e.distance);
-          if (E <= R) {
-            const L = V(x, $, M, w), O = k + Math.cos((L - 90) * Math.PI / 180) * E * y, z = A + Math.sin((L - 90) * Math.PI / 180) * E * y;
+          const { lat: M, lon: w } = C.position, A = q(x, $, M, w, e.distance);
+          if (A <= R) {
+            const L = U(x, $, M, w), O = k + Math.cos((L - 90) * Math.PI / 180) * A * y, z = E + Math.sin((L - 90) * Math.PI / 180) * A * y;
             if (C.type === "runway") {
-              const T = C.heading ?? 0, c = C.length ?? 0, p = e.distance === "km" ? c * 3048e-7 : c * 18939e-8, s = document.createElement("div");
-              s.className = "runway", s.style.width = p * y + "px", s.style.height = "1px", s.style.top = z + "px", s.style.left = O + "px", s.style.transformOrigin = "0 50%", s.style.transform = `rotate(${T - 90}deg)`, d.appendChild(s);
+              const T = C.heading ?? 0, c = C.length ?? 0, p = e.distance === "km" ? c * 3048e-7 : c * 18939e-8, d = document.createElement("div");
+              d.className = "runway", d.style.width = p * y + "px", d.style.height = "1px", d.style.top = z + "px", d.style.left = O + "px", d.style.transformOrigin = "0 50%", d.style.transform = `rotate(${T - 90}deg)`, s.appendChild(d);
             }
             if (C.type === "location") {
               const T = document.createElement("div");
               T.className = "location-dot";
               const c = C.label;
-              if (T.title = c ?? "Location", T.style.top = z + "px", T.style.left = O + "px", d.appendChild(T), c) {
+              if (T.title = c ?? "Location", T.style.top = z + "px", T.style.left = O + "px", s.appendChild(T), c) {
                 const p = document.createElement("div");
-                p.className = "location-label", p.textContent = c || "Location", d.appendChild(p);
-                const s = p.getBoundingClientRect(), h = s.width, v = s.height;
-                p.style.top = z - v - 4 + "px", p.style.left = O - h / 2 + "px";
+                p.className = "location-label", p.textContent = c || "Location", s.appendChild(p);
+                const d = p.getBoundingClientRect(), f = d.width, _ = d.height;
+                p.style.top = z - _ - 4 + "px", p.style.left = O - f / 2 + "px";
               }
             }
           }
@@ -763,26 +774,26 @@ function rt(t) {
     });
   }
 }
-function At(t, e) {
+function Tt(t, e) {
   let a = null, i = null;
   function o(u) {
-    const _ = u[0], m = u[1], g = _.clientX - m.clientX, y = _.clientY - m.clientY;
+    const v = u[0], m = u[1], g = v.clientX - m.clientX, y = v.clientY - m.clientY;
     return Math.sqrt(g * g + y * y);
   }
   function r(u) {
     u.preventDefault();
-    const _ = Math.sign(u.deltaY);
-    t.radar.range += _ * 2;
+    const v = Math.sign(u.deltaY);
+    t.radar.range += v * 2;
     const m = t.radar.min_range || 1, g = t.radar.max_range || Math.max(100, t.radar.initialRange || 35);
-    t.radar.range < m && (t.radar.range = m), t.radar.range > g && (t.radar.range = g), t.mainCard.updateRadarRange(_ * 2);
+    t.radar.range < m && (t.radar.range = m), t.radar.range > g && (t.radar.range = g), t.mainCard.updateRadarRange(v * 2);
   }
   function n(u) {
     u.touches.length === 2 && (a = o(u.touches), i = t.radar.range);
   }
-  function d(u) {
+  function s(u) {
     if (u.touches.length === 2 && a !== null && i !== null) {
       u.preventDefault();
-      const _ = o(u.touches), m = a / _, g = t.radar.min_range || 1, y = t.radar.max_range || Math.max(100, t.radar.initialRange || 35);
+      const v = o(u.touches), m = a / v, g = t.radar.min_range || 1, y = t.radar.max_range || Math.max(100, t.radar.initialRange || 35);
       let k = Math.round(i * m);
       k < g && (k = g), k > y && (k = y), t.radar.range = k, t.mainCard.updateRadarRange(0);
     }
@@ -790,57 +801,57 @@ function At(t, e) {
   function l() {
     a !== null && (a = null, i = null, t.config.updateRangeFilterOnTouchEnd && t.renderDynamicOnRangeChange && t.mainCard.renderDynamic());
   }
-  return e && (e.addEventListener("wheel", r, { passive: !1 }), e.addEventListener("touchstart", n, { passive: !0 }), e.addEventListener("touchmove", d, { passive: !1 }), e.addEventListener("touchend", l, { passive: !0 })), () => {
-    e && (e.removeEventListener("wheel", r), e.removeEventListener("touchstart", n), e.removeEventListener("touchmove", d), e.removeEventListener("touchend", l));
+  return e && (e.addEventListener("wheel", r, { passive: !1 }), e.addEventListener("touchstart", n, { passive: !0 }), e.addEventListener("touchmove", s, { passive: !1 }), e.addEventListener("touchend", l, { passive: !0 })), () => {
+    e && (e.removeEventListener("wheel", r), e.removeEventListener("touchstart", n), e.removeEventListener("touchmove", s), e.removeEventListener("touchend", l));
   };
 }
-function Vt(t, e, a) {
+function Kt(t, e, a) {
   const i = t.config?.tap_action;
   if (!i) return;
   const o = t.dom?.radar;
   if (!o) {
-    dt(ot(i, {
+    ut(lt(i, {
       map_lat: t.mapCenter?.lat,
       map_lon: t.mapCenter?.lon,
       zoom: t.mapZoom,
       radar_range: t.radar?.range,
-      entity: lt(t)
+      entity: pt(t)
     }));
     return;
   }
-  const r = o.getBoundingClientRect(), n = e - r.left, d = a - r.top, l = r.width, u = r.height, _ = t.units?.distance === "miles" ? (t.radar?.range || 1) * 1.60934 : t.radar?.range || 1, m = l / 2, g = u / 2, y = n - m, k = d - g, A = Math.sqrt(y * y + k * k) / Math.min(m, g) * _, R = (Math.atan2(y, -k) * (180 / Math.PI) + 360) % 360, F = t.mapCenter?.lat || 0, S = t.mapCenter?.lon || 0, x = R * Math.PI / 180, $ = 111.32, C = 111.32 * Math.cos(F * Math.PI / 180), M = Math.round((F + A / $ * Math.cos(x)) * 100) / 100, w = Math.round((S + A / C * Math.sin(x)) * 100) / 100;
-  dt(ot(i, {
+  const r = o.getBoundingClientRect(), n = e - r.left, s = a - r.top, l = r.width, u = r.height, v = t.units?.distance === "miles" ? (t.radar?.range || 1) * 1.60934 : t.radar?.range || 1, m = l / 2, g = u / 2, y = n - m, k = s - g, E = Math.sqrt(y * y + k * k) / Math.min(m, g) * v, R = (Math.atan2(y, -k) * (180 / Math.PI) + 360) % 360, F = t.mapCenter?.lat || 0, D = t.mapCenter?.lon || 0, x = R * Math.PI / 180, $ = 111.32, C = 111.32 * Math.cos(F * Math.PI / 180), M = Math.round((F + E / $ * Math.cos(x)) * 100) / 100, w = Math.round((D + E / C * Math.sin(x)) * 100) / 100;
+  ut(lt(i, {
     map_lat: t.mapCenter?.lat,
     map_lon: t.mapCenter?.lon,
     zoom: t.mapZoom,
     radar_range: t.radar?.range,
     click_lat: M,
     click_lon: w,
-    entity: lt(t)
+    entity: pt(t)
   }));
 }
-function st(t, e) {
+function ct(t, e) {
   const a = (t.config?.flight_tap_action || "toggle").split("|").map((r) => r.trim()), i = a.includes("toggle"), o = a.find((r) => r !== "toggle") || "";
-  i && t.toggleSelectedFlight(e), o && dt(ot(o, {
+  i && t.toggleSelectedFlight(e), o && ut(lt(o, {
     map_lat: t.mapCenter?.lat,
     map_lon: t.mapCenter?.lon,
     zoom: t.mapZoom,
     radar_range: t.radar?.range,
     flight: e,
-    entity: lt(t)
+    entity: pt(t)
   }));
 }
-function lt(t) {
+function pt(t) {
   const e = t.config?.flights_entity;
   if (!e || !t.hass?.states) return;
   const a = t.hass.states[e];
   if (a)
     return a;
 }
-function dt(t) {
+function ut(t) {
   t && window.open(t, "_blank");
 }
-function Ut(t, e) {
+function Yt(t, e) {
   e.shadowRoot.innerHTML = "";
   const a = document.createElement("ha-card");
   a.id = "flights-card";
@@ -850,42 +861,42 @@ function Ut(t, e) {
   if (i.classList.add(`layout-${o}`), t.radar?.view === "map" && i.classList.add("view-map"), !t.radar?.hide) {
     const n = document.createElement("div");
     n.id = "radar-container";
-    const d = document.createElement("div");
-    d.id = "radar-overlay", n.appendChild(d);
+    const s = document.createElement("div");
+    s.id = "radar-overlay", n.appendChild(s);
     const l = document.createElement("div");
     l.id = "radar-info", n.appendChild(l);
     const u = document.createElement("div");
     u.id = "toggle-container";
-    const _ = document.createElement("div");
-    _.id = "radar";
+    const v = document.createElement("div");
+    v.id = "radar";
     const m = document.createElement("div");
-    m.id = "radar-screen", _.appendChild(m);
+    m.id = "radar-screen", v.appendChild(m);
     const g = document.createElement("div");
-    g.id = "tracker", _.appendChild(g);
+    g.id = "tracker", v.appendChild(g);
     const y = document.createElement("div");
-    y.id = "planes", _.appendChild(y), n.appendChild(_), n.appendChild(u), i.appendChild(n), requestAnimationFrame(() => {
-      rt(t), e.observeRadarResize(), At(t, _), _.addEventListener("click", (k) => {
-        k.composedPath().some((A) => A.classList?.contains?.("plane")) || Vt(t, k.clientX, k.clientY);
+    y.id = "planes", v.appendChild(y), n.appendChild(v), n.appendChild(u), i.appendChild(n), requestAnimationFrame(() => {
+      dt(t), e.observeRadarResize(), Tt(t, v), v.addEventListener("click", (k) => {
+        k.composedPath().some((E) => E.classList?.contains?.("plane")) || Kt(t, k.clientX, k.clientY);
       });
-    }), t.dom = t.dom || {}, t.dom.toggleContainer = u, t.dom.planesContainer = y, t.dom.radar = _, t.dom.radarScreen = m, t.dom.radarInfoDisplay = l, t.dom.radarContainer = n, t.dom.shadowRoot = e.shadowRoot, t.mainCard = e;
+    }), t.dom = t.dom || {}, t.dom.toggleContainer = u, t.dom.planesContainer = y, t.dom.radar = v, t.dom.radarScreen = m, t.dom.radarInfoDisplay = l, t.dom.radarContainer = n, t.dom.shadowRoot = e.shadowRoot, t.mainCard = e;
   }
   const r = document.createElement("div");
-  r.id = "flights", t.list && t.list.hide === !0 && (r.style.display = "none"), i.appendChild(r), a.appendChild(i), e.shadowRoot.appendChild(a), St(t, e.shadowRoot), t.dom?.toggleContainer && Dt(t, t.dom.toggleContainer);
+  r.id = "flights", t.list && t.list.hide === !0 && (r.style.display = "none"), i.appendChild(r), a.appendChild(i), e.shadowRoot.appendChild(a), Nt(t, e.shadowRoot), t.dom?.toggleContainer && jt(t, t.dom.toggleContainer);
 }
-function Rt(t, e) {
-  return (t.flights || []).filter((a) => Ot(t, a, e));
+function It(t, e) {
+  return (t.flights || []).filter((a) => Dt(t, a, e));
 }
-function Ot(t, e, a) {
-  return Array.isArray(a) ? a.every((i) => U(t, e, i)) : U(t, e, a);
+function Dt(t, e, a) {
+  return Array.isArray(a) ? a.every((i) => W(t, e, i)) : W(t, e, a);
 }
-function U(t, e, a) {
+function W(t, e, a) {
   let i = !0;
-  if (a.type === "AND" && a.conditions) i = a.conditions.every((o) => U(t, e, o));
-  else if (a.type === "OR" && a.conditions) i = a.conditions.some((o) => U(t, e, o));
-  else if (a.type === "NOT" && a.condition) i = !U(t, e, a.condition);
+  if (a.type === "AND" && a.conditions) i = a.conditions.every((o) => W(t, e, o));
+  else if (a.type === "OR" && a.conditions) i = a.conditions.some((o) => W(t, e, o));
+  else if (a.type === "NOT" && a.condition) i = !W(t, e, a.condition);
   else {
-    const { field: o, defined: r, defaultValue: n, comparator: d } = a, l = nt(t, a.value), u = o ? e[o] : r ? nt(t, "${" + r + "}", n) : void 0;
-    switch (d) {
+    const { field: o, defined: r, defaultValue: n, comparator: s } = a, l = st(t, a.value), u = o ? e[o] : r ? st(t, "${" + r + "}", n) : void 0;
+    switch (s) {
       case "eq":
         i = u === l;
         break;
@@ -902,11 +913,11 @@ function U(t, e, a) {
         i = Number(u) >= Number(l);
         break;
       case "oneOf":
-        i = (Array.isArray(l) ? l : typeof l == "string" ? l.split(",").map((_) => _.trim()) : []).includes(u);
+        i = (Array.isArray(l) ? l : typeof l == "string" ? l.split(",").map((v) => v.trim()) : []).includes(u);
         break;
       case "containsOneOf": {
-        const _ = Array.isArray(l) ? l : typeof l == "string" ? l.split(",").map((m) => m.trim()) : [];
-        i = !!u && _.some((m) => u.includes(m));
+        const v = Array.isArray(l) ? l : typeof l == "string" ? l.split(",").map((m) => m.trim()) : [];
+        i = !!u && v.some((m) => u.includes(m));
         break;
       }
       default:
@@ -915,13 +926,14 @@ function U(t, e, a) {
   }
   return a.debugIf === i && console.debug("applyCondition", a, e, i), i;
 }
-var Wt = 12, mt = /* @__PURE__ */ new Map(), _t = /* @__PURE__ */ new Map();
-function Kt(t) {
+tt();
+var Gt = 12, Xt = (t) => (...e) => e?.filter((a) => a).join(t || " "), bt = /* @__PURE__ */ new Map(), yt = /* @__PURE__ */ new Map();
+function Zt(t) {
   if (!t) return [0, 0];
   const e = t.split(",").map(Number);
   return [e[0] || 0, e[1] || 0];
 }
-function Yt(t) {
+function Jt(t) {
   const e = {
     offsetX: 0,
     offsetY: 0,
@@ -935,53 +947,56 @@ function Yt(t) {
   let i = 2;
   return a.length > 2 && /^[\d.]+(?:px|em|rem|pt|cm|mm|in|pc|ex|ch|vw|vh|vmin|vmax)$/i.test(a[2]) && (e.blur = Math.max(0, parseFloat(a[2]) || 0), i = 3), a.length > i && (e.color = a.slice(i).join(" ")), e;
 }
-function Gt(t) {
-  const e = mt.get(t);
+function Qt(t) {
+  const e = bt.get(t);
   if (e) return e;
   const a = new Promise((i, o) => {
     const r = new Image();
     r.onload = () => i(r), r.onerror = () => o(/* @__PURE__ */ new Error(`Failed to load marker image: ${t}`)), r.src = t;
   });
-  return mt.set(t, a), a;
+  return bt.set(t, a), a;
 }
-function Xt(t, e) {
-  const a = t.width, i = t.height, o = a / Wt, r = e["aircraft-marker-color-overlay"], n = e["aircraft-marker-outline-width"] ?? 0, d = e["aircraft-marker-outline-color"] || "#000000", l = e["aircraft-marker-shadow"] || "", u = Yt(l), _ = Math.round(u.offsetX * o), m = Math.round(u.offsetY * o), g = Math.round(u.blur * o), y = Math.ceil(n * o), k = Math.max(1, Math.round(y * 0.4)), A = Math.ceil(Math.max(y + k * 2, Math.abs(_) + g * 2, Math.abs(m) + g * 2)), R = a + 2 * A, F = i + 2 * A, S = document.createElement("canvas");
-  S.width = R, S.height = F;
-  const x = S.getContext("2d"), $ = A, C = A;
-  if (l && (_ !== 0 || m !== 0 || g > 0)) {
+function ht(t) {
+  return j(t["aircraft-marker-color-overlay"] || "");
+}
+function te(t, e) {
+  const a = t.width, i = t.height, o = a / Gt, r = ht(e), n = e["aircraft-marker-outline-width"] ?? 0, s = e["aircraft-marker-outline-color"] || "#000000", l = e["aircraft-marker-shadow"] || "", u = Jt(l), v = Math.round(u.offsetX * o), m = Math.round(u.offsetY * o), g = Math.round(u.blur * o), y = Math.ceil(n * o), k = Math.max(1, Math.round(y * 0.4)), E = Math.ceil(Math.max(y + k * 2, Math.abs(v) + g * 2, Math.abs(m) + g * 2)), R = a + 2 * E, F = i + 2 * E, D = document.createElement("canvas");
+  D.width = R, D.height = F;
+  const x = D.getContext("2d"), $ = E, C = E;
+  if (l && (v !== 0 || m !== 0 || g > 0)) {
     const M = document.createElement("canvas");
     M.width = a, M.height = i;
     const w = M.getContext("2d");
-    w.drawImage(t, 0, 0, a, i), w.globalCompositeOperation = "source-atop", w.fillStyle = u.color, w.fillRect(0, 0, a, i), x.save(), g > 0 && (x.filter = `blur(${g}px)`), x.drawImage(M, $ + _, C + m, a, i), x.restore();
+    w.drawImage(t, 0, 0, a, i), w.globalCompositeOperation = "source-atop", w.fillStyle = u.color, w.fillRect(0, 0, a, i), x.save(), g > 0 && (x.filter = `blur(${g}px)`), x.drawImage(M, $ + v, C + m, a, i), x.restore();
   }
   if (y > 0) {
     const M = document.createElement("canvas");
     M.width = R, M.height = F;
-    const w = M.getContext("2d"), E = a + 2 * y, L = i + 2 * y;
-    w.save(), w.filter = `blur(${k}px)`, w.drawImage(t, $ - y, C - y, E, L), w.filter = "none", w.globalCompositeOperation = "source-atop", w.fillStyle = d, w.fillRect(0, 0, R, F), w.restore(), x.drawImage(M, 0, 0);
+    const w = M.getContext("2d"), A = a + 2 * y, L = i + 2 * y;
+    w.save(), w.filter = `blur(${k}px)`, w.drawImage(t, $ - y, C - y, A, L), w.filter = "none", w.globalCompositeOperation = "source-atop", w.fillStyle = s, w.fillRect(0, 0, R, F), w.restore(), x.drawImage(M, 0, 0);
   }
-  return x.drawImage(t, $, C, a, i), r && (x.globalCompositeOperation = "source-atop", x.fillStyle = r, x.fillRect($, C, a, i)), S;
+  return x.drawImage(t, $, C, a, i), r && (x.globalCompositeOperation = "source-atop", x.fillStyle = r, x.fillRect($, C, a, i)), D;
 }
-function Zt(t) {
-  return `${t["aircraft-marker-url"]}|${t["aircraft-marker-color-overlay"]}|${t["aircraft-marker-outline-width"]}|${t["aircraft-marker-outline-color"]}|${t["aircraft-marker-shadow"]}`;
+function ee(t) {
+  return `${t["aircraft-marker-url"]}|${ht(t)}|${t["aircraft-marker-outline-width"]}|${t["aircraft-marker-outline-color"]}|${t["aircraft-marker-shadow"]}`;
 }
-function Jt(t) {
-  const e = Zt(t), a = _t.get(e);
+function ae(t) {
+  const e = ee(t), a = yt.get(e);
   if (a) return a;
-  const i = Gt(t["aircraft-marker-url"]).then((o) => Xt(o, t));
-  return _t.set(e, i), i;
+  const i = Qt(t["aircraft-marker-url"]).then((o) => te(o, t));
+  return yt.set(e, i), i;
 }
-function Qt(t, e) {
+function ie(t, e) {
   const a = document.createElement("div");
   a.className = "custom-marker";
   const i = document.createElement("div");
   i.className = "custom-marker-transform", a.appendChild(i);
-  const o = t["aircraft-marker-url"], r = t["aircraft-marker-color-overlay"], n = t["aircraft-marker-outline-width"] ?? 0;
+  const o = t["aircraft-marker-url"], r = ht(t), n = t["aircraft-marker-outline-width"] ?? 0;
   t["aircraft-marker-outline-color"];
-  const d = t["aircraft-marker-shadow"] || "";
-  if (r || n > 0 || d.length > 0) {
+  const s = t["aircraft-marker-shadow"] || "";
+  if (r || n > 0 || s.length > 0) {
     const g = document.createElement("canvas");
-    i.appendChild(g), Jt(t).then((y) => {
+    i.appendChild(g), ae(t).then((y) => {
       g.width = y.width, g.height = y.height, g.getContext("2d").drawImage(y, 0, 0);
     }).catch(() => {
     });
@@ -989,57 +1004,57 @@ function Qt(t, e) {
     const g = document.createElement("img");
     g.src = o, g.draggable = !1, i.appendChild(g);
   }
-  const l = t["aircraft-marker-rotation"] ?? 0, u = t["aircraft-marker-scale"] ?? 1, [_, m] = Kt(t["aircraft-marker-center"]);
-  return i.style.transform = `rotate(${e + l}deg) scale(${u})`, i.style.transformOrigin = `calc(50% + ${_}px) calc(50% + ${m}px)`, a;
+  const l = t["aircraft-marker-rotation"] ?? 0, u = t["aircraft-marker-scale"] ?? 1, [v, m] = Zt(t["aircraft-marker-center"]);
+  return i.style.transform = `rotate(${e + l}deg) scale(${u})`, i.style.transformOrigin = `calc(50% + ${v}px) calc(50% + ${m}px)`, a;
 }
-function et(t) {
+function nt(t) {
   const { flights: e, radar: a, selectedFlights: i, dimensions: o, dom: r } = t;
   let n;
-  a && a.filter === !0 ? n = t.flightsFiltered || e : a && a.filter && typeof a.filter == "object" ? n = Rt(t, a.filter) : n = e;
-  const d = r?.planesContainer || t.mainCard?.shadowRoot && t.mainCard.shadowRoot.getElementById("planes");
-  if (!d) return;
-  d.innerHTML = "";
-  const { range: l, scaleFactor: u, centerX: _, centerY: m } = o;
-  if (!l || !u || _ === void 0 || m === void 0) return;
+  a && a.filter === !0 ? n = t.flightsFiltered || e : a && a.filter && typeof a.filter == "object" ? n = It(t, a.filter) : n = e;
+  const s = r?.planesContainer || t.mainCard?.shadowRoot && t.mainCard.shadowRoot.getElementById("planes");
+  if (!s) return;
+  s.innerHTML = "";
+  const { range: l, scaleFactor: u, centerX: v, centerY: m } = o;
+  if (!l || !u || v === void 0 || m === void 0) return;
   const g = l * 1.15, y = a?.["aircraft-marker"]?.default;
   n.slice().reverse().forEach((k) => {
-    const A = k.distance_to_tracker;
-    if (A !== void 0 && A <= g) {
+    const E = k.distance_to_tracker;
+    if (E !== void 0 && E <= g) {
       const R = document.createElement("div");
       R.className = "plane";
-      const F = k.heading_from_tracker ?? 0, S = _ + Math.cos((F - 90) * Math.PI / 180) * A * u, x = m + Math.sin((F - 90) * Math.PI / 180) * A * u;
-      if (R.style.top = x + "px", R.style.left = S + "px", y?.["aircraft-marker-url"]) {
+      const F = k.heading_from_tracker ?? 0, D = v + Math.cos((F - 90) * Math.PI / 180) * E * u, x = m + Math.sin((F - 90) * Math.PI / 180) * E * u;
+      if (R.style.top = x + "px", R.style.left = D + "px", y?.["aircraft-marker-url"]) {
         R.classList.add("plane-custom");
-        const L = Qt(y, k.heading ?? 0);
+        const L = ie(y, k.heading ?? 0);
         R.appendChild(L);
       } else {
         const L = document.createElement("div");
         L.className = "arrow", L.style.transform = `rotate(${k.heading}deg)`, R.appendChild(L), (k.altitude ?? 0) <= 0 ? R.classList.add("plane-small") : R.classList.add("plane-medium");
       }
       const $ = document.createElement("div");
-      $.className = "callsign-label", $.textContent = k.callsign ?? k.aircraft_registration ?? "n/a", d.appendChild($);
+      $.className = "callsign-label", t.templates && "radar_label" in t.templates ? $.innerHTML = at(t, "radar_label", k, Xt) : $.textContent = k.callsign ?? k.aircraft_registration ?? "n/a", s.appendChild($);
       const C = $.getBoundingClientRect(), M = C.width + 3, w = C.height + 6;
-      $.style.top = x - w + "px", $.style.left = S - M + "px";
-      const E = a["aircraft-marker-size"];
-      E && E !== "normal" && R.classList.add(`marker-size-${E}`), i && i.includes(k.id) && R.classList.add("selected"), R.addEventListener("click", (L) => {
-        L.stopPropagation(), st(t, k);
+      $.style.top = x - w + "px", $.style.left = D - M + "px";
+      const A = a["aircraft-marker-size"];
+      A && A !== "normal" && R.classList.add(`marker-size-${A}`), i && i.includes(k.id) && R.classList.add("selected"), R.addEventListener("click", (L) => {
+        L.stopPropagation(), ct(t, k);
       }), $.addEventListener("click", (L) => {
-        L.stopPropagation(), st(t, k);
-      }), d.appendChild(R);
+        L.stopPropagation(), ct(t, k);
+      }), s.appendChild(R);
     }
   });
 }
-function vt(t, e) {
+function kt(t, e) {
   const a = document.createElement("img");
   return a.setAttribute("src", `https://flagsapi.com/${t}/shiny/16.png`), a.setAttribute("title", `${e}`), a.style.position = "relative", a.style.top = "3px", a.style.left = "2px", a;
 }
-function te(t, e, a) {
+function ne(t, e, a) {
   try {
     let i = e[a];
     if (t.config.annotate) {
       const o = Object.assign({}, e);
       t.config.annotate.filter((r) => r.field === a).forEach((r) => {
-        Ot(t, e, r.conditions) && (o[a] = r.render.replace(/\$\{([^}]*)\}/g, (n, d) => String(o[d] || "")));
+        Dt(t, e, r.conditions) && (o[a] = r.render.replace(/\$\{([^}]*)\}/g, (n, s) => String(o[s] || "")));
       }), i = String(o[a] || "");
     }
     return i;
@@ -1047,7 +1062,7 @@ function te(t, e, a) {
     return console.error(`[FR24Card] flightField error for field '${a}':`, i), "";
   }
 }
-function ee(t, e) {
+function oe(t, e) {
   try {
     const a = Object.assign({}, e);
     [
@@ -1071,11 +1086,11 @@ function ee(t, e) {
       "airport_destination_country_name",
       "airport_destination_country_code"
     ].forEach((o) => {
-      a[o] = te(t, a, o);
-    }), a.origin_flag = a.airport_origin_country_code ? vt(a.airport_origin_country_code, a.airport_origin_country_name || "").outerHTML : "", a.destination_flag = a.airport_destination_country_code ? vt(a.airport_destination_country_code, a.airport_destination_country_name || "").outerHTML : "", a.climb_descend_indicator = Math.abs(a.vertical_speed) > 100 ? a.vertical_speed > 100 ? "↑" : "↓" : "", a.alt_in_unit = a.altitude >= 17750 ? `FL${Math.round(a.altitude / 1e3) * 10}` : a.altitude > 0 ? t.units.altitude === "m" ? `${Math.round(a.altitude * 0.3048)} m` : `${Math.round(a.altitude)} ft` : void 0, a.spd_in_unit = a.ground_speed > 0 ? t.units.speed === "kmh" ? `${Math.round(a.ground_speed * 1.852)} km/h` : t.units.speed === "mph" ? `${Math.round(a.ground_speed * 1.15078)} mph` : `${Math.round(a.ground_speed)} kts` : void 0, a.approach_indicator = a.ground_speed > 70 ? a.is_approaching ? "↓" : a.is_receding ? "↑" : "" : "", a.dist_in_unit = `${Math.round(a.distance_to_tracker || 0)} ${t.units.distance}`, a.direction_info = `${Math.round(a.heading_from_tracker || 0)}° ${a.cardinal_direction_from_tracker || ""}`;
+      a[o] = ne(t, a, o);
+    }), a.origin_flag = a.airport_origin_country_code ? kt(a.airport_origin_country_code, a.airport_origin_country_name || "").outerHTML : "", a.destination_flag = a.airport_destination_country_code ? kt(a.airport_destination_country_code, a.airport_destination_country_name || "").outerHTML : "", a.climb_descend_indicator = Math.abs(a.vertical_speed) > 100 ? a.vertical_speed > 100 ? "↑" : "↓" : "", a.alt_in_unit = a.altitude >= 17750 ? `FL${Math.round(a.altitude / 1e3) * 10}` : a.altitude > 0 ? t.units.altitude === "m" ? `${Math.round(a.altitude * 0.3048)} m` : `${Math.round(a.altitude)} ft` : void 0, a.spd_in_unit = a.ground_speed > 0 ? t.units.speed === "kmh" ? `${Math.round(a.ground_speed * 1.852)} km/h` : t.units.speed === "mph" ? `${Math.round(a.ground_speed * 1.15078)} mph` : `${Math.round(a.ground_speed)} kts` : void 0, a.approach_indicator = a.ground_speed > 70 ? a.is_approaching ? "↓" : a.is_receding ? "↑" : "" : "", a.dist_in_unit = `${Math.round(a.distance_to_tracker || 0)} ${t.units.distance}`, a.direction_info = `${Math.round(a.heading_from_tracker || 0)}° ${a.cardinal_direction_from_tracker || ""}`;
     const i = document.createElement("div");
-    return i.style.clear = "both", i.className = "flight", t.selectedFlights && t.selectedFlights.includes(a.id) && (i.className += " selected"), i.innerHTML = pt(t, "flight_element", a, (o) => (...r) => r?.filter((n) => n).join(o || " ")), i.addEventListener("click", (o) => {
-      o.stopPropagation(), st(t, a);
+    return i.style.clear = "both", i.className = "flight", t.selectedFlights && t.selectedFlights.includes(a.id) && (i.className += " selected"), i.innerHTML = at(t, "flight_element", a, (o) => (...r) => r?.filter((n) => n).join(o || " ")), i.addEventListener("click", (o) => {
+      o.stopPropagation(), ct(t, a);
     }), i;
   } catch (a) {
     console.error("[FR24Card] renderFlight error:", a);
@@ -1083,11 +1098,11 @@ function ee(t, e) {
     return i.className = "flight error", i.textContent = `Error rendering flight: ${a}`, i;
   }
 }
-var bt = {
+var wt = {
   altitude: "ft",
   speed: "kts",
   distance: "km"
-}, ae = [
+}, re = [
   {
     field: "id",
     comparator: "oneOf",
@@ -1104,8 +1119,8 @@ var bt = {
     field: "closest_passing_distance ?? distance_to_tracker",
     order: "ASC"
   }
-], W, Ft = J((() => {
-  W = {
+], K, St = G((() => {
+  K = {
     img_element: '${flight.aircraft_photo_small ? `<img style="float: right; width: 120px; height: auto; marginLeft: 8px; border: 1px solid black;" src="${flight.aircraft_photo_small}" />` : ""}',
     icon: '${flight.altitude > 0 ? (flight.vertical_speed > 100 ? "airplane-takeoff" : flight.vertical_speed < -100 ? "airplane-landing" : "airplane") : "airport"}',
     icon_element: '<ha-icon style="float: left;" icon="mdi:${tpl.icon}"></ha-icon>',
@@ -1129,51 +1144,52 @@ var bt = {
     proximity_info: '<div style="font-weight: bold; font-style: italic;">${flight.is_approaching && flight.ground_speed > 70 && flight.closest_passing_distance < 15 ? `Closest Distance: ${flight.closest_passing_distance} ${units.distance}, ETA: ${flight.eta_to_closest_distance} min` : ""}</div>',
     flight_element: "${tpl.header}${tpl.aircraft_info_element}${tpl.route_element}${tpl.flight_status}${tpl.position_status}${tpl.proximity_info}",
     radar_range: "Range: ${radar_range} ${units.distance}",
+    radar_label: '${flight.callsign ?? flight.aircraft_registration ?? "n/a"}',
     list_status: "${flights.shown}/${flights.total}"
   };
 }));
-Ft();
-function yt(t, e) {
+St();
+function xt(t, e) {
   return e.split(" ?? ").reduce((a, i) => a ?? t[i], void 0);
 }
-function ie(t, e = (a) => a) {
+function se(t, e = (a) => a) {
   return function(a, i) {
     for (const o of t) {
-      const { field: r, comparator: n, order: d = "ASC" } = o, l = e(o.value), u = yt(a, r), _ = yt(i, r);
+      const { field: r, comparator: n, order: s = "ASC" } = o, l = e(o.value), u = xt(a, r), v = xt(i, r);
       let m = 0;
       switch (n) {
         case "eq":
-          u === l && _ !== l ? m = 1 : u !== l && _ === l && (m = -1);
+          u === l && v !== l ? m = 1 : u !== l && v === l && (m = -1);
           break;
         case "lt":
-          u < l && _ >= l ? m = 1 : u >= l && _ < l && (m = -1);
+          u < l && v >= l ? m = 1 : u >= l && v < l && (m = -1);
           break;
         case "lte":
-          u <= l && _ > l ? m = 1 : u > l && _ <= l && (m = -1);
+          u <= l && v > l ? m = 1 : u > l && v <= l && (m = -1);
           break;
         case "gt":
-          u > l && _ <= l ? m = 1 : u <= l && _ > l && (m = -1);
+          u > l && v <= l ? m = 1 : u <= l && v > l && (m = -1);
           break;
         case "gte":
-          u >= l && _ < l ? m = 1 : u < l && _ >= l && (m = -1);
+          u >= l && v < l ? m = 1 : u < l && v >= l && (m = -1);
           break;
         case "oneOf":
           if (l != null && (Array.isArray(l) || typeof l == "string")) {
-            const g = l.includes(u), y = l.includes(_);
+            const g = l.includes(u), y = l.includes(v);
             g && !y ? m = 1 : !g && y && (m = -1);
           }
           break;
         case "containsOneOf":
           if (Array.isArray(l) && l.length > 0) {
-            const g = l.some((k) => (Array.isArray(u) || typeof u == "string") && u.includes(k)), y = l.some((k) => (Array.isArray(_) || typeof _ == "string") && _.includes(k));
+            const g = l.some((k) => (Array.isArray(u) || typeof u == "string") && u.includes(k)), y = l.some((k) => (Array.isArray(v) || typeof v == "string") && v.includes(k));
             g && !y ? m = 1 : !g && y && (m = -1);
           }
           break;
         default:
-          m = u - _;
+          m = u - v;
           break;
       }
-      if (m !== 0) return d.toUpperCase() === "DESC" ? -m : m;
+      if (m !== 0) return s.toUpperCase() === "DESC" ? -m : m;
     }
     return 0;
   };
@@ -1187,9 +1203,9 @@ var P = {
     showListStatus: !0,
     position: "below"
   },
-  units: bt,
+  units: wt,
   radar: {
-    range: bt.distance === "km" ? 35 : 25,
+    range: wt.distance === "km" ? 35 : 25,
     view: "radar",
     background_map: "none",
     background_map_opacity: 0,
@@ -1199,10 +1215,10 @@ var P = {
     background_map_light_api_key: "",
     background_map_dark_api_key: ""
   },
-  sort: ae,
-  templates: W,
+  sort: re,
+  templates: K,
   defines: {}
-}, kt = class {
+}, Ct = class {
   constructor() {
     this.hass = null, this.config = {}, this.radar = { range: 35 }, this.list = {}, this.templates = {}, this.defines = {}, this.units = {
       altitude: "ft",
@@ -1232,7 +1248,7 @@ var P = {
     }, this.radar.initialRange = this.radar.range, this.defines = {
       ...P.defines,
       ...t.defines
-    }, this.sortFn = ie(t.sort ?? P.sort, (e) => nt(this, e, void 0, (a) => {
+    }, this.sortFn = se(t.sort ?? P.sort, (e) => st(this, e, void 0, (a) => {
       this.renderDynamicOnRangeChange = a;
     })), this.templates = {
       ...P.templates,
@@ -1253,43 +1269,43 @@ var P = {
     ].includes(e), typeof this.renderDynamicFn == "function" && this.renderDynamicFn());
   }
 };
-async function ne() {
-  if (q) return q;
+async function le() {
+  if (B) return B;
   try {
     const e = await fetch("/local/flightradar24-card/runways.csv");
     if (e.ok)
-      return q = await e.text(), q;
+      return B = await e.text(), B;
   } catch {
   }
   try {
     const e = await fetch("data/runways.csv");
     if (e.ok)
-      return q = await e.text(), q;
+      return B = await e.text(), B;
   } catch {
   }
   const t = await fetch("https://davidmegginson.github.io/ourairports-data/runways.csv");
   if (!t.ok) throw new Error(`Failed to fetch runway data: ${t.status}`);
-  return q = await t.text(), q;
+  return B = await t.text(), B;
 }
-async function oe() {
-  if (B) return B;
+async function de() {
+  if (H) return H;
   try {
     const e = await fetch("/local/flightradar24-card/airports.csv");
     if (e.ok)
-      return B = await e.text(), B;
+      return H = await e.text(), H;
   } catch {
   }
   try {
     const e = await fetch("data/airports.csv");
     if (e.ok)
-      return B = await e.text(), B;
+      return H = await e.text(), H;
   } catch {
   }
   const t = await fetch("https://davidmegginson.github.io/ourairports-data/airports.csv");
   if (!t.ok) throw new Error(`Failed to fetch airport data: ${t.status}`);
-  return B = await t.text(), B;
+  return H = await t.text(), H;
 }
-function G(t) {
+function Z(t) {
   const e = [];
   let a = "", i = !1;
   for (let o = 0; o < t.length; o++) {
@@ -1298,46 +1314,46 @@ function G(t) {
   }
   return e.push(a), e;
 }
-function re(t, e, a, i, o) {
+function ce(t, e, a, i, o) {
   let r = 0;
   a && a === t && (r += 1e3), a && a.startsWith(t) && (r += 500), e === t && (r += 900), e.startsWith(t) && (r += 400), o && `${e}${o}`.includes(t) && (r += 300);
   const n = i.toUpperCase().split(/[\s,/-]+/);
-  for (const d of n) if (d.startsWith(t)) {
+  for (const s of n) if (s.startsWith(t)) {
     r += 250;
     break;
   }
   return i.toUpperCase().includes(t) && (r += 100), r;
 }
-async function se(t) {
+async function pe(t) {
   if (!t || t.length < 2) return [];
-  const e = t.trim().toUpperCase(), a = [], [i, o] = await Promise.all([ne(), oe()]), r = /* @__PURE__ */ new Map(), n = o.split(`
-`), d = G(n[0]), l = d.indexOf("ident"), u = d.indexOf("name"), _ = d.indexOf("iata_code");
+  const e = t.trim().toUpperCase(), a = [], [i, o] = await Promise.all([le(), de()]), r = /* @__PURE__ */ new Map(), n = o.split(`
+`), s = Z(n[0]), l = s.indexOf("ident"), u = s.indexOf("name"), v = s.indexOf("iata_code");
   for (let w = 1; w < n.length; w++) {
-    const E = n[w].trim();
-    if (!E) continue;
-    const L = G(E), O = L[l], z = L[u], T = L[_];
+    const A = n[w].trim();
+    if (!A) continue;
+    const L = Z(A), O = L[l], z = L[u], T = L[v];
     O && r.set(O, {
       name: z || "",
       iata: T || ""
     });
   }
   const m = i.split(`
-`), g = G(m[0]), y = g.indexOf("airport_ident"), k = g.indexOf("le_ident"), A = g.indexOf("he_ident"), R = g.indexOf("le_latitude_deg"), F = g.indexOf("le_longitude_deg"), S = g.indexOf("he_latitude_deg"), x = g.indexOf("he_longitude_deg"), $ = g.indexOf("le_heading_degT"), C = g.indexOf("he_heading_degT"), M = g.indexOf("length_ft");
+`), g = Z(m[0]), y = g.indexOf("airport_ident"), k = g.indexOf("le_ident"), E = g.indexOf("he_ident"), R = g.indexOf("le_latitude_deg"), F = g.indexOf("le_longitude_deg"), D = g.indexOf("he_latitude_deg"), x = g.indexOf("he_longitude_deg"), $ = g.indexOf("le_heading_degT"), C = g.indexOf("he_heading_degT"), M = g.indexOf("length_ft");
   for (let w = 1; w < m.length; w++) {
-    const E = m[w].trim();
-    if (!E) continue;
-    const L = G(E), O = L[y], z = L[k], T = L[A], c = r.get(O);
+    const A = m[w].trim();
+    if (!A) continue;
+    const L = Z(A), O = L[y], z = L[k], T = L[E], c = r.get(O);
     if (!c) continue;
-    const { name: p, iata: s } = c, h = O.startsWith(e), v = s && s.toUpperCase().startsWith(e), f = p.toUpperCase().includes(e), b = z && `${O}${z}`.includes(e), I = T && `${O}${T}`.includes(e);
-    if (!h && !v && !f && !b && !I) continue;
-    const H = re(e, O, s, p, z || T || "");
+    const { name: p, iata: d } = c, f = O.startsWith(e), _ = d && d.toUpperCase().startsWith(e), h = p.toUpperCase().includes(e), b = z && `${O}${z}`.includes(e), I = T && `${O}${T}`.includes(e);
+    if (!f && !_ && !h && !b && !I) continue;
+    const V = ce(e, O, d, p, z || T || "");
     if (z) {
-      const D = [];
-      s && D.push(s), D.push(O), D.push(`RWY${z}`), p && D.push(`- ${p}`), a.push({
-        displayText: D.join(" "),
+      const S = [];
+      d && S.push(d), S.push(O), S.push(`RWY${z}`), p && S.push(`- ${p}`), a.push({
+        displayText: S.join(" "),
         airportCode: O,
         airportName: p,
-        iataCode: s,
+        iataCode: d,
         runwayDesignator: z,
         data: {
           airportCode: O,
@@ -1347,35 +1363,35 @@ async function se(t) {
           heading: parseFloat(L[$]),
           length: parseFloat(L[M])
         },
-        score: H
+        score: V
       });
     }
     if (T) {
-      const D = [];
-      s && D.push(s), D.push(O), D.push(`RWY${T}`), p && D.push(`- ${p}`), a.push({
-        displayText: D.join(" "),
+      const S = [];
+      d && S.push(d), S.push(O), S.push(`RWY${T}`), p && S.push(`- ${p}`), a.push({
+        displayText: S.join(" "),
         airportCode: O,
         airportName: p,
-        iataCode: s,
+        iataCode: d,
         runwayDesignator: T,
         data: {
           airportCode: O,
           runwayDesignator: T,
-          latitude: parseFloat(L[S]),
+          latitude: parseFloat(L[D]),
           longitude: parseFloat(L[x]),
           heading: parseFloat(L[C]),
           length: parseFloat(L[M])
         },
-        score: H
+        score: V
       });
     }
   }
-  return a.sort((w, E) => E.score - w.score).slice(0, 10).map(({ score: w, ...E }) => E);
+  return a.sort((w, A) => A.score - w.score).slice(0, 10).map(({ score: w, ...A }) => A);
 }
-var q, B, le = J((() => {
-  q = null, B = null;
-})), de = /* @__PURE__ */ It({ Flightradar24CardEditor: () => ct }), ct, Tt = J((() => {
-  le(), Ft(), $t(), ct = class extends HTMLElement {
+var B, H, ue = G((() => {
+  B = null, H = null;
+})), fe = /* @__PURE__ */ Pt({ Flightradar24CardEditor: () => ft }), ft, zt = G((() => {
+  ue(), tt(), St(), At(), ft = class extends HTMLElement {
     constructor() {
       super(), this._config = {}, this._openSections = /* @__PURE__ */ new Set(["basic-settings"]), this._openConditions = /* @__PURE__ */ new Set(), this._openFeatures = /* @__PURE__ */ new Set(), this._openAnnotations = /* @__PURE__ */ new Set(), this._mapModal = null, this._internalUpdate = !1, this._shadowRoot = this.attachShadow({ mode: "open" });
     }
@@ -1553,10 +1569,10 @@ var q, B, le = J((() => {
       ];
     }
     _mapTypeRequiresApiKey(t) {
-      return xt(t);
+      return Lt(t);
     }
     _backgroundMapOptionsHtml(t) {
-      const e = (a, i) => `<optgroup label="${a}">${X.filter((o) => o.group === i).map((o) => `<option value="${o.id}" ${t === o.id ? "selected" : ""}>${o.label}</option>`).join("")}</optgroup>`;
+      const e = (a, i) => `<optgroup label="${a}">${J.filter((o) => o.group === i).map((o) => `<option value="${o.id}" ${t === o.id ? "selected" : ""}>${o.label}</option>`).join("")}</optgroup>`;
       return e("Keyless", "keyless") + e("Requires API key", "keyed");
     }
     _themeMapOptionsHtml(t) {
@@ -1569,9 +1585,41 @@ var q, B, le = J((() => {
                 <div class="input-with-help">
                     <input type="text" class="full-width" id="radar-background-map-${t}-api-key"
                         value="${i || ""}" placeholder="Paste your API key" />
-                    <span class="help-text">${gt(a)}</span>
+                    <span class="help-text">${vt(a)}</span>
                 </div>
             </div>` : "";
+    }
+    _colorPickerValue(t, e) {
+      const a = (t ?? "").split("|")[0].trim();
+      return /^#[0-9a-fA-F]{3}$|^#[0-9a-fA-F]{6}$/.test(a) ? a : e;
+    }
+    _dualColorRowHtml(t, e, a, i) {
+      const o = typeof a == "string" && a.includes("|"), r = this._colorPickerValue(a, i), n = o ? a.slice(a.indexOf("|") + 1).trim() : "", s = /^#[0-9a-fA-F]{3}$|^#[0-9a-fA-F]{6}$/.test(n) ? n : r;
+      return `
+            <div class="form-row">
+                <label>${e}:</label>
+                <div class="dual-color-controls">
+                    <input type="color" id="${t}" value="${r}" title="Light theme color" />
+                    <label class="dark-toggle" title="Use a different color for dark themes">
+                        <input type="checkbox" id="${t}-dark-enabled" ${o ? "checked" : ""} />
+                        Dark
+                    </label>
+                    <input type="color" id="${t}-dark" value="${s}" ${o ? "" : "disabled"} title="Dark theme color" />
+                </div>
+            </div>`;
+    }
+    _bindDualColor(t, e, a, i) {
+      const o = t.getElementById(e), r = t.getElementById(`${e}-dark`), n = t.getElementById(`${e}-dark-enabled`);
+      if (!o) return;
+      const s = () => {
+        const l = o.value;
+        a(n?.checked ? `${l}|${r?.value || l}` : l);
+      };
+      o.addEventListener("input", () => {
+        s(), i?.();
+      }), r?.addEventListener("input", s), n?.addEventListener("change", () => {
+        r && (r.disabled = !n.checked, n.checked && !r.value && (r.value = o.value)), s();
+      });
     }
     get validFlightFields() {
       return new Set(this.availableFlightFields.map((t) => t.value));
@@ -1584,8 +1632,8 @@ var q, B, le = J((() => {
       const t = /* @__PURE__ */ new Set(), e = this._config.templates || {}, a = this._config.filter, i = this._config.sort || [];
       Object.values(e).forEach((r) => {
         const n = r.matchAll(/\$\{(\w+)\}/g);
-        for (const d of n) {
-          const l = d[1];
+        for (const s of n) {
+          const l = s[1];
           this.allDefineAndToggleKeys.has(l) && t.add(l);
         }
       });
@@ -1594,9 +1642,9 @@ var q, B, le = J((() => {
           if ("type" in n && (n.type === "AND" || n.type === "OR")) o(n.conditions || []);
           else if ("type" in n && n.type === "NOT") o([n.condition]);
           else {
-            const d = n;
-            d.field && this.allDefineAndToggleKeys.has(d.field) && t.add(d.field), d.defined && this.allDefineAndToggleKeys.has(d.defined) && t.add(d.defined);
-            const l = d.value;
+            const s = n;
+            s.field && this.allDefineAndToggleKeys.has(s.field) && t.add(s.field), s.defined && this.allDefineAndToggleKeys.has(s.defined) && t.add(s.defined);
+            const l = s.value;
             if (typeof l == "string" && l.startsWith("${") && l.endsWith("}")) {
               const u = l.slice(2, -1);
               this.allDefineAndToggleKeys.has(u) && t.add(u);
@@ -1621,25 +1669,26 @@ var q, B, le = J((() => {
     }
     getUsedTemplateKeys() {
       const t = /* @__PURE__ */ new Set(), e = this._config.templates || {}, a = {
-        ...W,
+        ...K,
         ...e
       };
       return [
         "flight_element",
         "radar_range",
+        "radar_label",
         "list_status"
       ].forEach((i) => {
         e[i] !== void 0 && t.add(i);
       }), Object.values(a).forEach((i) => {
         const o = i.matchAll(/\$\{(\w+)\([\s\S]*?\)\}/g);
         for (const n of o) {
-          const d = n[1];
-          e[d] !== void 0 && t.add(d);
+          const s = n[1];
+          e[s] !== void 0 && t.add(s);
         }
         const r = i.matchAll(/tpl\.(\w+)/g);
         for (const n of r) {
-          const d = n[1];
-          e[d] !== void 0 && t.add(d);
+          const s = n[1];
+          e[s] !== void 0 && t.add(s);
         }
       }), t;
     }
@@ -1662,31 +1711,31 @@ var q, B, le = J((() => {
     _renameConfigKey(t, e, a) {
       if (e === a || !a.trim()) return;
       const i = { ...this._config.templates }, o = new RegExp(`\\$\\{${e}\\}`, "g");
-      for (const [d, l] of Object.entries(i))
-        l.includes(`\${${e}}`) && (i[d] = l.replace(o, `\${${a}}`)), t === "template" && (l.includes(`\${tpl.${e}}`) || l.includes(`tpl.${e}`)) && (i[d] = l.replace(new RegExp(`tpl\\.${e}`, "g"), `tpl.${a}`));
+      for (const [s, l] of Object.entries(i))
+        l.includes(`\${${e}}`) && (i[s] = l.replace(o, `\${${a}}`)), t === "template" && (l.includes(`\${tpl.${e}}`) || l.includes(`tpl.${e}`)) && (i[s] = l.replace(new RegExp(`tpl\\.${e}`, "g"), `tpl.${a}`));
       t === "template" && e in i && (i[a] = i[e], delete i[e]);
       const r = this._config.filter ? JSON.parse(JSON.stringify(this._config.filter)) : void 0;
       if (r) {
-        const d = (l) => {
+        const s = (l) => {
           l.forEach((u) => {
-            u.type === "AND" || u.type === "OR" ? d(u.conditions || []) : u.type === "NOT" ? d([u.condition]) : (u.field === e && (u.field = a), u.defined === e && (u.defined = a), typeof u.value == "string" && (u.value = u.value.replace(o, `\${${a}}`)));
+            u.type === "AND" || u.type === "OR" ? s(u.conditions || []) : u.type === "NOT" ? s([u.condition]) : (u.field === e && (u.field = a), u.defined === e && (u.defined = a), typeof u.value == "string" && (u.value = u.value.replace(o, `\${${a}}`)));
           });
         };
-        d(r);
+        s(r);
       }
-      const n = (this._config.sort || []).map((d) => {
-        if (d.field === e) return {
-          ...d,
+      const n = (this._config.sort || []).map((s) => {
+        if (s.field === e) return {
+          ...s,
           field: a
         };
-        if (d.field?.includes(" ?? ")) {
-          const l = d.field.split(" ?? ").map((u) => u === e ? a : u);
+        if (s.field?.includes(" ?? ")) {
+          const l = s.field.split(" ?? ").map((u) => u === e ? a : u);
           return {
-            ...d,
+            ...s,
             field: l.join(" ?? ")
           };
         }
-        return d;
+        return s;
       });
       this._config = {
         ...this._config,
@@ -1840,6 +1889,30 @@ var q, B, le = J((() => {
                 font-weight: 500;
                 font-size: 0.9em;
                 color: var(--secondary-text-color, #666);
+            }
+            .dual-color-controls {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .dual-color-controls input[type="color"] {
+                width: 56px;
+                min-width: 56px;
+                flex: 0 0 auto;
+            }
+            .dual-color-controls .dark-toggle {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                margin: 0;
+                font-size: 0.85em;
+                font-weight: 500;
+                color: var(--secondary-text-color, #666);
+                white-space: nowrap;
+                cursor: pointer;
+            }
+            .dual-color-controls input[type="color"]:disabled {
+                opacity: 0.35;
             }
             input[type="text"],
             input[type="number"],
@@ -2472,35 +2545,20 @@ var q, B, le = J((() => {
                     <details data-section-id="radar-colors">
                         <summary><h4>Colors</h4></summary>
                         <div class="section-content">
-                            <div class="form-row">
-                                <label>Background Color:</label>
-                                <input type="color" id="radar-background-color" value="${t["background-color"] ?? t["primary-color"] ?? "#ffffff"}" />
-                            </div>
+                            ${this._dualColorRowHtml("radar-background-color", "Background Color", t["background-color"] ?? t["primary-color"], "#ffffff")}
                             <div class="form-row">
                                 <label>Background Opacity:</label>
                                 <input type="number" min="0" max="1" step="0.05" id="radar-background-opacity" value="${t["background-opacity"] ?? 0.05}" />
                             </div>
-                            <div class="form-row">
-                                <label>Aircraft Marker:</label>
-                                <input type="color" id="radar-aircraft-color" value="${t["aircraft-color"] ?? t["accent-color"] ?? "#ff0000"}" />
-                            </div>
-                            <div class="form-row">
-                                <label>Aircraft Marker (Selected):</label>
-                                <input type="color" id="radar-aircraft-selected-color" value="${t["aircraft-selected-color"] ?? t["aircraft-color"] ?? t["accent-color"] ?? "#ff6600"}" />
-                            </div>
-                            <div class="form-row">
-                                <label>Radar Grid:</label>
-                                <input type="color" id="radar-grid-color" value="${t["radar-grid-color"] ?? t["feature-color"] ?? "#888888"}" />
-                            </div>
-                            <div class="form-row">
-                                <label>Local Features:</label>
-                                <input type="color" id="radar-local-features-color" value="${t["local-features-color"] ?? t["feature-color"] ?? t["radar-grid-color"] ?? "#888888"}" />
-                            </div>
+                            ${this._dualColorRowHtml("radar-aircraft-color", "Aircraft Marker", t["aircraft-color"] ?? t["accent-color"], "#ff0000")}
+                            ${this._dualColorRowHtml("radar-aircraft-selected-color", "Aircraft Marker (Selected)", t["aircraft-selected-color"] ?? t["aircraft-color"] ?? t["accent-color"], "#ff6600")}
+                            ${this._dualColorRowHtml("radar-grid-color", "Radar Grid", t["radar-grid-color"] ?? t["feature-color"], "#888888")}
+                            ${this._dualColorRowHtml("radar-local-features-color", "Local Features", t["local-features-color"] ?? t["feature-color"] ?? t["radar-grid-color"], "#888888")}
                         </div>
                     </details>
 
                     <details data-section-id="radar-aircraft-marker">
-                        <summary><h4>Aircraft Marker</h4></summary>
+                        <summary><h4>Aircraft Marker & Label</h4></summary>
                         <div class="section-content">
                             <div class="form-row">
                                 <label>Marker Size:</label>
@@ -2518,10 +2576,10 @@ var q, B, le = J((() => {
           large: 1.4,
           "x-large": 2,
           "xx-large": 2.8
-        }[a], r = t["background-color"] || t["primary-color"] || "#1a1a1a", n = t["aircraft-color"] || t["accent-color"] || "#ff0000", d = t["background-opacity"] ?? 0.05;
+        }[a], r = j(t["background-color"] || t["primary-color"] || "#1a1a1a"), n = j(t["aircraft-color"] || t["accent-color"] || "#ff0000"), s = t["background-opacity"] ?? 0.05;
         return `
                                             <button class="marker-size-option ${i ? "selected" : ""}" data-size="${a}">
-                                                <div class="marker-button-background" style="background-color: ${r}; opacity: ${d};"></div>
+                                                <div class="marker-button-background" style="background-color: ${r}; opacity: ${s};"></div>
                                                 <div class="marker-preview">
                                                     <div class="preview-arrow" style="
                                                         width: 0;
@@ -2536,6 +2594,13 @@ var q, B, le = J((() => {
                                         `;
       }).join("")}
                                 </div>
+                            </div>
+                            ${this._dualColorRowHtml("radar-callsign-label-color", "Label Background", t["callsign-label-color"], "#ffffff")}
+                            ${this._dualColorRowHtml("radar-callsign-label-text-color", "Label Text Color", t["callsign-label-text-color"], "#000000")}
+                            <div class="form-row">
+                                <label>Label Font Size:</label>
+                                <input type="text" id="radar-callsign-label-font-size" value="${t["callsign-label-font-size"] ?? ""}" placeholder="9px" />
+                                <span class="help-text">CSS size such as 9px, 12px or 0.8em. Use "light|dark" for per-theme values.</span>
                             </div>
                             <fieldset class="subsection">
                                 <legend>Custom Image Marker</legend>
@@ -2561,11 +2626,8 @@ var q, B, le = J((() => {
                                         <label>Scale:</label>
                                         <input type="number" min="0.1" step="0.1" id="radar-custom-marker-scale" value="${a["aircraft-marker-scale"] ?? 1}" />
                                     </div>
-                                    <div class="form-row">
-                                        <label>Color Overlay:</label>
-                                        <input type="color" id="radar-custom-marker-overlay" value="${a["aircraft-marker-color-overlay"] || "#000000"}" />
-                                        <span class="help-text">Fills the image shape with this color</span>
-                                    </div>`;
+                                    ${this._dualColorRowHtml("radar-custom-marker-overlay", "Color Overlay", a["aircraft-marker-color-overlay"], "#000000")}
+                                    <span class="help-text">Fills the image shape with this color</span>`;
       })()}
                             </fieldset>
                         </div>
@@ -2604,7 +2666,7 @@ var q, B, le = J((() => {
                                         <div class="input-with-help">
                                             <input type="text" class="full-width" id="radar-background-map-api-key"
                                                 value="${t.background_map_api_key || ""}" placeholder="Paste your API key" />
-                                            <span class="help-text">${gt(t.background_map)}</span>
+                                            <span class="help-text">${vt(t.background_map)}</span>
                                         </div>
                                     </div>
                                 ` : ""}
@@ -2779,8 +2841,9 @@ var q, B, le = J((() => {
       const t = this._config.templates || {}, e = [
         "flight_element",
         "radar_range",
+        "radar_label",
         "list_status"
-      ], a = Object.keys(W).filter((n) => !(n in t)), i = a.filter((n) => e.includes(n)), o = a.filter((n) => !e.includes(n)), r = this.getUnusedTemplates();
+      ], a = Object.keys(K).filter((n) => !(n in t)), i = a.filter((n) => e.includes(n)), o = a.filter((n) => !e.includes(n)), r = this.getUnusedTemplates();
       return `
             <details data-section-id="templates-config">
                 <summary>
@@ -2790,7 +2853,7 @@ var q, B, le = J((() => {
                 <div class="section-content">
                     <p class="help-text">Customize HTML templates for flight list items using \${flight.field} placeholders. Main templates are used directly by renderers; helper templates are used by other templates.</p>
                     <div id="templates-list">
-                        ${Object.entries(t).map(([n, d]) => {
+                        ${Object.entries(t).map(([n, s]) => {
         const l = e.includes(n), u = r.includes(n);
         return `
                             <div class="item-box" ${u ? 'style="border-color: #ff9800;"' : ""}>
@@ -2804,7 +2867,7 @@ var q, B, le = J((() => {
                                 </div>
                                 <div class="form-row">
                                     <label>Template:</label>
-                                    <textarea class="full-width" rows="3" data-template-value="${n}">${this._escapeHtml(d)}</textarea>
+                                    <textarea class="full-width" rows="3" data-template-value="${n}">${this._escapeHtml(s)}</textarea>
                                 </div>
                                 <button class="remove-button" data-action="remove-template" data-key="${n}">Remove</button>
                             </div>
@@ -2988,9 +3051,9 @@ var q, B, le = J((() => {
       return "type" in t ? t.type === "NOT" ? this._renderNotCondition(t, e) : this._renderGroupCondition(t, e) : this._renderFieldCondition(t, e);
     }
     _renderFieldCondition(t, e) {
-      const a = this._getConditionDescription(t), i = !!t.defined, o = Object.keys(this._config.defines || {}), r = Object.keys(this._config.toggles || {}), n = [...o, ...r], d = i ? t.defined : t.field, l = d ? this.validateConditionField(d) : { valid: !0 }, u = !l.valid;
+      const a = this._getConditionDescription(t), i = !!t.defined, o = Object.keys(this._config.defines || {}), r = Object.keys(this._config.toggles || {}), n = [...o, ...r], s = i ? t.defined : t.field, l = s ? this.validateConditionField(s) : { valid: !0 }, u = !l.valid;
       this._formatValue(t.value);
-      const _ = typeof t.value == "string" && t.value.startsWith("${") && t.value.endsWith("}"), m = _ ? t.value.slice(2, -1) : "";
+      const v = typeof t.value == "string" && t.value.startsWith("${") && t.value.endsWith("}"), m = v ? t.value.slice(2, -1) : "";
       return `
             <details class="condition-box" data-condition-path="${e}" ${u ? 'style="border-color: #ff9800;"' : ""}>
                 <summary class="condition-summary">
@@ -3021,8 +3084,8 @@ var q, B, le = J((() => {
                         <select class="full-width condition-field" data-path="${e}" data-prop="field" ${u ? 'style="border-color: #ff9800;"' : ""}>
                             <option value="">Select a field...</option>
                             ${this.availableFlightFields.map((g, y, k) => {
-        const A = y > 0 ? k[y - 1].group : null;
-        return `${g.group && g.group !== A ? `<option disabled style="font-weight: bold; font-style: italic;">— ${g.group} —</option>` : ""}<option value="${g.value}" ${t.field === g.value ? "selected" : ""}>${g.label}</option>`;
+        const E = y > 0 ? k[y - 1].group : null;
+        return `${g.group && g.group !== E ? `<option disabled style="font-weight: bold; font-style: italic;">— ${g.group} —</option>` : ""}<option value="${g.value}" ${t.field === g.value ? "selected" : ""}>${g.label}</option>`;
       }).join("")}
                         </select>
                     `}
@@ -3043,10 +3106,10 @@ var q, B, le = J((() => {
                 </div>
                 <div class="form-row">
                     <select class="condition-field-type" data-path="${e}" data-target="value">
-                        <option value="direct" ${_ ? "" : "selected"}>Value</option>
-                        <option value="defined" ${_ ? "selected" : ""}>Defined Value</option>
+                        <option value="direct" ${v ? "" : "selected"}>Value</option>
+                        <option value="defined" ${v ? "selected" : ""}>Defined Value</option>
                     </select>
-                    ${_ && n.length > 0 ? `
+                    ${v && n.length > 0 ? `
                         <select class="full-width condition-field-value-defined" data-path="${e}">
                             <option value="" ${m === "" ? "selected" : ""}>Select a define...</option>
                             ${n.map((g) => {
@@ -3056,7 +3119,7 @@ var q, B, le = J((() => {
                         </select>
                     ` : `
                         <input type="text" class="full-width condition-field" data-path="${e}" data-prop="value"
-                            value="${_ ? m : this._formatValue(t.value)}" placeholder="Value or comma-separated list" />
+                            value="${v ? m : this._formatValue(t.value)}" placeholder="Value or comma-separated list" />
                     `}
                 </div>
                 ${t.defaultValue !== void 0 ? `
@@ -3122,8 +3185,8 @@ var q, B, le = J((() => {
           const e = t, a = e.conditions.length;
           if (a === 0) return "(empty group)";
           const i = e.conditions.slice(0, 2).map((n) => {
-            const d = this._getConditionDescription(n);
-            return d.length > 30 ? d.substring(0, 27) + "..." : d;
+            const s = this._getConditionDescription(n);
+            return s.length > 30 ? s.substring(0, 27) + "..." : s;
           }), o = a - i.length, r = i.join(` ${e.type} `);
           return o > 0 ? `${r} + ${o} more` : r;
         }
@@ -3176,24 +3239,24 @@ var q, B, le = J((() => {
           ...this._config,
           location_tracker: p || void 0
         }, p) {
-          const { location: s, ...h } = this._config;
-          this._config = h;
+          const { location: d, ...f } = this._config;
+          this._config = f;
         }
         this._emitConfigChanged(), this._render();
       }), ["lat", "lon"].forEach((c) => {
         const p = t.getElementById(`location-${c}`);
-        p && p.addEventListener("input", (s) => {
-          const h = parseFloat(s.target.value);
-          if (!isNaN(h)) {
-            const v = this._config.location || {
+        p && p.addEventListener("input", (d) => {
+          const f = parseFloat(d.target.value);
+          if (!isNaN(f)) {
+            const _ = this._config.location || {
               lat: 0,
               lon: 0
             };
             this._config = {
               ...this._config,
               location: {
-                ...v,
-                [c]: h
+                ..._,
+                [c]: f
               }
             }, this._emitConfigChanged();
           }
@@ -3204,13 +3267,13 @@ var q, B, le = J((() => {
         "distance"
       ].forEach((c) => {
         const p = t.getElementById(`unit-${c}`);
-        p && p.addEventListener("change", (s) => {
-          const h = this._config.units || {};
+        p && p.addEventListener("change", (d) => {
+          const f = this._config.units || {};
           this._config = {
             ...this._config,
             units: {
-              ...h,
-              [c]: s.target.value
+              ...f,
+              [c]: d.target.value
             }
           }, this._emitConfigChanged(), c === "distance" && this._render();
         });
@@ -3231,20 +3294,20 @@ var q, B, le = J((() => {
       });
       const r = t.getElementById("max-flights");
       r && r.addEventListener("input", (c) => {
-        const p = c.target.value, s = parseInt(p);
+        const p = c.target.value, d = parseInt(p);
         this._config = {
           ...this._config,
-          max_flights: !p || isNaN(s) || s <= 0 ? void 0 : s
+          max_flights: !p || isNaN(d) || d <= 0 ? void 0 : d
         }, this._emitConfigChanged();
       });
       const n = t.getElementById("radar-show");
       n && n.addEventListener("change", (c) => {
-        const p = this._config.radar || {}, s = c.target.checked ? void 0 : !0;
+        const p = this._config.radar || {}, d = c.target.checked ? void 0 : !0;
         this._config = {
           ...this._config,
           radar: {
             ...p,
-            hide: s
+            hide: d
           }
         }, this._emitConfigChanged();
       }), [
@@ -3254,19 +3317,19 @@ var q, B, le = J((() => {
         "ring-distance"
       ].forEach((c) => {
         const p = t.getElementById(`radar-${c}`);
-        p && p.addEventListener("input", (s) => {
-          const h = this._config.radar || {}, v = c.replace(/-/g, "_");
+        p && p.addEventListener("input", (d) => {
+          const f = this._config.radar || {}, _ = c.replace(/-/g, "_");
           this._config = {
             ...this._config,
             radar: {
-              ...h,
-              [v]: parseFloat(s.target.value)
+              ...f,
+              [_]: parseFloat(d.target.value)
             }
           }, this._emitConfigChanged();
         });
       });
-      const d = t.getElementById("radar-view");
-      d && d.addEventListener("change", (c) => {
+      const s = t.getElementById("radar-view");
+      s && s.addEventListener("change", (c) => {
         const p = this._config.radar || {};
         this._config = {
           ...this._config,
@@ -3291,22 +3354,34 @@ var q, B, le = J((() => {
         "aircraft-color",
         "aircraft-selected-color",
         "radar-grid-color",
-        "local-features-color"
+        "local-features-color",
+        "callsign-label-color",
+        "callsign-label-text-color"
       ].forEach((c) => {
-        const p = c.startsWith("radar-") ? c : `radar-${c}`, s = t.getElementById(p);
-        s && s.addEventListener("input", (h) => {
-          const v = this._config.radar || {}, f = { ...this._config };
-          c === "background-color" && f.radar && delete f.radar["primary-color"], c === "aircraft-color" && f.radar && delete f.radar["accent-color"], (c === "radar-grid-color" || c === "local-features-color") && f.radar && delete f.radar["feature-color"], this._config = {
-            ...f,
+        const p = c.startsWith("radar-") ? c : `radar-${c}`;
+        this._bindDualColor(t, p, (d) => {
+          const f = this._config.radar || {}, _ = { ...this._config };
+          c === "background-color" && _.radar && delete _.radar["primary-color"], c === "aircraft-color" && _.radar && delete _.radar["accent-color"], (c === "radar-grid-color" || c === "local-features-color") && _.radar && delete _.radar["feature-color"], this._config = {
+            ..._,
             radar: {
-              ...v,
-              [c]: h.target.value
+              ...f,
+              [c]: d
             }
-          }, this._emitConfigChanged(), (c === "background-color" || c === "aircraft-color") && this._render();
+          }, this._emitConfigChanged();
+        }, () => {
+          (c === "background-color" || c === "aircraft-color") && this._render();
         });
       });
-      const u = t.getElementById("radar-background-opacity");
+      const u = t.getElementById("radar-callsign-label-font-size");
       u && u.addEventListener("input", (c) => {
+        const p = { ...this._config.radar || {} }, d = c.target.value.trim();
+        d ? p["callsign-label-font-size"] = d : delete p["callsign-label-font-size"], this._config = {
+          ...this._config,
+          radar: p
+        }, this._emitConfigChanged();
+      });
+      const v = t.getElementById("radar-background-opacity");
+      v && v.addEventListener("input", (c) => {
         const p = this._config.radar || {};
         this._config = {
           ...this._config,
@@ -3317,50 +3392,45 @@ var q, B, le = J((() => {
         }, this._emitConfigChanged(), this._render();
       }), t.querySelectorAll(".marker-size-option").forEach((c) => {
         c.addEventListener("click", (p) => {
-          const s = p.currentTarget.getAttribute("data-size"), h = this._config.radar || {};
+          const d = p.currentTarget.getAttribute("data-size"), f = this._config.radar || {};
           this._config = {
             ...this._config,
             radar: {
-              ...h,
-              "aircraft-marker-size": s === "normal" ? void 0 : s
+              ...f,
+              "aircraft-marker-size": d === "normal" ? void 0 : d
             }
           }, this._emitConfigChanged(), this._render();
         });
       });
-      const _ = (c, p) => {
-        const s = this._config.radar || {}, h = { ...s["aircraft-marker"]?.default || {} };
-        p === "" || p === void 0 || p === 0 ? delete h[c] : h[c] = p;
-        const v = Object.keys(h).length > 0 && h["aircraft-marker-url"];
+      const m = (c, p) => {
+        const d = this._config.radar || {}, f = { ...d["aircraft-marker"]?.default || {} };
+        p === "" || p === void 0 || p === 0 ? delete f[c] : f[c] = p;
+        const _ = Object.keys(f).length > 0 && f["aircraft-marker-url"];
         this._config = {
           ...this._config,
           radar: {
-            ...s,
-            "aircraft-marker": v ? { default: h } : void 0
+            ...d,
+            "aircraft-marker": _ ? { default: f } : void 0
           }
         }, this._emitConfigChanged();
-      }, m = t.getElementById("radar-custom-marker-url");
-      m && m.addEventListener("input", (c) => {
-        _("aircraft-marker-url", c.target.value);
-      });
-      const g = t.getElementById("radar-custom-marker-rotation");
+      }, g = t.getElementById("radar-custom-marker-url");
       g && g.addEventListener("input", (c) => {
-        const p = parseInt(c.target.value);
-        _("aircraft-marker-rotation", isNaN(p) ? 0 : p);
+        m("aircraft-marker-url", c.target.value);
       });
-      const y = t.getElementById("radar-custom-marker-center");
+      const y = t.getElementById("radar-custom-marker-rotation");
       y && y.addEventListener("input", (c) => {
-        _("aircraft-marker-center", c.target.value || void 0);
+        const p = parseInt(c.target.value);
+        m("aircraft-marker-rotation", isNaN(p) ? 0 : p);
       });
-      const k = t.getElementById("radar-custom-marker-scale");
+      const k = t.getElementById("radar-custom-marker-center");
       k && k.addEventListener("input", (c) => {
+        m("aircraft-marker-center", c.target.value || void 0);
+      });
+      const E = t.getElementById("radar-custom-marker-scale");
+      E && E.addEventListener("input", (c) => {
         const p = parseFloat(c.target.value);
-        _("aircraft-marker-scale", isNaN(p) ? 1 : p);
-      });
-      const A = t.getElementById("radar-custom-marker-overlay");
-      A && A.addEventListener("input", (c) => {
-        const p = c.target.value;
-        _("aircraft-marker-color-overlay", p || void 0);
-      });
+        m("aircraft-marker-scale", isNaN(p) ? 1 : p);
+      }), this._bindDualColor(t, "radar-custom-marker-overlay", (c) => m("aircraft-marker-color-overlay", c || void 0));
       const R = t.getElementById("radar-background-map");
       R && R.addEventListener("change", (c) => {
         const p = this._config.radar || {};
@@ -3373,41 +3443,41 @@ var q, B, le = J((() => {
         }, this._emitConfigChanged(), this._render();
       });
       const F = (c, p) => {
-        const s = t.getElementById(c);
-        s && s.addEventListener("change", (h) => {
-          const v = this._config.radar || {};
+        const d = t.getElementById(c);
+        d && d.addEventListener("change", (f) => {
+          const _ = this._config.radar || {};
           this._config = {
             ...this._config,
             radar: {
-              ...v,
-              [p]: h.target.value
+              ..._,
+              [p]: f.target.value
             }
           }, this._emitConfigChanged(), this._render();
         });
       };
       F("radar-background-map-light", "background_map_light"), F("radar-background-map-dark", "background_map_dark");
-      const S = (c, p) => {
-        const s = t.getElementById(c);
-        s && s.addEventListener("input", (h) => {
-          const v = this._config.radar || {}, f = h.target.value;
+      const D = (c, p) => {
+        const d = t.getElementById(c);
+        d && d.addEventListener("input", (f) => {
+          const _ = this._config.radar || {}, h = f.target.value;
           this._config = {
             ...this._config,
             radar: {
-              ...v,
-              [p]: f || void 0
+              ..._,
+              [p]: h || void 0
             }
           }, this._emitConfigChanged();
         });
       };
-      S("radar-background-map-light-api-key", "background_map_light_api_key"), S("radar-background-map-dark-api-key", "background_map_dark_api_key");
+      D("radar-background-map-light-api-key", "background_map_light_api_key"), D("radar-background-map-dark-api-key", "background_map_dark_api_key");
       const x = t.getElementById("radar-background-map-api-key");
       x && x.addEventListener("input", (c) => {
-        const p = this._config.radar || {}, s = c.target.value;
+        const p = this._config.radar || {}, d = c.target.value;
         this._config = {
           ...this._config,
           radar: {
             ...p,
-            background_map_api_key: s || void 0
+            background_map_api_key: d || void 0
           }
         }, this._emitConfigChanged();
       });
@@ -3424,39 +3494,39 @@ var q, B, le = J((() => {
       });
       const C = t.getElementById("list-show");
       C && C.addEventListener("change", (c) => {
-        const p = this._config.list || {}, s = c.target.checked ? void 0 : !0;
+        const p = this._config.list || {}, d = c.target.checked ? void 0 : !0;
         this._config = {
           ...this._config,
           list: {
             ...p,
-            hide: s
+            hide: d
           }
         }, this._emitConfigChanged();
       });
       const M = t.getElementById("list-show-status");
       M && M.addEventListener("change", (c) => {
-        const p = this._config.list || {}, s = c.target.checked ? void 0 : !1;
+        const p = this._config.list || {}, d = c.target.checked ? void 0 : !1;
         this._config = {
           ...this._config,
           list: {
             ...p,
-            showListStatus: s
+            showListStatus: d
           }
         }, this._emitConfigChanged();
       });
       const w = t.getElementById("list-position");
       w && w.addEventListener("change", (c) => {
-        const p = this._config.list || {}, s = c.target.value, h = s === "below" ? void 0 : s;
+        const p = this._config.list || {}, d = c.target.value, f = d === "below" ? void 0 : d;
         this._config = {
           ...this._config,
           list: {
             ...p,
-            position: h
+            position: f
           }
         }, this._emitConfigChanged(), this._render();
       });
-      const E = t.getElementById("no-flights-message");
-      E && E.addEventListener("input", (c) => {
+      const A = t.getElementById("no-flights-message");
+      A && A.addEventListener("input", (c) => {
         this._config = {
           ...this._config,
           no_flights_message: c.target.value
@@ -3466,30 +3536,30 @@ var q, B, le = J((() => {
       L && O && (L.addEventListener("click", (c) => {
         c.stopPropagation();
         const p = O.classList.contains("open");
-        t.querySelectorAll(".template-dropdown").forEach((s) => s.classList.remove("open")), p || O.classList.add("open");
+        t.querySelectorAll(".template-dropdown").forEach((d) => d.classList.remove("open")), p || O.classList.add("open");
       }), O.querySelectorAll(".template-dropdown-item").forEach((c) => {
         c.addEventListener("click", (p) => {
           p.stopPropagation();
-          const s = p.target.getAttribute("data-template-key");
-          if (!s) return;
-          const h = this._config.templates || {};
-          if (s === "__custom__") {
-            let v = 1;
-            for (; h[`template${v}`]; ) v++;
+          const d = p.target.getAttribute("data-template-key");
+          if (!d) return;
+          const f = this._config.templates || {};
+          if (d === "__custom__") {
+            let _ = 1;
+            for (; f[`template${_}`]; ) _++;
             this._config = {
               ...this._config,
               templates: {
-                ...h,
-                [`template${v}`]: ""
+                ...f,
+                [`template${_}`]: ""
               }
             };
           } else {
-            const v = W[s];
+            const _ = K[d];
             this._config = {
               ...this._config,
               templates: {
-                ...h,
-                [s]: v
+                ...f,
+                [d]: _
               }
             };
           }
@@ -3499,89 +3569,89 @@ var q, B, le = J((() => {
         O.classList.remove("open");
       })), t.querySelectorAll("[data-action]").forEach((c) => {
         c.addEventListener("click", (p) => {
-          const s = p.target.getAttribute("data-action"), h = p.target.getAttribute("data-index"), v = p.target.getAttribute("data-key");
-          if (s === "add-sort") {
-            const f = this._config.sort || [];
+          const d = p.target.getAttribute("data-action"), f = p.target.getAttribute("data-index"), _ = p.target.getAttribute("data-key");
+          if (d === "add-sort") {
+            const h = this._config.sort || [];
             this._config = {
               ...this._config,
-              sort: [...f, {
+              sort: [...h, {
                 field: "distance",
                 order: "asc"
               }]
             }, this._emitConfigChanged(), this._render();
-          } else if (s === "remove-sort" && h) {
-            const f = [...this._config.sort || []];
-            f.splice(parseInt(h), 1), this._config = {
+          } else if (d === "remove-sort" && f) {
+            const h = [...this._config.sort || []];
+            h.splice(parseInt(f), 1), this._config = {
               ...this._config,
-              sort: f.length > 0 ? f : void 0
+              sort: h.length > 0 ? h : void 0
             }, this._emitConfigChanged(), this._render();
-          } else if (s === "add-define") {
-            const f = this._config.defines || {};
+          } else if (d === "add-define") {
+            const h = this._config.defines || {};
             let b = 1;
-            for (; f[`define${b}`]; ) b++;
+            for (; h[`define${b}`]; ) b++;
             this._config = {
               ...this._config,
               defines: {
-                ...f,
+                ...h,
                 [`define${b}`]: ""
               }
             }, this._emitConfigChanged(), this._render();
-          } else if (s === "remove-define" && v) {
-            const f = { ...this._config.defines };
-            delete f[v], this._config = {
+          } else if (d === "remove-define" && _) {
+            const h = { ...this._config.defines };
+            delete h[_], this._config = {
               ...this._config,
-              defines: Object.keys(f).length > 0 ? f : void 0
+              defines: Object.keys(h).length > 0 ? h : void 0
             }, this._emitConfigChanged(), this._render();
-          } else if (s === "add-toggle") {
-            const f = this._config.toggles || {};
+          } else if (d === "add-toggle") {
+            const h = this._config.toggles || {};
             let b = 1;
-            for (; f[`toggle${b}`]; ) b++;
+            for (; h[`toggle${b}`]; ) b++;
             this._config = {
               ...this._config,
               toggles: {
-                ...f,
+                ...h,
                 [`toggle${b}`]: {
                   label: "Toggle",
                   default: !1
                 }
               }
             }, this._emitConfigChanged(), this._render();
-          } else if (s === "remove-toggle" && v) {
-            const f = { ...this._config.toggles };
-            delete f[v], this._config = {
+          } else if (d === "remove-toggle" && _) {
+            const h = { ...this._config.toggles };
+            delete h[_], this._config = {
               ...this._config,
-              toggles: Object.keys(f).length > 0 ? f : void 0
+              toggles: Object.keys(h).length > 0 ? h : void 0
             }, this._emitConfigChanged(), this._render();
-          } else if (s === "remove-template" && v) {
-            const f = { ...this._config.templates };
-            delete f[v], this._config = {
+          } else if (d === "remove-template" && _) {
+            const h = { ...this._config.templates };
+            delete h[_], this._config = {
               ...this._config,
-              templates: Object.keys(f).length > 0 ? f : void 0
+              templates: Object.keys(h).length > 0 ? h : void 0
             }, this._emitConfigChanged(), this._render();
-          } else if (s === "add-filter-condition") {
-            const f = this._config.filter || [], b = f.length;
+          } else if (d === "add-filter-condition") {
+            const h = this._config.filter || [], b = h.length;
             this._config = {
               ...this._config,
-              filter: [...f, {
+              filter: [...h, {
                 field: "",
                 comparator: "eq",
                 value: ""
               }]
             }, this._openConditions.add(`filter:${b}`), this._emitConfigChanged(), this._render();
-          } else if (s === "add-filter-group") {
-            const f = this._config.filter || [], b = f.length;
+          } else if (d === "add-filter-group") {
+            const h = this._config.filter || [], b = h.length;
             this._config = {
               ...this._config,
-              filter: [...f, {
+              filter: [...h, {
                 type: "AND",
                 conditions: []
               }]
             }, this._openConditions.add(`filter:${b}`), this._emitConfigChanged(), this._render();
-          } else if (s === "add-filter-not") {
-            const f = this._config.filter || [], b = f.length;
+          } else if (d === "add-filter-not") {
+            const h = this._config.filter || [], b = h.length;
             this._config = {
               ...this._config,
-              filter: [...f, {
+              filter: [...h, {
                 type: "NOT",
                 condition: {
                   field: "",
@@ -3590,32 +3660,32 @@ var q, B, le = J((() => {
                 }
               }]
             }, this._openConditions.add(`filter:${b}`), this._emitConfigChanged(), this._render();
-          } else if (s === "remove-condition") {
-            const f = p.target.getAttribute("data-path");
-            f && (this._removeConditionAtPath(f), this._emitConfigChanged(), this._render());
-          } else if (s === "add-group-condition") {
-            const f = p.target.getAttribute("data-path");
-            if (f) {
-              const b = this._addConditionToGroup(f, {
+          } else if (d === "remove-condition") {
+            const h = p.target.getAttribute("data-path");
+            h && (this._removeConditionAtPath(h), this._emitConfigChanged(), this._render());
+          } else if (d === "add-group-condition") {
+            const h = p.target.getAttribute("data-path");
+            if (h) {
+              const b = this._addConditionToGroup(h, {
                 field: "",
                 comparator: "eq",
                 value: ""
               });
               b && this._openConditions.add(b), this._emitConfigChanged(), this._render();
             }
-          } else if (s === "add-group-group") {
-            const f = p.target.getAttribute("data-path");
-            if (f) {
-              const b = this._addConditionToGroup(f, {
+          } else if (d === "add-group-group") {
+            const h = p.target.getAttribute("data-path");
+            if (h) {
+              const b = this._addConditionToGroup(h, {
                 type: "AND",
                 conditions: []
               });
               b && this._openConditions.add(b), this._emitConfigChanged(), this._render();
             }
-          } else if (s === "add-group-not") {
-            const f = p.target.getAttribute("data-path");
-            if (f) {
-              const b = this._addConditionToGroup(f, {
+          } else if (d === "add-group-not") {
+            const h = p.target.getAttribute("data-path");
+            if (h) {
+              const b = this._addConditionToGroup(h, {
                 type: "NOT",
                 condition: {
                   field: "",
@@ -3625,12 +3695,12 @@ var q, B, le = J((() => {
               });
               b && this._openConditions.add(b), this._emitConfigChanged(), this._render();
             }
-          } else if (s === "add-local-feature-location") {
-            const f = this._config.radar || {}, b = f.local_features || [], I = b.length;
+          } else if (d === "add-local-feature-location") {
+            const h = this._config.radar || {}, b = h.local_features || [], I = b.length;
             this._config = {
               ...this._config,
               radar: {
-                ...f,
+                ...h,
                 local_features: [...b, {
                   type: "location",
                   label: "",
@@ -3641,12 +3711,12 @@ var q, B, le = J((() => {
                 }]
               }
             }, this._openFeatures.add(`feature-${I}`), this._emitConfigChanged(), this._render();
-          } else if (s === "add-local-feature-runway") {
-            const f = this._config.radar || {}, b = f.local_features || [], I = b.length;
+          } else if (d === "add-local-feature-runway") {
+            const h = this._config.radar || {}, b = h.local_features || [], I = b.length;
             this._config = {
               ...this._config,
               radar: {
-                ...f,
+                ...h,
                 local_features: [...b, {
                   type: "runway",
                   position: {
@@ -3658,83 +3728,83 @@ var q, B, le = J((() => {
                 }]
               }
             }, this._openFeatures.add(`feature-${I}`), this._emitConfigChanged(), this._render();
-          } else if (s === "add-local-feature-outline") {
-            const f = this._config.radar || {}, b = f.local_features || [], I = b.length;
+          } else if (d === "add-local-feature-outline") {
+            const h = this._config.radar || {}, b = h.local_features || [], I = b.length;
             this._config = {
               ...this._config,
               radar: {
-                ...f,
+                ...h,
                 local_features: [...b, {
                   type: "outline",
                   points: []
                 }]
               }
             }, this._openFeatures.add(`feature-${I}`), this._emitConfigChanged(), this._render();
-          } else if (s === "remove-local-feature" && h) {
-            const f = this._config.radar || {}, b = [...f.local_features || []];
-            b.splice(parseInt(h), 1), this._config = {
+          } else if (d === "remove-local-feature" && f) {
+            const h = this._config.radar || {}, b = [...h.local_features || []];
+            b.splice(parseInt(f), 1), this._config = {
               ...this._config,
               radar: {
-                ...f,
+                ...h,
                 local_features: b.length > 0 ? b : void 0
               }
             }, this._emitConfigChanged(), this._render();
-          } else if (s === "select-location-on-map" && h) this._openMapModal("location", parseInt(h));
-          else if (s === "draw-outline-on-map" && h) this._openMapModal("outline", parseInt(h));
-          else if (s === "add-annotation") {
-            const f = this._config.annotate || [], b = f.length;
+          } else if (d === "select-location-on-map" && f) this._openMapModal("location", parseInt(f));
+          else if (d === "draw-outline-on-map" && f) this._openMapModal("outline", parseInt(f));
+          else if (d === "add-annotation") {
+            const h = this._config.annotate || [], b = h.length;
             this._config = {
               ...this._config,
-              annotate: [...f, {
+              annotate: [...h, {
                 field: "",
                 render: "",
                 conditions: []
               }]
             }, this._openAnnotations.add(`annotation-${b}`), this._emitConfigChanged(), this._render();
-          } else if (s === "remove-annotation" && h) {
-            const f = [...this._config.annotate || []];
-            f.splice(parseInt(h), 1), this._config = {
+          } else if (d === "remove-annotation" && f) {
+            const h = [...this._config.annotate || []];
+            h.splice(parseInt(f), 1), this._config = {
               ...this._config,
-              annotate: f.length > 0 ? f : void 0
+              annotate: h.length > 0 ? h : void 0
             }, this._emitConfigChanged(), this._render();
-          } else if (s === "add-annotation-condition" && h) {
-            const f = [...this._config.annotate || []], b = parseInt(h);
-            if (f[b]) {
-              const I = (f[b].conditions || []).length;
-              f[b] = {
-                ...f[b],
-                conditions: [...f[b].conditions || [], {
+          } else if (d === "add-annotation-condition" && f) {
+            const h = [...this._config.annotate || []], b = parseInt(f);
+            if (h[b]) {
+              const I = (h[b].conditions || []).length;
+              h[b] = {
+                ...h[b],
+                conditions: [...h[b].conditions || [], {
                   field: "",
                   comparator: "eq",
                   value: ""
                 }]
               }, this._config = {
                 ...this._config,
-                annotate: f
+                annotate: h
               }, this._openConditions.add(`annotate:${b}:${I}`), this._emitConfigChanged(), this._render();
             }
-          } else if (s === "add-annotation-group" && h) {
-            const f = [...this._config.annotate || []], b = parseInt(h);
-            if (f[b]) {
-              const I = (f[b].conditions || []).length;
-              f[b] = {
-                ...f[b],
-                conditions: [...f[b].conditions || [], {
+          } else if (d === "add-annotation-group" && f) {
+            const h = [...this._config.annotate || []], b = parseInt(f);
+            if (h[b]) {
+              const I = (h[b].conditions || []).length;
+              h[b] = {
+                ...h[b],
+                conditions: [...h[b].conditions || [], {
                   type: "AND",
                   conditions: []
                 }]
               }, this._config = {
                 ...this._config,
-                annotate: f
+                annotate: h
               }, this._openConditions.add(`annotate:${b}:${I}`), this._emitConfigChanged(), this._render();
             }
-          } else if (s === "add-annotation-not" && h) {
-            const f = [...this._config.annotate || []], b = parseInt(h);
-            if (f[b]) {
-              const I = (f[b].conditions || []).length;
-              f[b] = {
-                ...f[b],
-                conditions: [...f[b].conditions || [], {
+          } else if (d === "add-annotation-not" && f) {
+            const h = [...this._config.annotate || []], b = parseInt(f);
+            if (h[b]) {
+              const I = (h[b].conditions || []).length;
+              h[b] = {
+                ...h[b],
+                conditions: [...h[b].conditions || [], {
                   type: "NOT",
                   condition: {
                     field: "",
@@ -3744,181 +3814,181 @@ var q, B, le = J((() => {
                 }]
               }, this._config = {
                 ...this._config,
-                annotate: f
+                annotate: h
               }, this._openConditions.add(`annotate:${b}:${I}`), this._emitConfigChanged(), this._render();
             }
           }
         });
       }), t.querySelectorAll("[data-runway-index]").forEach((c) => {
-        const p = parseInt(c.getAttribute("data-runway-index")), s = t.getElementById(`runway-dropdown-${p}`), h = t.getElementById(`runway-lookup-status-${p}`);
-        let v;
-        c.addEventListener("input", (f) => {
-          const b = f.target.value.trim();
-          if (clearTimeout(v), !b || b.length < 2) {
-            s && (s.style.display = "none"), h && (h.textContent = "");
+        const p = parseInt(c.getAttribute("data-runway-index")), d = t.getElementById(`runway-dropdown-${p}`), f = t.getElementById(`runway-lookup-status-${p}`);
+        let _;
+        c.addEventListener("input", (h) => {
+          const b = h.target.value.trim();
+          if (clearTimeout(_), !b || b.length < 2) {
+            d && (d.style.display = "none"), f && (f.textContent = "");
             return;
           }
-          s && (s.innerHTML = '<div class="runway-dropdown-loading">⏳ Searching runways...</div>', s.style.display = "block"), v = window.setTimeout(() => {
-            se(b).then((I) => {
-              s && (I.length === 0 ? s.innerHTML = '<div class="runway-dropdown-empty">No runways found</div>' : (s.innerHTML = I.map((H) => `<div class="runway-dropdown-item" data-runway-result='${JSON.stringify(H.data)}'>${H.displayText}</div>`).join(""), s.querySelectorAll(".runway-dropdown-item").forEach((H) => {
-                H.addEventListener("click", () => {
-                  const D = JSON.parse(H.getAttribute("data-runway-result")), ut = this._config.radar || {}, tt = [...ut.local_features || []], Y = { ...tt[p] };
-                  Y.position = {
-                    lat: D.latitude,
-                    lon: D.longitude
-                  }, Y.heading = Math.round(D.heading), Y.length = Math.round(D.length), tt[p] = Y, this._config = {
+          d && (d.innerHTML = '<div class="runway-dropdown-loading">⏳ Searching runways...</div>', d.style.display = "block"), _ = window.setTimeout(() => {
+            pe(b).then((I) => {
+              d && (I.length === 0 ? d.innerHTML = '<div class="runway-dropdown-empty">No runways found</div>' : (d.innerHTML = I.map((V) => `<div class="runway-dropdown-item" data-runway-result='${JSON.stringify(V.data)}'>${V.displayText}</div>`).join(""), d.querySelectorAll(".runway-dropdown-item").forEach((V) => {
+                V.addEventListener("click", () => {
+                  const S = JSON.parse(V.getAttribute("data-runway-result")), gt = this._config.radar || {}, it = [...gt.local_features || []], X = { ...it[p] };
+                  X.position = {
+                    lat: S.latitude,
+                    lon: S.longitude
+                  }, X.heading = Math.round(S.heading), X.length = Math.round(S.length), it[p] = X, this._config = {
                     ...this._config,
                     radar: {
-                      ...ut,
-                      local_features: tt
+                      ...gt,
+                      local_features: it
                     }
-                  }, this._emitConfigChanged(), c.value = `${D.airportCode} ${D.runwayDesignator}`, s.style.display = "none", h && (h.style.color = "var(--success-color, #43a047)", h.textContent = `✓ ${D.airportCode} RWY${D.runwayDesignator} - ${Math.round(D.length)}ft`), this._render();
+                  }, this._emitConfigChanged(), c.value = `${S.airportCode} ${S.runwayDesignator}`, d.style.display = "none", f && (f.style.color = "var(--success-color, #43a047)", f.textContent = `✓ ${S.airportCode} RWY${S.runwayDesignator} - ${Math.round(S.length)}ft`), this._render();
                 });
               })));
             }).catch((I) => {
-              s && (s.innerHTML = `<div class="runway-dropdown-empty">Error: ${I.message}</div>`), h && (h.style.color = "var(--error-color, #f44336)", h.textContent = `❌ ${I.message}`);
+              d && (d.innerHTML = `<div class="runway-dropdown-empty">Error: ${I.message}</div>`), f && (f.style.color = "var(--error-color, #f44336)", f.textContent = `❌ ${I.message}`);
             });
           }, 300);
         }), c.addEventListener("blur", () => {
           setTimeout(() => {
-            s && (s.style.display = "none");
+            d && (d.style.display = "none");
           }, 200);
         });
       }), t.querySelectorAll(".condition-field-type").forEach((c) => {
-        const p = c.getAttribute("data-path"), s = c.getAttribute("data-target");
-        p && c.addEventListener("change", (h) => {
-          const v = h.target.value;
-          s === "value" ? this._switchConditionValueType(p, v) : this._switchConditionFieldType(p, v), this._emitConfigChanged(), this._render();
+        const p = c.getAttribute("data-path"), d = c.getAttribute("data-target");
+        p && c.addEventListener("change", (f) => {
+          const _ = f.target.value;
+          d === "value" ? this._switchConditionValueType(p, _) : this._switchConditionFieldType(p, _), this._emitConfigChanged(), this._render();
         });
       }), t.querySelectorAll(".condition-field").forEach((c) => {
-        const p = c.getAttribute("data-path"), s = c.getAttribute("data-prop");
-        if (p && s) {
-          c.addEventListener("input", (v) => {
-            this._updateConditionAtPath(p, s, v.target.value), this._emitConfigChanged();
+        const p = c.getAttribute("data-path"), d = c.getAttribute("data-prop");
+        if (p && d) {
+          c.addEventListener("input", (_) => {
+            this._updateConditionAtPath(p, d, _.target.value), this._emitConfigChanged();
           });
-          const h = () => {
+          const f = () => {
             this._render();
           };
-          c.tagName === "SELECT" ? c.addEventListener("change", h) : c.addEventListener("blur", h);
+          c.tagName === "SELECT" ? c.addEventListener("change", f) : c.addEventListener("blur", f);
         }
       }), t.querySelectorAll(".condition-field-value-defined").forEach((c) => {
         const p = c.getAttribute("data-path");
-        p && c.addEventListener("change", (s) => {
-          const h = s.target.value, v = h ? `\${${h}}` : "${}";
-          this._updateConditionAtPath(p, "value", v), this._emitConfigChanged(), this._render();
+        p && c.addEventListener("change", (d) => {
+          const f = d.target.value, _ = f ? `\${${f}}` : "${}";
+          this._updateConditionAtPath(p, "value", _), this._emitConfigChanged(), this._render();
         });
       }), t.querySelectorAll("[data-define-key]").forEach((c) => {
         c.addEventListener("input", (p) => {
-          const s = p.target, h = s.getAttribute("data-define-key"), v = s.value;
-          h !== v && v.trim() && (this._renameConfigKey("define", h, v), s.setAttribute("data-define-key", v), s.closest(".item-box")?.querySelector("[data-define-value]")?.setAttribute("data-define-value", v), this._emitConfigChanged());
+          const d = p.target, f = d.getAttribute("data-define-key"), _ = d.value;
+          f !== _ && _.trim() && (this._renameConfigKey("define", f, _), d.setAttribute("data-define-key", _), d.closest(".item-box")?.querySelector("[data-define-value]")?.setAttribute("data-define-value", _), this._emitConfigChanged());
         });
       }), t.querySelectorAll("[data-toggle-key]").forEach((c) => {
         c.addEventListener("input", (p) => {
-          const s = p.target, h = s.getAttribute("data-toggle-key"), v = s.value;
-          if (h !== v && v.trim()) {
-            this._renameConfigKey("toggle", h, v), s.setAttribute("data-toggle-key", v);
-            const f = s.closest(".item-box");
-            f?.querySelector("[data-toggle-label]")?.setAttribute("data-toggle-label", v), f?.querySelector("[data-toggle-default]")?.setAttribute("data-toggle-default", v), this._emitConfigChanged();
+          const d = p.target, f = d.getAttribute("data-toggle-key"), _ = d.value;
+          if (f !== _ && _.trim()) {
+            this._renameConfigKey("toggle", f, _), d.setAttribute("data-toggle-key", _);
+            const h = d.closest(".item-box");
+            h?.querySelector("[data-toggle-label]")?.setAttribute("data-toggle-label", _), h?.querySelector("[data-toggle-default]")?.setAttribute("data-toggle-default", _), this._emitConfigChanged();
           }
         });
       }), t.querySelectorAll("[data-template-name]").forEach((c) => {
         c.addEventListener("input", (p) => {
-          const s = p.target, h = s.getAttribute("data-template-name"), v = s.value;
-          h !== v && v.trim() && (this._renameConfigKey("template", h, v), s.setAttribute("data-template-name", v), s.closest(".item-box")?.querySelector("[data-template-value]")?.setAttribute("data-template-value", v), this._emitConfigChanged());
+          const d = p.target, f = d.getAttribute("data-template-name"), _ = d.value;
+          f !== _ && _.trim() && (this._renameConfigKey("template", f, _), d.setAttribute("data-template-name", _), d.closest(".item-box")?.querySelector("[data-template-value]")?.setAttribute("data-template-value", _), this._emitConfigChanged());
         });
       }), t.querySelectorAll("[data-define-value]").forEach((c) => {
         c.addEventListener("input", (p) => {
-          const s = p.target.getAttribute("data-define-value"), h = { ...this._config.defines };
-          h[s] = p.target.value, this._config = {
+          const d = p.target.getAttribute("data-define-value"), f = { ...this._config.defines };
+          f[d] = p.target.value, this._config = {
             ...this._config,
-            defines: h
+            defines: f
           }, this._emitConfigChanged();
         });
       }), t.querySelectorAll("[data-toggle-label]").forEach((c) => {
         c.addEventListener("input", (p) => {
-          const s = p.target.getAttribute("data-toggle-label"), h = { ...this._config.toggles };
-          h[s] = {
-            ...h[s],
+          const d = p.target.getAttribute("data-toggle-label"), f = { ...this._config.toggles };
+          f[d] = {
+            ...f[d],
             label: p.target.value
           }, this._config = {
             ...this._config,
-            toggles: h
+            toggles: f
           }, this._emitConfigChanged();
         });
       }), t.querySelectorAll("[data-toggle-default]").forEach((c) => {
         c.addEventListener("change", (p) => {
-          const s = p.target.getAttribute("data-toggle-default"), h = { ...this._config.toggles }, v = p.target.checked ? !0 : void 0;
-          h[s] = {
-            ...h[s],
-            default: v
+          const d = p.target.getAttribute("data-toggle-default"), f = { ...this._config.toggles }, _ = p.target.checked ? !0 : void 0;
+          f[d] = {
+            ...f[d],
+            default: _
           }, this._config = {
             ...this._config,
-            toggles: h
+            toggles: f
           }, this._emitConfigChanged();
         });
       }), t.querySelectorAll("[data-template-value]").forEach((c) => {
         c.addEventListener("input", (p) => {
-          const s = p.target.getAttribute("data-template-value"), h = { ...this._config.templates };
-          h[s] = p.target.value, this._config = {
+          const d = p.target.getAttribute("data-template-value"), f = { ...this._config.templates };
+          f[d] = p.target.value, this._config = {
             ...this._config,
-            templates: h
+            templates: f
           }, this._emitConfigChanged();
         });
       }), t.querySelectorAll("[data-sort-prop]").forEach((c) => {
         c.addEventListener("input", (p) => {
-          const [s, h] = p.target.getAttribute("data-sort-prop").split(":"), v = [...this._config.sort || []];
-          v[parseInt(s)] = {
-            ...v[parseInt(s)],
-            [h]: p.target.value
+          const [d, f] = p.target.getAttribute("data-sort-prop").split(":"), _ = [...this._config.sort || []];
+          _[parseInt(d)] = {
+            ..._[parseInt(d)],
+            [f]: p.target.value
           }, this._config = {
             ...this._config,
-            sort: v
+            sort: _
           }, this._emitConfigChanged();
         });
       }), t.querySelectorAll("[data-feature-prop]").forEach((c) => {
-        const [p, s] = c.getAttribute("data-feature-prop").split(":");
-        c.addEventListener("input", (h) => {
-          const v = this._config.radar || {}, f = [...v.local_features || []], b = { ...f[parseInt(p)] };
-          if (s === "label") b.label = h.target.value;
-          else if (s === "lat")
+        const [p, d] = c.getAttribute("data-feature-prop").split(":");
+        c.addEventListener("input", (f) => {
+          const _ = this._config.radar || {}, h = [..._.local_features || []], b = { ...h[parseInt(p)] };
+          if (d === "label") b.label = f.target.value;
+          else if (d === "lat")
             "position" in b && (b.position = {
               ...b.position,
-              lat: parseFloat(h.target.value) || 0
+              lat: parseFloat(f.target.value) || 0
             });
-          else if (s === "lon")
+          else if (d === "lon")
             "position" in b && (b.position = {
               ...b.position,
-              lon: parseFloat(h.target.value) || 0
+              lon: parseFloat(f.target.value) || 0
             });
-          else if (s === "heading") b.heading = parseFloat(h.target.value) || 0;
-          else if (s === "length") b.length = parseFloat(h.target.value) || 0;
-          else if (s === "max_range") {
-            const I = h.target.value;
+          else if (d === "heading") b.heading = parseFloat(f.target.value) || 0;
+          else if (d === "length") b.length = parseFloat(f.target.value) || 0;
+          else if (d === "max_range") {
+            const I = f.target.value;
             b.max_range = I ? parseFloat(I) : void 0;
-          } else if (s === "points") try {
-            b.points = JSON.parse(h.target.value);
+          } else if (d === "points") try {
+            b.points = JSON.parse(f.target.value);
           } catch {
             return;
           }
-          f[parseInt(p)] = b, this._config = {
+          h[parseInt(p)] = b, this._config = {
             ...this._config,
             radar: {
-              ...v,
-              local_features: f
+              ..._,
+              local_features: h
             }
           }, this._emitConfigChanged();
-        }), s === "label" && c.addEventListener("blur", () => {
+        }), d === "label" && c.addEventListener("blur", () => {
           this._render();
         });
       }), t.querySelectorAll("[data-annotation-prop]").forEach((c) => {
-        const [p, s] = c.getAttribute("data-annotation-prop").split(":");
-        c.addEventListener("input", (h) => {
-          const v = [...this._config.annotate || []], f = { ...v[parseInt(p)] };
-          s === "field" ? f.field = h.target.value : s === "render" && (f.render = h.target.value), v[parseInt(p)] = f, this._config = {
+        const [p, d] = c.getAttribute("data-annotation-prop").split(":");
+        c.addEventListener("input", (f) => {
+          const _ = [...this._config.annotate || []], h = { ..._[parseInt(p)] };
+          d === "field" ? h.field = f.target.value : d === "render" && (h.render = f.target.value), _[parseInt(p)] = h, this._config = {
             ...this._config,
-            annotate: v
+            annotate: _
           }, this._emitConfigChanged();
-        }), s === "field" && c.addEventListener("blur", () => {
+        }), d === "field" && c.addEventListener("blur", () => {
           this._render();
         });
       });
@@ -3961,7 +4031,7 @@ var q, B, le = J((() => {
       let o = i;
       for (let n = 1; n < e.length - 1; n++) {
         if (!i) return null;
-        const d = parseInt(e[n]), l = i[d];
+        const s = parseInt(e[n]), l = i[s];
         if (!l) return null;
         if ("type" in l) l.type === "NOT" ? (o = l, i = [l.condition]) : (o = i, i = l.conditions);
         else return null;
@@ -4198,15 +4268,15 @@ var q, B, le = J((() => {
             draggable: !0
           }).addTo(t);
           n.on("drag", () => {
-            const d = n.getLatLng();
+            const s = n.getLatLng();
             this._mapModal.points[r] = {
-              lat: d.lat,
-              lon: d.lng
+              lat: s.lat,
+              lon: s.lng
             };
             const l = this._mapModal.points.map((u) => [u.lat, u.lon]);
             this._mapModal.polygon.setLatLngs(l);
-          }), n.on("contextmenu", (d) => {
-            d.originalEvent.preventDefault(), this._removeOutlinePoint(r);
+          }), n.on("contextmenu", (s) => {
+            s.originalEvent.preventDefault(), this._removeOutlinePoint(r);
           }), this._mapModal.markers.push(n);
         });
       }
@@ -4289,30 +4359,30 @@ var q, B, le = J((() => {
         });
       }));
     }
-  }, customElements.define("flightradar24-radar-card-editor", ct);
+  }, customElements.define("flightradar24-radar-card-editor", ft);
 }));
-Tt();
-var wt = "___CARD_VERSION___";
-wt !== "___CARD_VERSION___" && console.info(`%cFLIGHTRADAR24-CARD%c v${wt} `, "color: #236597; font-weight: bold", "color: inherit; font-weight: normal");
-var ce = class extends HTMLElement {
+zt();
+var $t = "___CARD_VERSION___";
+$t !== "___CARD_VERSION___" && console.info(`%cFLIGHTRADAR24-CARD%c v${$t} `, "color: #236597; font-weight: bold", "color: inherit; font-weight: normal");
+var he = class extends HTMLElement {
   constructor() {
     super(), this._radarResizeObserver = null, this._zoomCleanup = null, this._updateRequired = !0, this._timer = null, this._unsubStateChangesPromise = null, this._intersectionObserver = null, this._visibilityChangeHandler = null, this._layoutOptions = null;
     try {
-      this.attachShadow({ mode: "open" }), this.cardState = new kt(), this.cardState.setRenderDynamic(() => this.renderDynamic());
+      this.attachShadow({ mode: "open" }), this.cardState = new Ct(), this.cardState.setRenderDynamic(() => this.renderDynamic());
     } catch (t) {
-      console.error("[FR24Card] constructor error:", t), this.cardState = new kt();
+      console.error("[FR24Card] constructor error:", t), this.cardState = new Ct();
     }
   }
   setConfig(t) {
     try {
       if (!t) throw new Error("Configuration is missing.");
-      this.cardState._leafletMap && (this.cardState._leafletMap.remove(), this.cardState._leafletMap = null, this.cardState._currentMapConfig = void 0), this.cardState.setConfig(t), Ut(this.cardState, this), this.observeRadarResize();
+      this.cardState._leafletMap && (this.cardState._leafletMap.remove(), this.cardState._leafletMap = null, this.cardState._currentMapConfig = void 0), this.cardState.setConfig(t), Yt(this.cardState, this), this.observeRadarResize();
     } catch (e) {
       console.error("[FR24Card] setConfig error:", e);
     }
   }
   static async getConfigElement(t) {
-    await Promise.resolve().then(() => (Tt(), de));
+    await Promise.resolve().then(() => (zt(), fe));
     const e = document.createElement("flightradar24-radar-card-editor");
     return e.setConfig(t), e;
   }
@@ -4345,9 +4415,9 @@ var ce = class extends HTMLElement {
     try {
       this.cardState.hass = t, this._unsubStateChangesPromise || (this._unsubStateChangesPromise = this.subscribeToStateChanges(t)), this._updateRequired && (this._updateRequired = !1, setTimeout(() => {
         this.fetchFlightsData(), requestAnimationFrame(() => {
-          this.updateCardDimensions(), qt(this.cardState, this.shadowRoot, () => {
+          this.updateCardDimensions(), Vt(this.cardState, this.shadowRoot, () => {
             try {
-              rt(this.cardState), et(this.cardState);
+              dt(this.cardState), nt(this.cardState);
             } catch (e) {
               console.error("[FR24Card] Leaflet render error:", e);
             }
@@ -4384,7 +4454,7 @@ var ce = class extends HTMLElement {
         scaleFactor: o,
         centerX: e / 2,
         centerY: a / 2
-      }, this.cardState.radar.hide !== !0 && (rt(this.cardState), et(this.cardState)));
+      }, this.cardState.radar.hide !== !0 && (dt(this.cardState), nt(this.cardState)));
     } catch (t) {
       console.error("[FR24Card] updateCardDimensions error:", t);
     }
@@ -4397,7 +4467,7 @@ var ce = class extends HTMLElement {
         try {
           this.updateCardDimensions(), this.cardState._leafletMap && requestAnimationFrame(() => {
             try {
-              this.cardState._leafletMap?.invalidateSize({ pan: !1 }), Ht(this.cardState);
+              this.cardState._leafletMap?.invalidateSize({ pan: !1 }), Wt(this.cardState);
             } catch (e) {
               console.error("[FR24Card] ResizeObserver map refresh error:", e);
             }
@@ -4405,7 +4475,7 @@ var ce = class extends HTMLElement {
         } catch (e) {
           console.error("[FR24Card] ResizeObserver error:", e);
         }
-      }), this._radarResizeObserver.observe(t), this._zoomCleanup && this._zoomCleanup(), this._zoomCleanup = At(this.cardState, t);
+      }), this._radarResizeObserver.observe(t), this._zoomCleanup && this._zoomCleanup(), this._zoomCleanup = Tt(this.cardState, t);
     } catch (t) {
       console.error("[FR24Card] observeRadarResize error:", t);
     }
@@ -4474,10 +4544,10 @@ var ce = class extends HTMLElement {
           type: "AND",
           conditions: this.cardState.config.filter
         }]
-      }] : this.cardState.config.filter : void 0, i = this.cardState.flights.length, o = a ? Rt(this.cardState, a) : this.cardState.flights, r = o.length;
+      }] : this.cardState.config.filter : void 0, i = this.cardState.flights.length, o = a ? It(this.cardState, a) : this.cardState.flights, r = o.length;
       if (o.sort(this.cardState.sortFn), this.cardState.radar.hide !== !0 && requestAnimationFrame(() => {
         try {
-          et(this.cardState);
+          nt(this.cardState);
         } catch (n) {
           console.error("[FR24Card] requestAnimationFrame renderRadar error:", n);
         }
@@ -4488,7 +4558,7 @@ var ce = class extends HTMLElement {
           filtered: o.length
         };
         const n = document.createElement("div");
-        n.className = "list-status", n.innerHTML = pt(this.cardState, "list_status", null, (d) => (...l) => l?.filter((u) => u).join(d || " ")), e.appendChild(n);
+        n.className = "list-status", n.innerHTML = at(this.cardState, "list_status", null, (s) => (...l) => l?.filter((u) => u).join(s || " ")), e.appendChild(n);
       }
       if (r === 0) {
         if (this.cardState.config.no_flights_message !== "") {
@@ -4497,8 +4567,8 @@ var ce = class extends HTMLElement {
         }
       } else {
         const n = this.cardState.config.max_flights;
-        (n && n > 0 ? o.slice(0, n) : o).forEach((d, l) => {
-          const u = ee(this.cardState, d);
+        (n && n > 0 ? o.slice(0, n) : o).forEach((s, l) => {
+          const u = oe(this.cardState, s);
           l === 0 && (u.className += " first"), e.appendChild(u);
         });
       }
@@ -4559,28 +4629,28 @@ var ce = class extends HTMLElement {
   calculateFlightData() {
     try {
       let t = !1, e = !1;
-      const a = Date.now() / 1e3, i = K(this.cardState);
+      const a = Date.now() / 1e3, i = Y(this.cardState);
       if (i) {
         const o = i.latitude, r = i.longitude;
         this.cardState.flights.forEach((n) => {
           n._timestamp || (n._timestamp = a), e = e || n.ground_speed > 0;
-          const d = a - (n._timestamp || a);
-          if (d > 1) {
+          const s = a - (n._timestamp || a);
+          if (s > 1) {
             t = !0, n._timestamp = a;
-            const l = it(n.latitude, n.longitude, n.heading, n.ground_speed * 1.852 / 3600 * d);
+            const l = rt(n.latitude, n.longitude, n.heading, n.ground_speed * 1.852 / 3600 * s);
             n.latitude = l.lat, n.longitude = l.lon;
-            const u = Math.max(n.altitude + d / 60 * n.vertical_speed, 0);
-            (n.landed || u !== n.altitude && u === 0) && (n.landed = !0, n.ground_speed = Math.max(n.ground_speed - 15 * d, 15)), n.altitude = u;
+            const u = Math.max(n.altitude + s / 60 * n.vertical_speed, 0);
+            (n.landed || u !== n.altitude && u === 0) && (n.landed = !0, n.ground_speed = Math.max(n.ground_speed - 15 * s, 15)), n.altitude = u;
           }
-          if (n.distance_to_tracker = j(o, r, n.latitude, n.longitude, this.cardState.units.distance), n.heading_from_tracker = V(o, r, n.latitude, n.longitude), n.cardinal_direction_from_tracker = Pt(n.heading_from_tracker), n.is_approaching = ht((n.heading_from_tracker + 180) % 360, n.heading), n.is_receding = ht(n.heading_from_tracker, n.heading), n.is_approaching) {
-            let l = zt(o, r, n.latitude, n.longitude, n.heading);
-            n.closest_passing_distance = Math.round(j(o, r, l.lat, l.lon, this.cardState.units.distance));
+          if (n.distance_to_tracker = q(o, r, n.latitude, n.longitude, this.cardState.units.distance), n.heading_from_tracker = U(o, r, n.latitude, n.longitude), n.cardinal_direction_from_tracker = Bt(n.heading_from_tracker), n.is_approaching = _t((n.heading_from_tracker + 180) % 360, n.heading), n.is_receding = _t(n.heading_from_tracker, n.heading), n.is_approaching) {
+            let l = qt(o, r, n.latitude, n.longitude, n.heading);
+            n.closest_passing_distance = Math.round(q(o, r, l.lat, l.lon, this.cardState.units.distance));
             const u = this.calculateETA(n.latitude, n.longitude, l.lat, l.lon, n.ground_speed);
             if (n.eta_to_closest_distance = Math.round(u), n.vertical_speed < 0 && n.altitude > 0) {
-              const _ = n.altitude / Math.abs(n.vertical_speed), m = it(n.latitude, n.longitude, n.heading, n.ground_speed * _ / 60), g = j(o, r, m.lat, m.lon, this.cardState.units.distance);
-              _ < u && (n.is_landing = !0, n.closest_passing_distance = Math.round(g), n.eta_to_closest_distance = Math.round(_), l = m);
+              const v = n.altitude / Math.abs(n.vertical_speed), m = rt(n.latitude, n.longitude, n.heading, n.ground_speed * v / 60), g = q(o, r, m.lat, m.lon, this.cardState.units.distance);
+              v < u && (n.is_landing = !0, n.closest_passing_distance = Math.round(g), n.eta_to_closest_distance = Math.round(v), l = m);
             }
-            n.heading_from_tracker_to_closest_passing = Math.round(V(o, r, l.lat, l.lon));
+            n.heading_from_tracker_to_closest_passing = Math.round(U(o, r, l.lat, l.lon));
           } else
             delete n.closest_passing_distance, delete n.eta_to_closest_distance, delete n.heading_from_tracker_to_closest_passing, delete n.is_landing;
         });
@@ -4598,7 +4668,7 @@ var ce = class extends HTMLElement {
   }
   calculateETA(t, e, a, i, o) {
     try {
-      const r = j(t, e, a, i, this.cardState.units.distance);
+      const r = q(t, e, a, i, this.cardState.units.distance);
       return o === 0 ? 1 / 0 : r / (o * (this.cardState.units.distance === "km" ? 1.852 : 1.15078) / 60);
     } catch (r) {
       return console.error("[FR24Card] calculateETA error:", r), 1 / 0;
@@ -4615,7 +4685,7 @@ var ce = class extends HTMLElement {
     return this.cardState.hass;
   }
 };
-customElements.define("flightradar24-radar-card", ce);
+customElements.define("flightradar24-radar-card", he);
 typeof window < "u" && (window.customCards = window.customCards || [], window.customCards.push({
   type: "flightradar24-radar-card",
   name: "Flightradar24 Radar Card",

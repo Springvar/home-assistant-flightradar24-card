@@ -1,3 +1,4 @@
+import { resolveThemedValue } from '../utils/theme';
 import type { CardState } from '../types/cardState';
 
 export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void {
@@ -5,13 +6,18 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
     if (oldStyle) oldStyle.remove();
 
     const radar = cardState.radar;
-    // Backwards compatibility: use new properties, fall back to old ones
-    const backgroundColor = radar['background-color'] || radar['primary-color'] || 'var(--dark-primary-color)';
-    const aircraftColor = radar['aircraft-color'] || radar['accent-color'] || 'var(--accent-color)';
-    const aircraftSelectedColor = radar['aircraft-selected-color'] || radar['aircraft-color'] || radar['accent-color'] || 'var(--accent-color)';
-    const radarGridColor = radar['radar-grid-color'] || radar['feature-color'] || 'var(--secondary-text-color)';
-    const localFeaturesColor = radar['local-features-color'] || radar['feature-color'] || radar['radar-grid-color'] || 'var(--secondary-text-color)';
-    const callsignLabelColor = radar['callsign-label-color'] || 'var(--primary-background-color)';
+    // Backwards compatibility: use new properties, fall back to old ones.
+    // Every color value (and the label font size) accepts an optional
+    // "light|dark" dual value for per-theme styling (see utils/theme.ts).
+    const backgroundColor = resolveThemedValue(radar['background-color'] || radar['primary-color'] || 'var(--dark-primary-color)');
+    const aircraftColor = resolveThemedValue(radar['aircraft-color'] || radar['accent-color'] || 'var(--accent-color)');
+    const aircraftSelectedColor = resolveThemedValue(radar['aircraft-selected-color'] || radar['aircraft-color'] || radar['accent-color'] || 'var(--accent-color)');
+    const radarGridColor = resolveThemedValue(radar['radar-grid-color'] || radar['feature-color'] || 'var(--secondary-text-color)');
+    const localFeaturesColor = resolveThemedValue(radar['local-features-color'] || radar['feature-color'] || radar['radar-grid-color'] || 'var(--secondary-text-color)');
+    const callsignLabelColor = resolveThemedValue(radar['callsign-label-color'] || 'var(--primary-background-color)');
+    const callsignLabelTextColor = resolveThemedValue(radar['callsign-label-text-color'] || 'var(--primary-text-color)');
+    const fontSize = resolveThemedValue(radar['callsign-label-font-size'] || '');
+    const callsignLabelFontSize = /^\d+(\.\d+)?(px|em|rem|pt)$/.test(fontSize) ? fontSize : '9px';
     const backgroundOpacity = radar['background-opacity'] !== undefined ? Math.max(0, Math.min(1, radar['background-opacity'])) : 0.05;
     const radarSize = radar['radar_size'] !== undefined ? Math.max(30, Math.min(90, radar['radar_size'])) : 70;
     const radarMargin = (100 - radarSize) / 2;
@@ -27,6 +33,8 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
       --radar-grid-color: ${radarGridColor};
       --radar-local-features-color: ${localFeaturesColor};
       --radar-callsign-label-color: ${callsignLabelColor};
+      --radar-callsign-label-text-color: ${callsignLabelTextColor};
+      --radar-callsign-label-font-size: ${callsignLabelFontSize};
     }
     #flights-card {
       padding: 16px;
@@ -274,8 +282,8 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
       padding: 0px;
       margin: 0px;
       border-radius: 3px;
-      font-size: 9px;
-      color: var(--primary-text-color);
+      font-size: var(--radar-callsign-label-font-size);
+      color: var(--radar-callsign-label-text-color);
       z-index: 2;
     }
     .ring {
