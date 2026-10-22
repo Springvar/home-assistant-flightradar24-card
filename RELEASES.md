@@ -1,5 +1,35 @@
 # Release Notes
 
+## v0.4.3-pre.1
+
+### Added
+
+**Configurable aircraft label**
+
+The label next to each aircraft marker was hard-coded to the callsign (or the
+registration when there was no callsign) at a fixed 9px. Both are now configurable:
+
+- `templates.radar_label` controls the label content and can use any flight field, e.g.
+  `${flight.callsign} · ${flight.aircraft_code}` for `KLM1412 · B738`.
+- `radar.callsign-label-font-size` sets the label font size, e.g. `12px`.
+
+Existing configurations keep their current appearance: the default template still renders
+`callsign ?? registration ?? 'n/a'` at 9px.
+
+**Light/dark theme values**
+
+Every radar color option and `callsign-label-font-size` now accept an optional dual value
+`"light|dark"`, for example `callsign-label-color: 'rgba(255,255,255,0.8)|rgba(0,0,0,0.8)'`.
+The first part is used with light themes and the second with dark themes. The dark theme is
+detected from the active Home Assistant theme, falling back to the OS preference. A single
+value works exactly as before, and an empty part falls back to the other part.
+
+### Changed
+
+The visual editor shows the light part of a dual value in its color pickers and preserves
+the dark part when a new color is picked.
+
+
 ## v0.4.2
 
 ### Fixed
