@@ -1,5 +1,36 @@
 # Release Notes
 
+## v0.4.3-pre.3
+
+### Added
+
+**Label text color**
+
+`radar.callsign-label-color` only ever set the label *background*; the text color was
+hard-coded to `var(--primary-text-color)`. That made a dark label background in a light
+theme show dark text. New `radar.callsign-label-text-color` sets the text color:
+
+```yaml
+radar:
+    callsign-label-color: 'rgba(255,255,255,0.85)|rgba(0,0,0,0.85)'
+    callsign-label-text-color: '#111111|#f5f5f5'
+```
+
+The default is unchanged (`var(--primary-text-color)`).
+
+**Light/dark pickers in the visual editor**
+
+Every radar color row now has a **Dark** checkbox next to the color picker. Checking it
+enables a second picker that controls the dark-theme value and stores the option as
+`light|dark`. Unchecking it drops the dark part and stores a single value. This covers
+the five radar colors, both label colors and the custom marker color overlay.
+
+**Custom marker color overlay follows the theme**
+
+`radar.aircraft-marker.*.aircraft-marker-color-overlay` now accepts `light|dark` too. The
+resolved color is part of the marker canvas cache key, so switching themes redraws the
+marker instead of reusing the previous theme's image.
+
 ## v0.4.3-pre.2
 
 ### Added
