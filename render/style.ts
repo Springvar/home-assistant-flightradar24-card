@@ -15,6 +15,7 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
     const radarGridColor = resolveThemedValue(radar['radar-grid-color'] || radar['feature-color'] || 'var(--secondary-text-color)');
     const localFeaturesColor = resolveThemedValue(radar['local-features-color'] || radar['feature-color'] || radar['radar-grid-color'] || 'var(--secondary-text-color)');
     const callsignLabelColor = resolveThemedValue(radar['callsign-label-color'] || 'var(--primary-background-color)');
+    const callsignLabelTextColor = resolveThemedValue(radar['callsign-label-text-color'] || 'var(--primary-text-color)');
     const fontSize = resolveThemedValue(radar['callsign-label-font-size'] || '');
     const callsignLabelFontSize = /^\d+(\.\d+)?(px|em|rem|pt)$/.test(fontSize) ? fontSize : '9px';
     const backgroundOpacity = radar['background-opacity'] !== undefined ? Math.max(0, Math.min(1, radar['background-opacity'])) : 0.05;
@@ -32,6 +33,7 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
       --radar-grid-color: ${radarGridColor};
       --radar-local-features-color: ${localFeaturesColor};
       --radar-callsign-label-color: ${callsignLabelColor};
+      --radar-callsign-label-text-color: ${callsignLabelTextColor};
       --radar-callsign-label-font-size: ${callsignLabelFontSize};
     }
     #flights-card {
@@ -281,7 +283,7 @@ export function renderStyle(cardState: CardState, shadowRoot: ShadowRoot): void 
       margin: 0px;
       border-radius: 3px;
       font-size: var(--radar-callsign-label-font-size);
-      color: var(--primary-text-color);
+      color: var(--radar-callsign-label-text-color);
       z-index: 2;
     }
     .ring {

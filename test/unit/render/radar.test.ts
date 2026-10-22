@@ -130,6 +130,27 @@ describe('renderStyle callsign label font size', () => {
         }
     });
 
+    it('defaults the label text color to the theme text color', () => {
+        const style = renderCardStyle({});
+        expect(style).toContain('--radar-callsign-label-text-color: var(--primary-text-color)');
+        expect(style).toContain('color: var(--radar-callsign-label-text-color)');
+    });
+
+    it('resolves light|dark dual label text color values per theme', () => {
+        expect(renderCardStyle({ 'callsign-label-text-color': '#111111|#f5f5f5' })).toContain(
+            '--radar-callsign-label-text-color: #111111'
+        );
+
+        document.body.classList.add('dark');
+        try {
+            expect(renderCardStyle({ 'callsign-label-text-color': '#111111|#f5f5f5' })).toContain(
+                '--radar-callsign-label-text-color: #f5f5f5'
+            );
+        } finally {
+            document.body.classList.remove('dark');
+        }
+    });
+
     it('resolves light|dark dual font size values per theme', () => {
         document.body.classList.add('dark');
         try {

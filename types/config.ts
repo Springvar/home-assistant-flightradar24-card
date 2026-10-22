@@ -93,6 +93,7 @@ export interface RadarConfig {
     'radar-grid-color'?: string;
     'local-features-color'?: string;
     'callsign-label-color'?: string;
+    'callsign-label-text-color'?: string;
     'callsign-label-font-size'?: string;
     'aircraft-marker-size'?: 'small' | 'normal' | 'large' | 'x-large' | 'xx-large';
     'aircraft-marker'?: Record<string, AircraftMarkerEntry>;

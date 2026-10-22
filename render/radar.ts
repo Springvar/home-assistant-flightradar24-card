@@ -1,6 +1,7 @@
 import { applyFilter } from '../utils/filter';
 import { handleFlightTap } from '../utils/action';
 import { parseTemplate } from '../utils/template';
+import { resolveThemedValue } from '../utils/theme';
 import type { Flight } from '../types/flight';
 import type { Condition, AircraftMarkerEntry } from '../types/config';
 import type { CardState } from '../types/cardState';
@@ -59,12 +60,16 @@ function loadImage(url: string): Promise<HTMLImageElement> {
     return promise;
 }
 
+function resolveOverlayColor(entry: AircraftMarkerEntry): string {
+    return resolveThemedValue(entry['aircraft-marker-color-overlay'] || '');
+}
+
 function renderMarker(img: HTMLImageElement, entry: AircraftMarkerEntry): HTMLCanvasElement {
     const iw = img.width;
     const ih = img.height;
     const pxRatio = iw / DISPLAY_SIZE;
 
-    const overlayColor = entry['aircraft-marker-color-overlay'];
+    const overlayColor = resolveOverlayColor(entry);
     const outlineWidth = entry['aircraft-marker-outline-width'] ?? 0;
     const outlineColor = entry['aircraft-marker-outline-color'] || '#000000';
     const shadow = entry['aircraft-marker-shadow'] || '';
@@ -142,7 +147,7 @@ function renderMarker(img: HTMLImageElement, entry: AircraftMarkerEntry): HTMLCa
 }
 
 function markerCacheKey(entry: AircraftMarkerEntry): string {
-    return `${entry['aircraft-marker-url']}|${entry['aircraft-marker-color-overlay']}|${entry['aircraft-marker-outline-width']}|${entry['aircraft-marker-outline-color']}|${entry['aircraft-marker-shadow']}`;
+    return `${entry['aircraft-marker-url']}|${resolveOverlayColor(entry)}|${entry['aircraft-marker-outline-width']}|${entry['aircraft-marker-outline-color']}|${entry['aircraft-marker-shadow']}`;
 }
 
 function getOrCreateRenderPromise(entry: AircraftMarkerEntry): Promise<HTMLCanvasElement> {
@@ -163,7 +168,7 @@ function createCustomMarker(entry: AircraftMarkerEntry, heading: number): HTMLDi
     wrapper.appendChild(transformEl);
 
     const url = entry['aircraft-marker-url'];
-    const overlayColor = entry['aircraft-marker-color-overlay'];
+    const overlayColor = resolveOverlayColor(entry);
     const outlineWidth = entry['aircraft-marker-outline-width'] ?? 0;
     const outlineColor = entry['aircraft-marker-outline-color'] || '#000000';
     const shadow = entry['aircraft-marker-shadow'] || '';

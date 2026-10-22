@@ -61,4 +61,81 @@ describe('editor radar marker & label settings', () => {
         input.dispatchEvent(new Event('input'));
         expect(configs[configs.length - 1]?.radar?.['callsign-label-color']).toBe('#222222|#111111');
     });
+
+    it('renders a configurable label text color defaulting to the theme text color', () => {
+        const { root } = renderEditor({ radar: {} });
+        const input = root.getElementById('radar-callsign-label-text-color') as HTMLInputElement;
+        expect(input).not.toBeNull();
+        expect(input.value).toBe('#000000');
+    });
+
+    it('shows light and dark pickers for a dual label text color', () => {
+        const { root } = renderEditor({ radar: { 'callsign-label-text-color': '#111111|#f5f5f5' } });
+        const light = root.getElementById('radar-callsign-label-text-color') as HTMLInputElement;
+        const dark = root.getElementById('radar-callsign-label-text-color-dark') as HTMLInputElement;
+        const toggle = root.getElementById('radar-callsign-label-text-color-dark-enabled') as HTMLInputElement;
+
+        expect(light.value).toBe('#111111');
+        expect(dark.value).toBe('#f5f5f5');
+        expect(toggle.checked).toBe(true);
+        expect(dark.disabled).toBe(false);
+    });
+
+    it('disables the dark picker when no dark value is configured', () => {
+        const { root } = renderEditor({ radar: { 'callsign-label-text-color': '#111111' } });
+        const dark = root.getElementById('radar-callsign-label-text-color-dark') as HTMLInputElement;
+        const toggle = root.getElementById('radar-callsign-label-text-color-dark-enabled') as HTMLInputElement;
+
+        expect(toggle.checked).toBe(false);
+        expect(dark.disabled).toBe(true);
+        expect(dark.value).toBe('#111111');
+    });
+
+    it('writes light|dark values from the two pickers and drops the dark part when unchecked', () => {
+        const { editor, root } = renderEditor({ radar: { 'callsign-label-text-color': '#111111' } });
+        const light = root.getElementById('radar-callsign-label-text-color') as HTMLInputElement;
+        const dark = root.getElementById('radar-callsign-label-text-color-dark') as HTMLInputElement;
+        const toggle = root.getElementById('radar-callsign-label-text-color-dark-enabled') as HTMLInputElement;
+
+        const configs: CardConfig[] = [];
+        editor.addEventListener('config-changed', (e) => {
+            configs.push((e as CustomEvent<{ config: CardConfig }>).detail.config);
+        });
+        const latest = () => configs[configs.length - 1]?.radar?.['callsign-label-text-color'];
+
+        toggle.checked = true;
+        toggle.dispatchEvent(new Event('change'));
+        expect(dark.disabled).toBe(false);
+        expect(latest()).toBe('#111111|#111111');
+
+        dark.value = '#eeeeee';
+        dark.dispatchEvent(new Event('input'));
+        expect(latest()).toBe('#111111|#eeeeee');
+
+        light.value = '#000000';
+        light.dispatchEvent(new Event('input'));
+        expect(latest()).toBe('#000000|#eeeeee');
+
+        toggle.checked = false;
+        toggle.dispatchEvent(new Event('change'));
+        expect(dark.disabled).toBe(true);
+        expect(latest()).toBe('#000000');
+    });
+
+    it('offers the dark picker on every radar color row', () => {
+        const { root } = renderEditor({ radar: {} });
+        for (const id of [
+            'radar-background-color',
+            'radar-aircraft-color',
+            'radar-aircraft-selected-color',
+            'radar-grid-color',
+            'radar-local-features-color',
+            'radar-callsign-label-color',
+            'radar-custom-marker-overlay',
+        ]) {
+            expect(root.getElementById(id), id).not.toBeNull();
+            expect(root.getElementById(`${id}-dark`), `${id} dark`).not.toBeNull();
+            expect(root.getElementById(`${id}-dark-enabled`), `${id} toggle`).not.toBeNull();
+        }
+    });
 });

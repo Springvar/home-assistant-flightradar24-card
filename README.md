@@ -225,7 +225,8 @@ radar:
 | `aircraft-selected-color`| Color for selected aircraft markers                       | Same as `aircraft-color`        | Must be a valid CSS color                             |
 | `radar-grid-color`       | Color for radar rings and cardinal direction lines        | `var(--secondary-text-color)`   | Must be a valid CSS color                             |
 | `local-features-color`   | Color for local features (runways, locations, outlines)   | Same as `radar-grid-color`      | Must be a valid CSS color                             |
-| `callsign-label-color`   | Color for callsign labels                                 | `var(--primary-background-color)`| Must be a valid CSS color                            |
+| `callsign-label-color`   | Background color for callsign labels                      | `var(--primary-background-color)`| Must be a valid CSS color                            |
+| `callsign-label-text-color` | Text color for callsign labels                         | `var(--primary-text-color)`      | Must be a valid CSS color                            |
 | `callsign-label-font-size` | Font size for callsign labels                           | `9px`                            | Must be a CSS font size such as `12px`, `0.8em` or `10pt` |
 | `aircraft-marker-size`   | Size of aircraft markers on the radar                     | `normal`                        | Must be `small`, `normal`, `large`, `x-large`, or `xx-large` |
 | `aircraft-marker`        | Custom image markers per aircraft (see below)             | None                            | Must be a mapping of aircraft identifiers to marker objects |
@@ -237,12 +238,13 @@ radar:
 
 **Note:** For backwards compatibility, the old color property names (`primary-color`, `accent-color`, `feature-color`) are still supported but deprecated. They will be automatically migrated to the new names when using the visual editor.
 
-**Light/dark theme variants:** Every radar color option, plus `callsign-label-font-size`, accepts an optional dual value `"light|dark"`. The first value is used while a light theme is active, the second while a dark theme is active. Dark themes are detected from the Home Assistant theme, falling back to the OS preference. A single value keeps working as before, and an empty part falls back to the other part.
+**Light/dark theme variants:** Every radar color option (including the custom marker's color overlay), plus `callsign-label-font-size`, accepts an optional dual value `"light|dark"`. The first value is used while a light theme is active, the second while a dark theme is active. Dark themes are detected from the Home Assistant theme, falling back to the OS preference. A single value keeps working as before, and an empty part falls back to the other part. In the visual editor, each color row has a **Dark** checkbox that reveals a second color picker for the dark-theme value.
 
 ```yaml
 radar:
     aircraft-color: 'var(--accent-color)|#ff8a80'
     callsign-label-color: 'rgba(255,255,255,0.8)|rgba(0,0,0,0.8)'
+    callsign-label-text-color: '#111111|#f5f5f5'
     callsign-label-font-size: '10px|12px'
 ```
 
